@@ -17,6 +17,7 @@ a.community-card:hover{border-color:#ADA1C2;box-shadow:0 12px 30px rgba(116,99,1
 .header-link.subtle{color:#616B78}
 .community-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:760px){.community-grid,.community-grid.two{grid-template-columns:1fr}.community-card{min-height:0}}
-.repo-button{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:999px;border:1px solid #D9DEE4;background:#fff;color:#3F474F;font-size:13px;font-weight:600}
-.repo-button:hover{border-color:#92A8BE;background:#F0F4F8;color:#526B85}
-@media (max-width:760px){.repo-button span{display:none}.repo-button{padding:0 9px}}
+.repo-button{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 15px;border-radius:999px;border:1px solid #1F2328;background:linear-gradient(180deg,#2D333B,#1F2328);color:#fff;font-size:13px;font-weight:650;box-shadow:0 6px 16px rgba(31,35,40,.22);transition:transform .2s,box-shadow .2s,background .2s}
+.repo-button:hover{transform:translateY(-1px);background:linear-gradient(180deg,#373E47,#24292F);color:#fff;box-shadow:0 10px 22px rgba(31,35,40,.28)}
+.repo-stars{display:inline-flex;align-items:center;gap:4px;height:24px;margin-right:-8px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.16);font-size:12px;font-weight:700}
+@media (max-width:760px){.repo-button span{display:none}.repo-button{padding:0 10px}}

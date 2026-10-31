@@ -2,95 +2,62 @@
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/"><img src=".github/assets/banner.jpg" alt="NextTransformer：走向下一代 Transformer" width="100%"></a>
 
-<h3>面向下一代 Transformer 架构的开源框架与公平基准</h3>
+<h3>面向下一代 Transformer 的全面、综合、最前沿的<br>开源框架、比较平台与自动研究平台</h3>
 
 <p>
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/"><img alt="文档" src="https://img.shields.io/badge/docs-read-3F7FD9?style=flat-square"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/"><img src=".github/assets/readme/button-observatory-zh.webp" alt="进入观测站" height="60"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/"><img src=".github/assets/readme/button-docs-zh.webp" alt="阅读文档" height="60"></a>
+<a href="#快速开始"><img src=".github/assets/readme/button-quickstart-zh.webp" alt="快速开始" height="60"></a>
+</p>
+
+<p>
+<a href="https://github.com/Interactive-Active-AI/NextTransformer/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Interactive-Active-AI/NextTransformer/ci.yml?branch=main&style=flat-square&label=CI&color=3F7FD9"></a>
 <a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-8B5CF6?style=flat-square"></a>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2A93B?style=flat-square"></a>
 <img alt="Python 3.10-3.13" src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=flat-square&logo=python&logoColor=white">
 <img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?style=flat-square&logo=pytorch&logoColor=white">
-<br>
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/WeChat-group-E5607E?style=flat-square&logo=wechat&logoColor=white"></a>
 <a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/discussions-ask-7A5AF0?style=flat-square&logo=github&logoColor=white"></a>
 </p>
 
-<b>
-<a href="https://interactive-active-ai.github.io/NextTransformer/">观测站</a> ·
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/">文档</a> ·
-<a href="#快速开始">快速开始</a> ·
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/">协议</a> ·
-<a href="#自动研究竞技场">竞技场</a> ·
-<a href="#社区">社区</a> ·
-<a href="README.md">English</a>
-</b>
+<a href="README.md">English</a> · <b>简体中文</b>
 
 </div>
 
 <br>
 
-**在训练预算固定时，语言模型应该如何分配它的计算？** NextTransformer 让循环深度、稀疏与线性注意力、残差流变体和 hybrid
-在相同的数据上、用相同的 49.152B tokens、相同的每 token 理论训练 FLOPs 进行训练，并在相同的检查点上评测。每个结果都是经过审计、以文件形式保存的记录，
-可以在[观测站](https://interactive-active-ai.github.io/NextTransformer/)中查看。
+**在训练预算固定时，语言模型应该如何分配它的计算？** NextTransformer 让循环深度、稀疏与线性注意力、残差流变体和混合架构在相同的数据上、
+用相同的 49.152B tokens、相同的每 token 理论训练 FLOPs 进行训练，并在相同的检查点上评测。每个结果都是经过审计、以文件形式保存的记录；
+AI agent 也可以在完全相同的规则下研究新架构。
 
 ## 新闻
 
-- **2026-11-01** · NextTransformer **v0.1.0** 开源：29 个完成的运行、39 张模型卡片、完整的协议、文档和观测站。
-- **2026-11-14 前** · **Arena v2**：全面支持 agent 自主研究，提供研究 gym 和算力计量。
-- **2026 年 11 月** · **400B tokens 和更大模型**的训练配方。
+- <img src="https://img.shields.io/badge/NEW-E5607E?style=flat-square" alt="New" height="18"> **2026-10-31** · NextTransformer 正式开源：29 个完成的运行、39 张模型卡片、完整的协议、文档和观测站。
+- <img src="https://img.shields.io/badge/SOON-8B5CF6?style=flat-square" alt="Soon" height="18"> **2026-11-14 前** · **Arena v2**：全面支持 agent 自主研究。
+- <img src="https://img.shields.io/badge/SOON-8B5CF6?style=flat-square" alt="Soon" height="18"> **2026 年 11 月** · **400B tokens 和更大模型**的训练配方。
 
 ## 亮点
 
-<table>
-<tr>
-<td width="50%" valign="top">
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/"><img src=".github/assets/readme/card-framework-zh.webp" alt="一个框架，集成前沿架构：七个模型族共 39 个模型，全部在同一套代码中；新方法只需一个插件目录。" width="100%"></a>
 
-**一个框架，集成前沿架构**<br>
-39 个模型，覆盖完整注意力、残差连接、线性与稀疏注意力、循环计算和 hybrid，全部在基于 nanochat 的同一套代码中。新方法只需[一个插件目录](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/guides/plugins/)。
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/"><img src=".github/assets/readme/card-protocol-zh.webp" alt="公平、明确的协议：每个模型使用相同的数据、token、优化器、调度和评测；训练算力对齐到 1% 以内，并对整个运行做审计。" width="100%"></a>
 
-</td>
-<td width="50%" valign="top">
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-zh.webp" alt="单机完成 1B 级预训练：一台 8 卡机器 2–4 天即可用 49B tokens 训练约 1.4B 参数的模型；400B tokens 与更大模型 11 月补齐。" width="100%"></a>
 
-**公平、明确的协议**<br>
-每个模型使用相同的数据、token、优化器、调度和评测。训练算力由算子级账本对齐到 ±1% 以内，并对整个运行做审计。[阅读协议](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/)。
-
-</td>
-</tr>
-<tr>
-<td width="50%" valign="top">
-
-**单机完成 1B 级预训练**<br>
-在一台 8 卡机器上，2–4 天即可用 49B tokens 训练约 1.4B 参数的模型，也可以扩展到 16 或 32 卡。400B tokens 和更大模型的配方将于 11 月补齐。
-
-</td>
-<td width="50%" valign="top">
-
-**Agent 原生研究**<br>
-把[竞技场任务](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/task/)交给你的 agent，让它研究出下一代架构，并不断改进自己的研究方式。完整版本将于 2026 年 11 月 14 日前上线。
-
-</td>
-</tr>
-</table>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/task/"><img src=".github/assets/readme/card-agent-zh.webp" alt="Agent 原生研究：把竞技场任务交给你的 agent；完整版本 Arena v2 将于 2026 年 11 月 14 日前上线。" width="100%"></a>
 
 ## 观测站
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/"><img src=".github/assets/observatory.jpg" alt="NextTransformer 观测站：学习曲线、排行榜、模型图谱和竞技场" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/"><img src=".github/assets/readme/observatory.webp" alt="NextTransformer 观测站：学习曲线、排行榜、模型图谱和竞技场" width="100%"></a>
 
-每个运行的学习曲线、可回放的排行榜、全部 22 个 CORE 任务、架构图和模型卡片。第 46,875 次更新时领先的运行，与完整注意力的 Dense Baseline 对比：
+每个运行的学习曲线、可回放的排行榜、全部 22 个 CORE 任务、架构图和模型卡片，都可以在浏览器中查看。
+
+## 结果
 
 <!-- generated:leaderboard -->
-| 模型 | 模型族 | 验证 BPB ↓ | Δ BPB | CORE ↑ | Δ CORE |
-|---|---|---:|---:|---:|---:|
-| **Dense Baseline** | baseline | 0.6672 | — | 33.10 | — |
-| Block Attention Residuals · AttnRes | residual | 0.6630 | −0.0042 | 34.00 | +0.90 |
-| SSSL¹ | others | 0.6671 | ±0.0000 | 33.78 | +0.69 |
-| Native Sparse Attention · NSA | sparse | 0.6678 | +0.0006 | 33.78 | +0.69 |
-| Hybrid GDN + SWA | hybrid | 0.6656 | −0.0015 | 33.66 | +0.57 |
-| Hybrid GDN + MHA | hybrid | 0.6647 | −0.0025 | 33.37 | +0.28 |
-| Grouped-Query Attention · GQA | others | 0.6741 | +0.0069 | 32.62 | −0.47 |
-| Multi-head Latent Attention · MLA + QK-norm | others | 0.6759 | +0.0087 | 32.53 | −0.56 |
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img src=".github/assets/readme/results-zh.svg" alt="全部 29 个运行在第 46,875 次更新时的 CORE，与 Dense Baseline 对比" width="100%"></a>
 
-单种子运行；¹ 使用历史算力核算。全部 29 个运行及其说明见[排行榜](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/leaderboard/)。
+每个运行的数值和说明见[排行榜](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/leaderboard/)；交互式回放见[观测站](https://interactive-active-ai.github.io/NextTransformer/#leaderboard)。
 <!-- /generated:leaderboard -->
 
 ## 快速开始
@@ -134,18 +101,18 @@ sbatch --nodes=4 launch/slurm.sbatch --config configs/linear/gdn.json --site-con
 
 ## 模型库
 
-<details>
-<summary><b>七个模型族，共 39 个模型</b>（点击展开）</summary>
+<details open>
+<summary><b>七个模型族，共 39 个模型</b></summary>
 
 | 模型族 | 模型 |
 |---|---|
-| Baseline | Dense（完整因果注意力） |
-| Residual | Standard Residual · Block Attention Residuals · Hyper-Connections\* · mHC\* |
-| Looped | Universal Transformer · ACT · Fixed Recursive · Huginn · Ouro · DeepLoop · Mixture-of-Recursions · LoopFormer · Circle Loop |
-| Sparse | DeepSeek Sparse Attention · Qwen Sparse Attention · Native Sparse Attention · SeerAttention-style · MoBA |
-| Linear | DeltaNet · Gated DeltaNet · Gated Linear Attention · Kimi Delta Attention · RetNet · Linear Transformer (ELU+1)† · ELU+1 with q/k-norm · KDA without VE\* |
-| Hybrid | GDN + MHA · GDN + SWA · DeltaNet + MHA\* · KDA + MLA-NoPE\* · GDN + QSA\* · MoBA + MHA\* |
-| Others | SSSL · MQA · GQA · MLA + QK-norm · MLA-NoPE + QK-norm · MLA-NoPE\* · MHA without VE\* |
+| <img src="https://img.shields.io/badge/Baseline-7A8288?style=flat-square" alt="Baseline"> | Dense（完整因果注意力） |
+| <img src="https://img.shields.io/badge/Residual-33456E?style=flat-square" alt="Residual"> | Standard Residual · Block Attention Residuals · Hyper-Connections\* · mHC\* |
+| <img src="https://img.shields.io/badge/Looped-8B5CF6?style=flat-square" alt="Looped"> | Universal Transformer · ACT · Fixed Recursive · Huginn · Ouro · DeepLoop · Mixture-of-Recursions · LoopFormer · Circle Loop |
+| <img src="https://img.shields.io/badge/Sparse-E5607E?style=flat-square" alt="Sparse"> | DeepSeek Sparse Attention · Qwen Sparse Attention · Native Sparse Attention · SeerAttention-style · MoBA |
+| <img src="https://img.shields.io/badge/Linear-3F7FD9?style=flat-square" alt="Linear"> | DeltaNet · Gated DeltaNet · Gated Linear Attention · Kimi Delta Attention · RetNet · Linear Transformer (ELU+1)† · ELU+1 with q/k-norm · KDA without VE\* |
+| <img src="https://img.shields.io/badge/Hybrid-F07856?style=flat-square" alt="Hybrid"> | GDN + MHA · GDN + SWA · DeltaNet + MHA\* · KDA + MLA-NoPE\* · GDN + QSA\* · MoBA + MHA\* |
+| <img src="https://img.shields.io/badge/Others-D99A2B?style=flat-square" alt="Others"> | SSSL · MQA · GQA · MLA + QK-norm · MLA-NoPE + QK-norm · MLA-NoPE\* · MHA without VE\* |
 
 \* 结果即将发布。† 在协议下未能稳定训练，由 q/k 归一化版本替代。论文、调整和配置见[模型库](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/)。
 
@@ -173,6 +140,8 @@ sbatch --nodes=4 launch/slurm.sbatch --config configs/linear/gdn.json --site-con
 
 ## 自动研究竞技场
 
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/overview/"><img src=".github/assets/readme/arena-zh.webp" alt="Arena v2 将于 2026 年 11 月 14 日前上线：Agent 原生研究，端到端" width="100%"></a>
+
 > [!NOTE]
 > **竞技场正在积极开发中。** 全面支持 agent 自主研究的 Arena v2（带 MCP 工具的研究 gym、算力计量、研究轨迹和自我改进的研究循环）将于 **2026 年 11 月 14 日**前上线。
 
@@ -182,7 +151,7 @@ sbatch --nodes=4 launch/slurm.sbatch --config configs/linear/gdn.json --site-con
 
 - **2026 年 11 月 14 日前：** Arena v2 和 agent 原生研究。
 - **2026 年 11 月：** 400B tokens 和更大模型的配方。
-- **即将发布的结果：** Hyper-Connections、mHC、另外四个 hybrid 和三个对照实验。
+- **即将发布的结果：** Hyper-Connections、mHC、另外四个混合架构和三个对照实验。
 - **计划中：** 在 Hugging Face Hub 上发布检查点和分词器。
 
 详见[路线图](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/roadmap/)。
