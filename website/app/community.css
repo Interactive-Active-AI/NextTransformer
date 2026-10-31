@@ -21,3 +21,17 @@ a.community-card:hover{border-color:#ADA1C2;box-shadow:0 12px 30px rgba(116,99,1
 .repo-button:hover{transform:translateY(-1px);background:linear-gradient(180deg,#373E47,#24292F);color:#fff;box-shadow:0 10px 22px rgba(31,35,40,.28)}
 .repo-stars{display:inline-flex;align-items:center;gap:4px;height:24px;margin-right:-8px;padding:0 9px;border-radius:999px;background:rgba(255,255,255,.16);font-size:12px;font-weight:700}
 @media (max-width:760px){.repo-button span{display:none}.repo-button{padding:0 10px}}
+
+/* Keep the two brand links and the actions from overlapping when stars appear. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .observatory .topbar { flex-wrap: wrap; height: auto; min-height: 66px; padding-block: 10px; gap: 8px 16px; }
+  .observatory .brand-cluster, .observatory .header-actions { flex: none; }
+  .observatory .header-actions { gap: 12px; margin-left: auto; }
+}
+@media (max-width: 480px) {
+  .repo-button .repo-stars { display: none; }
+}
+@media (max-width: 380px) {
+  .observatory .topbar { padding-inline: 10px; }
+  .observatory .iaai-brand b { display: none; }
+}
