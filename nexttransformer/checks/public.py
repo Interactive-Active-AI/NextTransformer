@@ -5,7 +5,7 @@
 
 Flags credentials and tokens, private keys, absolute paths into a home or data directory, personal
 e-mail addresses, private-network IP addresses, and GPU model names in results, evidence,
-documentation and the website (run records describe the protocol, not the machines; arena cards are
+documentation, launch scripts, configurations and the website (run records describe the protocol, not the machines; arena cards are
 exempt because the arena rules ask entrants to disclose their compute). Exits non-zero on a finding.
 """
 import re
@@ -20,11 +20,11 @@ PATHS = re.compile(r"(/home/(?!runner/)[a-z_][a-z0-9_.-]*/|/Users/[A-Za-z][^/\s]
 EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]{2,}@[A-Za-z0-9-]{2,}(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,6}\b")
 EMAIL_OK = re.compile(r"(noreply|no-reply)@|@users\.noreply\.github\.com|@example\.(com|org|net)$|^git@github\.com$")
 PRIVATE_IP = re.compile(r"\b(10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b")
-GPU = re.compile(r"\b(A800|A100|H800|H100|H200|H20|B200|B300|B30Z|L40S|RTX ?\d{4})\b")
-GPU_SCOPE = ("results/", "evidence/", "docs/", "README", "website/app/", "website/index.html")
+GPU = re.compile(r"(?<![A-Za-z0-9])(?:A800|A100|H800|H100|H200|H20|B200|B300|B30Z|GB200|GB300|L40S|RTX[ _-]?\d{4})(?![A-Za-z0-9])", re.IGNORECASE)
+GPU_SCOPE = ("results/", "evidence/", "configs/", "docs/", "launch/", "README", "website/", ".github/assets/")
 GPU_EXEMPT = ("results/arena/",)
 SELF = "nexttransformer/checks/public.py"
-SKIP = ("uv.lock", "package-lock.json", ".lock.txt", ".woff2", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".pdf", "-OFL.txt")
+SKIP = ("uv.lock", "package-lock.json", ".lock.txt", ".woff2", ".png", ".jpg", ".jpeg", ".ico", ".pdf", "-OFL.txt")
 
 
 def tracked():
@@ -43,7 +43,8 @@ def scan(paths):
             continue
         gpu = path.startswith(GPU_SCOPE) and not path.startswith(GPU_EXEMPT)
         for number, line in enumerate(text.splitlines(), 1):
-            hits = [m.group(0) for m in SECRETS.finditer(line)] + [m.group(0) for m in PATHS.finditer(line)]
+            hits = ["possible credential (redacted)"] if SECRETS.search(line) else []
+            hits += [m.group(0) for m in PATHS.finditer(line)]
             hits += [m.group(0) for m in EMAIL.finditer(line) if not EMAIL_OK.search(m.group(0))]
             hits += [m.group(0) for m in PRIVATE_IP.finditer(line)]
             if gpu:

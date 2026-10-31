@@ -21,3 +21,13 @@ def test_the_cost_ledger_is_contract_and_affects_published_methods():
 
 def test_the_repository_has_no_findings():
     assert scan(tracked()) == []
+
+
+def test_public_scan_detects_device_names_in_launcher_paths(tmp_path, monkeypatch):
+    from nexttransformer.checks import public
+    monkeypatch.setattr(public, "REPO", tmp_path)
+    launch = tmp_path / "launch"
+    launch.mkdir()
+    script = launch / "example.sh"
+    script.write_text("old_example_a800.sh\nsource_hash=dea800ef\n")
+    assert scan(["launch/example.sh"]) == ["launch/example.sh:1: a800"]

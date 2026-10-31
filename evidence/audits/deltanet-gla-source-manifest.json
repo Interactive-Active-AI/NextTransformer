@@ -65,9 +65,7 @@
   "runs/scaling_laws.sh": "236534e01e5c3027a146bff0de245bb24c919eddc3ed74abd830fbb9cf0fbe95",
   "runs/setup_environment.sh": "98f4c83a5342a1490022bdb0020035c57daf285271d04b5aa94fc22075baac0b",
   "runs/speedrun.sh": "fcda99db3dd0b83af87d3e9f3984c18b7cc742aa32d92e1666220f9d7a6cf2f7",
-  "runs/train_native_a800.sh": "a49ec1b35675aa9502580f04de2ee57d4a1be63ff37e40b01d5a78e58af52291",
   "runs/train_native_common.sh": "fb81a7d49f478252fb22dd2320cbcac46d4e482be2ca0a30d0f0bd40072e4d2e",
-  "runs/train_native_h200.sh": "41eb5403a1d43d74e0aa7daaec24ab81e0df3d318291f59e14bbdffdedf59833",
   "runs/validate_native.py": "bf5fd03c0fbbabde17592a3545d01ede588ee4550d388b6ab71e81f13401c381",
   "requirements/experiment.txt": "195dbb4594f4eee4f6796c7f394584ac73e9ef1c63eadc8f23fdcb58e7294045",
   "pyproject.toml": "4a7d40b1ba8e5888f85f662c49852cd51ac2601e4eb5c0a1c952af78a1386d8a",
@@ -102,5 +100,5 @@
   "reference/methods/linear_backend.py",
   "reference/train.py"
  ],
- "note": "The file list omits one cluster-specific launch script; source_sha256 was computed over the complete original list."
+ "note": "Three infrastructure-specific launch paths are omitted from this public list. The source_sha256 value covers the complete original list."
 }

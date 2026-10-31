@@ -39,7 +39,7 @@ Resumed segments are consistent to rounding, not bitwise; a guarantee is never c
 ## DeltaNet and GLA (frozen replay accounting)
 
 Both completed the full protocol (independent final BPB 0.6760 and 0.6663; CORE 28.34 and 31.11) from a frozen source
-revision whose executed files are listed in `evidence/audits/deltanet-gla-source-manifest.json`. Their compute uses the
+revision whose public file hashes are listed in `evidence/audits/deltanet-gla-source-manifest.json`. Their compute uses the
 operator-level ledger with backward replay against a theoretical anchor of 4.71661506444785 GFLOPs per token, so their
 compute values carry mark ² and are not compared with other rows; their BPB and CORE use the standard rankings.
 
