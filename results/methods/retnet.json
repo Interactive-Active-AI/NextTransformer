@@ -1,0 +1,26 @@
+{
+ "id": "retnet",
+ "name": "RetNet · Retention",
+ "family": "linear",
+ "tagline": "Retain memory across several decay timescales.",
+ "description": "Different attention heads use different fixed decay rates. Retention state and positional structure preserve historical information. Per-head RMSNorm replaces the paper’s GroupNorm to fit the common backbone.",
+ "paperTitle": "Retentive Network: A Successor to Transformer for Large Language Models",
+ "paperUrl": "https://arxiv.org/abs/2307.08621",
+ "mechanism": [
+  "Head-specific fixed decay rates for the retention state",
+  "Rotary positional structure and an output gate",
+  "Per-head RMSNorm; trained with FLA chunk kernels with FP32 state"
+ ],
+ "limitations": "Normalization differs from the original paper, so this is a native adaptation. An efficient generation cache is not provided.",
+ "diagram": "state",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1410077320,
+ "flops": 4.63006,
+ "error": -0.906,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/linear.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#linear-attention",
+ "costModel": "reference-aten-math-v2",
+ "order": 16
+}

@@ -1,0 +1,26 @@
+{
+ "id": "gla",
+ "name": "Gated Linear Attention · GLA",
+ "family": "linear",
+ "tagline": "Use input-dependent forgetting to control matrix memory.",
+ "description": "A feature-wise gate decays the previous state before the current KV update is added. A low-rank gate projection provides input-dependent forgetting, while a SiLU output gate controls the readout.",
+ "paperTitle": "Gated Linear Attention Transformers with Hardware-Efficient Training",
+ "paperUrl": "https://arxiv.org/abs/2312.06635",
+ "mechanism": [
+  "S ← diag(g)S + kvᵀ, followed by a query readout",
+  "A rank-16 gate projection and a SiLU output gate",
+  "FP32 state, without importing softmax attention’s RoPE or Q/K normalization"
+ ],
+ "limitations": "The reference is a readable recurrent scan, not the paper’s hardware-efficient chunked kernel. The completed run uses a separately frozen FLA fused-recurrent backend and an operator-level cost ledger with backward replay; see its evidence and source patch. It does not establish a fused backend in the current code.",
+ "diagram": "state",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1411207816,
+ "flops": 4.642048,
+ "error": -0.65,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/linear.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#linear-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 14
+}

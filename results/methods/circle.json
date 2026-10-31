@@ -1,0 +1,25 @@
+{
+ "id": "circle",
+ "name": "Circle Loop",
+ "family": "looped",
+ "tagline": "After the first circuit, every block becomes an exit.",
+ "description": "A block-level computation-allocation method. All tokens complete the first circuit. A shared halter then uses the current state and its change to decide whether to continue, executing later core steps only for surviving tokens.",
+ "paperTitle": "Circle Loop · method specification",
+ "paperUrl": "",
+ "mechanism": [
+  "3 prelude + 9 core blocks + 3 coda, with 9–27 in-loop block executions",
+  "A target average core depth of 17.5; state-change features and unfolded-position biases inform halting",
+  "Exited states freeze and stop providing in-loop KV; the coda reunites all tokens"
+ ],
+ "limitations": "Differs from the earlier Circle-ST design that retained KV from exited tokens. Incremental KV-cache decoding is not implemented.",
+ "diagram": "loop",
+ "params": 927992523,
+ "blocks": 15,
+ "flops": 4.779192,
+ "cohort": "native-v3",
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/native/circle.py",
+ "error": 0.08306170888994355,
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#historical-native-track",
+ "costModel": "native-v3-matrix-estimate",
+ "order": 22
+}

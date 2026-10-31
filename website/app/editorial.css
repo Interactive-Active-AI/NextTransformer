@@ -1,0 +1,141 @@
+/* Editorial layer: warm paper, a serif accent line under every title, and the homepage's blue, lavender and rose
+   as the semantic colors of the families (as on the OneWM project page). Loaded after the other themes. */
+@font-face { font-family:Kalam; font-style:normal; font-weight:700; font-display:swap; src:url('/fonts/kalam-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family:Kalam; font-style:normal; font-weight:400; font-display:swap; src:url('/fonts/kalam-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family:Kalam; font-style:normal; font-weight:300; font-display:swap; src:url('/fonts/kalam-latin-300-normal.woff2') format('woff2'); }
+.observatory { --paper:#FBF9F7; --surface:#FFFEFD; --line:#E6E2E3; --ink-strong:#353D43; --ink-soft:#4E5860; --muted-ink:#616B78; --serif:Georgia,'Times New Roman',serif; --accent:#7F9DBA; background:var(--paper); }
+.dream-sky { background:radial-gradient(ellipse at 0% 8%,#DCE8F4B0,transparent 44%),radial-gradient(ellipse at 100% 32%,#E9E2F3A6,transparent 46%),radial-gradient(ellipse at 40% 100%,#F5E1E7A6,transparent 55%); }
+.observatory .topbar { background:#FBF9F7E8; border-bottom-color:var(--line); }
+
+/* Brand: the homepage masthead's hand-written Kalam, for the wordmark only. */
+.observatory .brand b { font-family:Kalam,'Avenir Next',sans-serif; font-weight:700; font-size:24px; letter-spacing:0; line-height:1; transform:translateY(2px); color:var(--ink-strong); }
+.observatory .iaai-brand img { width:34px; height:34px; image-rendering:auto; }
+/* IAAI lockup: the wordmark's Kalam in lighter weights, with the ampersand in the logo's rose. */
+.observatory .iaai-brand { gap:10px; }
+.observatory .iaai-brand b { font-family:Kalam,'Avenir Next',sans-serif; font-weight:400; font-size:24px; letter-spacing:.03em; line-height:1; transform:translateY(2px); color:var(--ink-soft); }
+.observatory .iaai-brand > span { font-family:Kalam,'Avenir Next',sans-serif; font-weight:300; font-size:18px; letter-spacing:0; line-height:1; transform:translateY(2px); color:#68717A; margin-left:0; }
+.observatory .iaai-brand > span i { color:#C96A7A; font-style:normal; }
+/* Titles: a strong sans line, then an italic serif line in soft blue. */
+.observatory .eyebrow { color:#74638C; font-size:12px; letter-spacing:1.6px; font-weight:600; }
+.observatory h1 em,.observatory h2 em { display:block; font-family:var(--serif); font-style:italic; font-weight:400; letter-spacing:0; color:var(--accent); }
+.observatory .results-topline h2,.observatory .directory-heading h2,.observatory .leaderboard-heading h2,.observatory .contribution-hero h2,.arena-hero h2 { font-size:31px; line-height:1.18; font-weight:650; letter-spacing:-.7px; color:var(--ink-strong); margin-top:8px; }
+.observatory .results-topline h2 em,.observatory .directory-heading h2 em,.observatory .contribution-hero h2 em { font-size:.7em; margin-top:7px; }
+.observatory .leaderboard-heading h2 > span,.arena-hero h2 > span { font-family:var(--serif); font-style:italic; font-size:21px; color:var(--accent); margin-top:8px; line-height:1.45; }
+.observatory .leaderboard-heading .eyebrow { display:flex; }
+.observatory .results-topline { align-items:flex-end; margin:6px 0 18px; }
+.observatory .results-topline > div:first-child { display:block; }
+.observatory .results-topline > div > span { display:block; margin-top:9px; font-size:14px; color:var(--muted-ink); }
+.observatory .directory-heading { align-items:flex-end; }
+.observatory .directory-heading p:not(.eyebrow) { font-size:15px; color:var(--muted-ink); margin-top:9px; }
+.observatory .contribution-hero > p:not(.eyebrow) { font-size:16px; color:var(--ink-soft); }
+
+/* Hero: the observatory illustration with the constellation of results. Shown on the Results view only. */
+.observatory .workbench-intro.observatory-hero { display:grid; grid-template-columns:minmax(0,1.12fr) minmax(0,1fr); gap:30px; align-items:start; min-height:540px; margin-top:22px; padding:40px 40px 36px; border:1px solid #FFFFFFB8; border-radius:26px; background:#F3EEF1 url('/brand/observatory-sky.jpg') left bottom/cover no-repeat; box-shadow:0 22px 60px #74638C14; overflow:hidden; }
+.observatory-hero .hero-copy { align-self:start; padding-top:6px; }
+.observatory .observatory-hero h1 { font-size:44px; line-height:1.08; font-weight:650; letter-spacing:-1.3px; color:var(--ink-strong); margin:12px 0 0; white-space:nowrap; }
+.observatory .observatory-hero h1 em { font-size:.84em; margin-top:8px; color:#7F9DBA; }
+.observatory .observatory-hero .hero-description { display:block; max-width:44ch; margin-top:16px; font-size:17px; line-height:1.7; color:var(--ink-soft); }
+.observatory .observatory-hero .intro-facts { margin-top:12px; font-size:14px; color:var(--ink-soft); }
+.hero-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+.hero-actions .secondary { background:#FFFEFDCC; }
+
+/* Surfaces sit on paper as white cards with a warm hairline. */
+.observatory .results-surface,.observatory .leaderboard-surface,.observatory .directory-card,.observatory .multiples-panel,.arena-surface,.arena-panel,.arena-principles > div { background:var(--surface); border-color:var(--line); }
+.observatory .directory-card { transition:transform .25s ease,box-shadow .25s ease; }
+.observatory .directory-card:hover { transform:translateY(-3px); box-shadow:0 14px 34px #74638C14; }
+
+/* Type: nothing smaller than 12px, secondary text dark enough to read. */
+.observatory .axis-text,.observatory .plot-wide .axis-text { fill:var(--muted-ink); }
+.observatory .workspace-count,.observatory .baseline-note { font-size:13px; color:var(--muted-ink); }
+.observatory .directory-meta,.observatory .multiples-caption { font-size:13px; color:var(--muted-ink); }
+.observatory .directory-open p { color:var(--ink-soft); }
+.compute-value > small { font-size:12px; }
+.observatory .leaderboard-columns { font-size:12px; color:var(--muted-ink); }
+.observatory .leaderboard-model > span { font-size:13px; }
+
+/* Small multiples: the gap to Dense is filled, and its size is the headline number. */
+.multiples-caption { align-items:center; padding:2px 13px 12px; }
+.multiples-caption > b { display:inline-flex; align-items:baseline; gap:7px; font-size:18px; font-weight:600; color:var(--ink-strong); font-variant-numeric:tabular-nums; }
+/* Leaderboard: compact rows, differences from Dense in each score, a podium, and the rank race in replay. */
+.observatory .leaderboard-rows { --leaderboard-row-height:62px; gap:6px; }
+.observatory .leaderboard-row { padding:10px 11px; }
+.observatory .leaderboard-score { padding:2px 0 9px; }
+.observatory .leaderboard-score > b { font-size:16px; line-height:1.35; }
+.leaderboard-delta { font-size:12px; color:var(--muted-ink); font-variant-numeric:tabular-nums; }
+.leaderboard-delta.better { color:#526B85; }
+.leaderboard-delta.worse { color:#965C66; }
+.leaderboard-progress-chip { font-style:normal; padding:1px 8px; border-radius:999px; background:#F0F4F8; color:#526B85; font-size:12px; white-space:nowrap; }
+.leaderboard-podium { display:flex; flex-wrap:wrap; align-items:stretch; gap:10px; min-width:0; }
+.leaderboard-podium > small { flex-basis:100%; font-size:12px; letter-spacing:1.3px; color:var(--muted-ink); }
+.leaderboard-podium button { display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:12px; align-items:center; min-width:170px; padding:10px 16px 10px 12px; border:1px solid var(--line); border-radius:14px; background:var(--surface); text-align:left; transition:transform .2s ease,box-shadow .2s ease; }
+.leaderboard-podium button:hover { transform:translateY(-2px); box-shadow:0 10px 26px #74638C12; }
+.leaderboard-podium button > span { grid-row:1/3; display:grid; place-items:center; width:36px; height:36px; border-radius:50%; font-family:var(--serif); font-style:italic; font-size:18px; color:#FFFEFD; background:#ADA1C2; }
+.leaderboard-podium button.place-1 > span { background:linear-gradient(135deg,#C89CA3,#965C66); }
+.leaderboard-podium button.place-2 > span { background:linear-gradient(135deg,#ADA1C2,#74638C); }
+.leaderboard-podium button.place-3 > span { background:linear-gradient(135deg,#92A8BE,#526B85); }
+.leaderboard-podium b { font-size:16px; font-weight:600; color:var(--ink-strong); line-height:1.3; }
+.leaderboard-podium em { font-style:normal; font-size:14px; color:var(--muted-ink); font-variant-numeric:tabular-nums; }
+.rank-chart { margin:4px 16px 8px; padding:12px 12px 6px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+.rank-chart-heading { display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted-ink); padding:0 4px 6px; }
+.rank-chart-heading b { font-weight:600; color:var(--ink-strong); }
+.rank-chart svg { display:block; width:100%; height:auto; overflow:visible; }
+.rank-chart .rank-axis { font-size:12px; fill:var(--muted-ink); font-variant-numeric:tabular-nums; }
+.rank-chart .rank-step { stroke:#ECE8EA; }
+.rank-chart .rank-step.current { stroke:#C89CA3; stroke-width:1.5; stroke-dasharray:3 4; }
+.rank-chart .rank-label { font-size:12px; font-weight:600; paint-order:stroke; stroke:#FFFEFD; stroke-width:3px; }
+.rank-chart path { fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; transition:opacity .2s; }
+
+/* Motion: views fade in, pressed controls ripple softly, and atlas diagrams run on hover. */
+.observatory main > section:not(.observatory-hero) { animation:panel-in .38s cubic-bezier(.22,1,.36,1) both; }
+@keyframes panel-in { from { opacity:0; transform:translateY(8px); } }
+.ripple-host { position:relative; overflow:hidden; }
+.ripple { position:absolute; border-radius:50%; pointer-events:none; background:radial-gradient(circle,currentColor 0,transparent 68%); opacity:.2; transform:scale(0); animation:ripple .6s ease-out forwards; }
+@keyframes ripple { to { transform:scale(1); opacity:0; } }
+@media(prefers-reduced-motion:no-preference) {
+ .directory-card:hover .architecture-preview svg path[marker-end],.directory-card:focus-within .architecture-preview svg path[marker-end] { stroke-dasharray:6 4; animation:arch-flow .9s linear infinite; }
+ .directory-card:hover .architecture-preview svg > g,.directory-card:focus-within .architecture-preview svg > g { transform-box:fill-box; transform-origin:center; animation:arch-node 2.4s ease-in-out infinite; }
+ .architecture-preview svg > g:nth-child(3) { animation-delay:.12s; } .architecture-preview svg > g:nth-child(4) { animation-delay:.24s; }
+ .architecture-preview svg > g:nth-child(5) { animation-delay:.36s; } .architecture-preview svg > g:nth-child(6) { animation-delay:.48s; }
+ .architecture-preview svg > g:nth-child(7) { animation-delay:.6s; } .architecture-preview svg > g:nth-child(8) { animation-delay:.72s; }
+ .architecture-preview svg > g:nth-child(9) { animation-delay:.84s; } .architecture-preview svg > g:nth-child(10) { animation-delay:.96s; }
+ .architecture-preview svg > g:nth-child(11) { animation-delay:1.08s; } .architecture-preview svg > g:nth-child(12) { animation-delay:1.2s; }
+}
+@keyframes arch-flow { to { stroke-dashoffset:-20; } }
+@keyframes arch-node { 0%,34%,100% { transform:none; filter:none; } 14% { transform:translateY(-3px); filter:drop-shadow(0 3px 6px #74638C30); } }
+@media(prefers-reduced-motion:reduce) { .observatory main > section { animation:none; } .ripple { display:none; } }
+
+@media(max-width:1100px) {
+ .observatory .workbench-intro.observatory-hero { grid-template-columns:minmax(0,1fr); min-height:0; padding:36px 30px 170px; background-position:8% 100%; }
+ .observatory .observatory-hero .hero-description { max-width:52ch; }
+ .observatory .observatory-hero h1 { white-space:normal; }
+}
+@media(max-width:760px) {
+ .observatory .brand b { font-size:20px; }
+ .observatory .iaai-brand { gap:6px; }
+ .observatory .iaai-brand b { font-size:21px; }
+ .observatory .workbench-intro.observatory-hero { margin-top:14px; padding:26px 18px 150px; border-radius:20px; background-position:14% 100%; gap:22px; }
+ .observatory .observatory-hero h1 { font-size:33px; letter-spacing:-.8px; }
+ .observatory .observatory-hero .hero-description { font-size:16px; }
+ .observatory .results-topline h2,.observatory .directory-heading h2,.observatory .leaderboard-heading h2,.observatory .contribution-hero h2,.arena-hero h2 { font-size:26px; }
+ .observatory .leaderboard-heading h2 > span,.arena-hero h2 > span { font-size:18px; }
+ .constellation-card { padding:14px 12px 10px; }
+ .observatory .leaderboard-story { flex-direction:column; align-items:stretch; gap:12px; }
+ .leaderboard-podium { gap:6px; }
+ .leaderboard-podium button { flex:1 1 100%; min-width:0; grid-template-columns:28px minmax(0,1fr) auto; grid-template-rows:auto; padding:7px 12px 7px 8px; border-radius:10px; }
+ .leaderboard-podium button > span { grid-row:auto; width:26px; height:26px; font-size:14px; }
+ .leaderboard-podium b { font-size:15px; }
+ .observatory .leaderboard-replay-button { align-self:flex-start; }
+ .rank-chart { margin:4px 8px 8px; padding:10px 6px 4px; }
+}
+.observatory .leaderboard-compare { white-space:nowrap; }
+.observatory .leaderboard-compute .compute-value.missing > small { display:none; }
+/* The sticky navigation fades the content scrolling beneath it instead of overlapping it. */
+.observatory .workspace-navigation { background:linear-gradient(#FBF9F7F5 68%,#FBF9F700); }
+/* Leaderboard controls: compact segmented switches, the same size as the chart switches. */
+.observatory .leaderboard-toolbar { padding:14px 20px; gap:12px 18px; }
+.observatory .leaderboard-metric { gap:2px; padding:2px; border:1px solid #E2E8EE; border-radius:8px; background:#F7F9FB; }
+.observatory .leaderboard-metric button { gap:5px; height:30px; padding:4px 11px; font-size:13px; font-weight:500; border-radius:6px; }
+.observatory .leaderboard-metric button[aria-pressed=true] { font-weight:600; }
+.observatory .leaderboard-metric button svg { width:13px; height:13px; }
+.observatory .leaderboard-view { gap:2px; }
+.observatory .leaderboard-view button { height:30px; padding:4px 11px; font-size:13px; border-radius:6px; }

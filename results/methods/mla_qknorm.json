@@ -1,0 +1,26 @@
+{
+ "id": "mla_qknorm",
+ "name": "Multi-head Latent Attention · MLA + QK-norm",
+ "family": "others",
+ "tagline": "Compress keys and values into a 256-dimensional latent, then normalize q and k.",
+ "description": "Queries pass through a rank-768 latent. One joint down-projection gives a rank-256 key/value latent and a single RoPE key shared by all heads; per-head content keys and values are reconstructed from the latent, as in DeepSeek-V2. The native shell's per-head QK RMSNorm with gain 1.2 then acts on every reconstructed query and key after RoPE, bounding each logit by 1.44·√128 ≈ 16.3, the same bound as in MHA, MQA and GQA.",
+ "paperTitle": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+ "paperUrl": "https://arxiv.org/abs/2405.04434",
+ "mechanism": [
+  "Query latent rank 768; joint key/value latent rank 256 plus one shared RoPE key",
+  "12 heads: QK content 64 + RoPE 64, value 128, reconstructed explicitly",
+  "Per-head QK RMSNorm × 1.2 after RoPE; full causal attention in 26 layers"
+ ],
+ "limitations": "The QK normalization departs from DeepSeek-V2, which has none, and stops the key up-projection from being absorbed into the query; value absorption and the latent are unchanged. Latent-cache decoding is not implemented, so no KV-cache saving is claimed. Value embeddings are disabled, and the matching multi-head control without them has not been trained. Single seed 42; trained from the frozen Others branch, not yet ported to the current code.",
+ "diagram": "attention",
+ "blocks": 26,
+ "ffn": 6144,
+ "params": 742195278,
+ "flops": 4.670459,
+ "error": -0.042,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/others.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 34
+}

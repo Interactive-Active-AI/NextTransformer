@@ -1,0 +1,26 @@
+{
+ "id": "gsa_qknorm",
+ "name": "Gated Slot Attention · GSA + QK-norm",
+ "family": "linear",
+ "tagline": "Bound q/k features before gated slot-memory addressing.",
+ "description": "Two gated states map keys to 64 slots and slots to values, with per-head QK normalization before SiLU features and softmax addressing.",
+ "paperTitle": "Gated Slot Attention for Efficient Linear-Time Sequence Modeling",
+ "paperUrl": "https://arxiv.org/abs/2409.07146",
+ "mechanism": [
+  "64 slots with a shared per-slot decay/write gate in both memory stages",
+  "Per-head QK RMSNorm × 1.2, SiLU features and softmax slot addressing",
+  "24 layers; chunk128 FP64 recurrence with the native output normalization and shell"
+ ],
+ "limitations": "Single seed 42 with the QK-normalized common-shell adaptation. The contribution includes the result and frozen-source fingerprints. A trainable implementation for this run is not included.",
+ "diagram": "state",
+ "blocks": 24,
+ "ffn": 6144,
+ "params": 1412436746,
+ "flops": 4.689437744486418,
+ "error": 0.3646825003288612,
+ "codeUrl": "",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/results/runs/gsa_qknorm/",
+ "costModel": "reference-aten-math-v2",
+ "order": 13
+}

@@ -1,0 +1,26 @@
+{
+ "id": "deeploop",
+ "name": "DeepLoop",
+ "family": "looped",
+ "tagline": "Stabilize shared depth through normalization and scaling.",
+ "description": "Twelve shared blocks execute twice with DeepLoop α/β scaling. Because sharing, residual parameterization and normalization change together, paired controls are needed to distinguish their effects.",
+ "paperTitle": "DeepLoop · v2",
+ "paperUrl": "https://arxiv.org/abs/2607.13491v2",
+ "mechanism": [
+  "12 shared blocks × 2 recursions, with no separate prelude or coda",
+  "Inner and outer RMSNorm with residual scaling α = √(2N)",
+  "Initialization gain β = 1/√(8N) for V/O and both feed-forward matrices"
+ ],
+ "limitations": "Scaling the native Value Embeddings is an adaptation. Normalization controls should be reported separately.",
+ "diagram": "loop",
+ "blocks": 12,
+ "ffn": 6144,
+ "params": 742392722,
+ "flops": 4.660529,
+ "error": -0.254,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/looped.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#looped-methods",
+ "costModel": "reference-aten-math-v1",
+ "order": 6
+}

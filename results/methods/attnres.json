@@ -1,0 +1,26 @@
+{
+ "id": "attnres",
+ "name": "Block Attention Residuals · AttnRes",
+ "family": "residual",
+ "tagline": "Each sublayer reads a learned softmax mixture over depth instead of one running sum.",
+ "description": "Block AttnRes on the full-attention shell: the 23 transformer blocks form 8 groups of 3,3,3,3,3,3,3,2. Before every attention and FFN sublayer, a zero-initialized pseudo-query attends over depth, across the token embedding, the sums of completed groups and the current group's partial sum, with RMSNorm keys; the softmax-weighted mixture is the sublayer input, and the sublayer output joins the partial sum. A final pseudo-query reads the embedding and all eight group sums. The 47 pseudo-queries add 72,192 parameters; calibrated to +0.160% of the shared budget at 23 layers / FFN 6144.",
+ "paperTitle": "Attention Residuals",
+ "paperUrl": "https://arxiv.org/abs/2603.15031",
+ "mechanism": [
+  "8 depth groups of 3,3,3,3,3,3,3,2 blocks; sources are the embedding, completed group sums and the current partial sum",
+  "One zero-initialized pseudo-query per attention and FFN sublayer and one for the readout; parameter-free RMSNorm keys, softmax over depth",
+  "Native residual/x0 scalars and backout frozen and unused; 23 full-attention layers, FFN 6144, value embeddings"
+ ],
+ "limitations": "Single seed 42; the preregistered pilot was skipped by the maintainers' decision. Read it as a paired difference from Standard Residual. Published gains come from other scales and MoE backbones. The reference implementation is eager PyTorch without fused kernels, so its step time, about 1.35 times Standard Residual's, reflects this implementation rather than the method. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "residual",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1355882760,
+ "flops": 4.679857,
+ "error": 0.16,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/residual.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#full-attention-dense-and-residual-family",
+ "costModel": "reference-aten-math-v2",
+ "order": 24
+}

@@ -1,0 +1,26 @@
+{
+ "id": "qsa",
+ "name": "Qwen Sparse Attention · QSA",
+ "family": "sparse",
+ "tagline": "Compress micro-blocks before selecting historical context.",
+ "description": "Four-token key blocks are pooled for indexer scoring. Attention selects fully visible historical blocks and retains the unfinished tail. Only the QSA mixer is transferred, without the original system’s hybrid layers or additional training recipe.",
+ "paperTitle": "Qwen3.8-Next technical report · §2.1.2 QSA",
+ "paperUrl": "https://arxiv.org/html/2608.30320v1#S2.SS1.SSS2",
+ "mechanism": [
+  "Four-token key pooling, followed by RMSNorm and partial RoPE",
+  "Up to 64 complete blocks within a 256-token selection budget",
+  "Cross-head normalized, max-pooled teacher targets with KL supervision on selected blocks"
+ ],
+ "limitations": "Excludes the GDN/QSA hybrid, MoE, gated residuals, MTP and 256K continued pretraining. The tail can add up to 3 tokens.",
+ "diagram": "sparse",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1378420488,
+ "flops": 4.673328,
+ "error": 0.02,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/sparse.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#sparse-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 8
+}

@@ -1,0 +1,26 @@
+{
+ "id": "residual_standard",
+ "name": "Standard Residual",
+ "family": "residual",
+ "tagline": "Every sublayer adds its output to one unscaled stream. The control for HC, mHC and Block AttnRes.",
+ "description": "The Dense Baseline's 23 full-attention layers at FFN 6144, with nanochat's learned residual and x0 coefficients and backout replaced by the plain Pre-Norm update h + F(RMSNorm(h)) around every attention and FFN sublayer. Value embeddings, smear, embeddings and the ReLU² FFN are unchanged. The 47 native residual scalars stay registered, frozen and unused, so its parameter count equals Dense. Calibrated independently to +0.041% of the shared budget; HC, mHC and Block AttnRes are reported as paired differences from this run.",
+ "paperTitle": "Identity Mappings in Deep Residual Networks",
+ "paperUrl": "https://arxiv.org/abs/1603.05027",
+ "mechanism": [
+  "h ← h + F(RMSNorm(h)) around each of the 46 attention and FFN sublayers",
+  "No learned residual or x0 coefficients and no backout; those 47 scalars stay frozen and unused",
+  "Dense's shell otherwise: 23 full-attention layers, 12 heads of 128, FFN 6144, value embeddings"
+ ],
+ "limitations": "Single seed 42. The preregistered pilot was skipped by the maintainers' decision; the formal run started from random initialization. It differs from the Dense Baseline only in the residual path, so the pair separates nanochat's learned residual scalars from plain Pre-Norm addition. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "residual",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1355810568,
+ "flops": 4.674298,
+ "error": 0.041,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/residual.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#full-attention-dense-and-residual-family",
+ "costModel": "reference-aten-math-v2",
+ "order": 23
+}

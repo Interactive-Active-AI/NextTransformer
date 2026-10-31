@@ -1,0 +1,31 @@
+# Models
+
+Every built-in architecture in NextTransformer lives here, behind one interface. Contributed methods are plugins
+under [`nexttransformer/methods/`](../methods) ([plugin guide](https://interactive-active-ai.github.io/NextTransformer/docs/guides/plugins/)); they are registered and
+built through the same interface.
+
+```python
+from nexttransformer.models import build_model, load_model, METHODS, FAMILY
+from nexttransformer.models.config import candidate_config, debug_config
+
+model = build_model(debug_config("dsa"))                       # a registered method at debug size
+model, saved = load_model("RUN/checkpoint_00046875", "cuda")   # a trained checkpoint of either track
+```
+
+| Module | Contents |
+|---|---|
+| [`registry.py`](registry.py) | Registered methods and their families: baseline, looped, sparse, linear, residual, hybrid, others |
+| [`config.py`](config.py) | `ModelConfig`, family sets, hybrid layouts, candidate and debug configurations |
+| [`backbone.py`](backbone.py) | The nanochat d24 GPT backbone (byte-pinned upstream file) |
+| [`lm.py`](lm.py) | `ReferenceLM`: assembles every registered method from the backbone and the family mixers |
+| [`looped.py`](looped.py) | UT-ACT, Huginn, Ouro, and DeepLoop components |
+| [`sparse.py`](sparse.py), [`sparse_kernels.py`](sparse_kernels.py) | DSA, QSA, NSA, SeerAttention-style, and MoBA mixers and their kernel path |
+| [`linear.py`](linear.py) | DeltaNet, GLA, KDA, RetNet, ELU-Norm, and GDN |
+| [`others.py`](others.py) | Latent attention used by the KDA–MLA-NoPE hybrid |
+| [`residual.py`](residual.py) | Hyper-Connections, mHC (Sinkhorn-Knopp), and Block AttnRes |
+| [`native/`](native) | Historical native track: SSSL Dense, MoR, LoopFormer, Circle Loop (`NativeModelConfig`) |
+
+Admit a `ModelConfig` with `nexttransformer.protocol.admission.admit_config` before formal use; see
+[configs/](../../configs) and the [configuration reference](https://interactive-active-ai.github.io/NextTransformer/docs/methods/configurations/). Parameter names and
+configuration fields are part of checkpoint compatibility: changing them breaks loading of trained runs. Adaptations
+from each original method are listed in the [source notes](https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/).

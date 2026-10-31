@@ -1,0 +1,7 @@
+{
+ "name": "toy_two_pass",
+ "family": "looped",
+ "title": "Toy two-pass stack (test plugin)",
+ "paper": {"title": "Test fixture for the model and stages hooks", "url": "https://github.com/Interactive-Active-AI/NextTransformer"},
+ "options": {"passes": 2, "single_pass_updates": 512}
+}

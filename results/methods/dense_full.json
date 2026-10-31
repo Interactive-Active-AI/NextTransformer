@@ -1,0 +1,26 @@
+{
+ "id": "dense_full",
+ "name": "Dense Baseline",
+ "family": "baseline",
+ "tagline": "Full causal attention in every layer. The reference for every comparison.",
+ "description": "All 23 layers attend to their complete causal prefix, with 12 query and 12 key/value heads of dimension 128, in the native nanochat shell with value embeddings. Its depth was calibrated independently, from 24 to 23 layers at FFN 6144, to fit the frozen SSSL training budget (+0.048%). It was trained from scratch on the full 49.152B tokens and accepted as the Dense Baseline; it reuses no SSSL checkpoint, score or cost.",
+ "paperTitle": "Attention Is All You Need",
+ "paperUrl": "https://arxiv.org/abs/1706.03762",
+ "mechanism": [
+  "Full causal multi-head attention in all 23 layers: 12 Q / 12 KV heads of dimension 128",
+  "Native nanochat shell: value embeddings, learned residual and x0 scalars, backout",
+  "Depth calibrated to 23 layers within 1% of the SSSL compute anchor"
+ ],
+ "limitations": "Single seed 42. The preregistered pilot was skipped by the maintainers' decision; the formal run started from random initialization. It has one layer fewer than SSSL. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "dense_full",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1355810568,
+ "flops": 4.674662,
+ "error": 0.048,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/backbone.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#full-attention-dense-and-residual-family",
+ "costModel": "reference-aten-math-v2",
+ "order": 1
+}

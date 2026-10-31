@@ -1,0 +1,26 @@
+{
+ "id": "mla_nope_qknorm",
+ "name": "MLA-NoPE + QK-norm",
+ "family": "others",
+ "tagline": "Latent attention without rotary positions; order comes only from the causal mask.",
+ "description": "The same latent ranks, heads and value width as MLA, but the 128-dimensional query and key content carries no rotary part and there is no shared RoPE key, so positions enter only through causal masking. The per-head QK RMSNorm with gain 1.2 acts on the content queries and keys.",
+ "paperTitle": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+ "paperUrl": "https://arxiv.org/abs/2405.04434",
+ "mechanism": [
+  "Query latent rank 768; key/value latent rank 256; no RoPE key",
+  "12 heads: QK content 128, value 128, scale 128^-1/2",
+  "Per-head QK RMSNorm × 1.2; full causal attention in 26 layers"
+ ],
+ "limitations": "A control for MLA's decoupled RoPE, not a published model. The QK normalization departs from DeepSeek-V2. Latent-cache decoding is not implemented, so no KV-cache saving is claimed. Value embeddings are disabled, and the matching multi-head control without them has not been trained. Single seed 42; trained from the frozen Others branch, not yet ported to the current code.",
+ "diagram": "attention",
+ "blocks": 26,
+ "ffn": 6144,
+ "params": 744751182,
+ "flops": 4.685569,
+ "error": 0.282,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/others.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 35
+}

@@ -1,0 +1,26 @@
+{
+ "id": "dsa",
+ "name": "DeepSeek Sparse Attention · DSA",
+ "family": "sparse",
+ "tagline": "Score historical tokens, then attend to the selected keys.",
+ "description": "A multi-head ReLU indexer scores historical tokens and selects a causal top-256 set for attention. The adaptation transfers the selection mechanism without importing the complete DeepSeek MLA, MoE or FP8 system.",
+ "paperTitle": "DeepSeek-V3.2-Exp · DeepSeek Sparse Attention",
+ "paperUrl": "https://github.com/deepseek-ai/DeepSeek-V3.2-Exp/blob/87e509a2e5a100d221c97df52c6e8be7835f0057/DeepSeek_V3_2.pdf",
+ "mechanism": [
+  "A 4 × 128 indexer, 64-dimensional partial RoPE and signed head weights",
+  "Gather attention over a causal top-256 token selection",
+  "The first 512 updates use dense burn-in and an internal attention teacher"
+ ],
+ "limitations": "A from-scratch native-MHA adaptation. Indexer, teacher and auxiliary backward paths all contribute to training cost.",
+ "diagram": "sparse",
+ "blocks": 22,
+ "ffn": 6400,
+ "params": 1316236406,
+ "flops": 4.69456,
+ "error": 0.474,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/sparse.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#sparse-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 7
+}

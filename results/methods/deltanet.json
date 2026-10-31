@@ -1,0 +1,26 @@
+{
+ "id": "deltanet",
+ "name": "DeltaNet",
+ "family": "linear",
+ "tagline": "Correct matrix memory using the current prediction error.",
+ "description": "The previous state predicts the current value, then the key and write strength β update the memory. Unlike simple KV accumulation, the delta rule can correct information already stored in the state.",
+ "paperTitle": "Parallelizing Linear Transformers with the Delta Rule over Sequence Length",
+ "paperUrl": "https://arxiv.org/abs/2406.06484",
+ "mechanism": [
+  "S ← S + k[β(v − kᵀS)]ᵀ, followed by output qᵀS",
+  "Causal convolution of width 4, SiLU, Q/K L2 normalization and sigmoid β",
+  "FP32 state, reset at packed-row boundaries"
+ ],
+ "limitations": "A token-by-token mathematical scan is not an efficient chunked training kernel. A generation cache is not provided. The completed run uses a separately frozen FLA fused-recurrent backend and an operator-level cost ledger with backward replay; see its evidence and source patch. It does not establish a fused backend in the current code.",
+ "diagram": "state",
+ "blocks": 25,
+ "ffn": 6144,
+ "params": 1463690268,
+ "flops": 4.674979,
+ "error": 0.055,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/linear.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#linear-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 12
+}

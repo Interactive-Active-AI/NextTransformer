@@ -1,0 +1,26 @@
+{
+ "id": "ut_act",
+ "name": "Universal Transformer · ACT",
+ "family": "looped",
+ "tagline": "Let each token accumulate enough computation to halt.",
+ "description": "A causal nanochat adaptation of Universal Transformer with Adaptive Computation Time. Halting mass accumulates across recursions, intermediate states are combined, and a ponder cost regularizes computation depth.",
+ "paperTitle": "Universal Transformers",
+ "paperUrl": "https://arxiv.org/abs/1807.03819",
+ "mechanism": [
+  "3 prelude + 6 core blocks × up to 3 recursions + 3 coda",
+  "Coordinate signals, accumulated halting mass and a final remainder",
+  "Language-model loss plus ACT ponder cost"
+ ],
+ "limitations": "The reference path computes every candidate recursion. Average exit depth does not imply lower training compute.",
+ "diagram": "loop",
+ "blocks": 12,
+ "ffn": 6144,
+ "params": 742394259,
+ "flops": 4.660085,
+ "error": -0.264,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/looped.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#looped-methods",
+ "costModel": "reference-aten-math-v1",
+ "order": 2
+}

@@ -1,0 +1,26 @@
+{
+ "id": "sssl",
+ "name": "SSSL",
+ "family": "others",
+ "tagline": "Short, short, short, long. The historical reference.",
+ "description": "The existing nanochat d24 model uses an SSSL schedule: three local-attention layers followed by one full causal layer, with a final long-window layer. Its historical runs, checkpoints and cost definitions are preserved. It is distinct from the planned all-layer full-attention Dense Baseline.",
+ "paperTitle": "nanochat · GPT d24 implementation",
+ "paperUrl": "https://github.com/karpathy/nanochat/tree/92d63d4e8bb4df75c3b71618f31ddde2378b2bcd",
+ "mechanism": [
+  "24 independent blocks, each with its own parameters",
+  "Native SSSL window schedule, ending with a long-window layer",
+  "A common data budget and evaluation protocol"
+ ],
+ "limitations": "Historical SSSL measurements are not results for the new full-attention Dense Baseline. The reference ledger and historical matrix estimate also use different accounting rules.",
+ "diagram": "dense",
+ "blocks": 24,
+ "ffn": 6144,
+ "params": 1384122122,
+ "flops": 4.67239832544785,
+ "error": 0,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/native/model.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#historical-native-track",
+ "costModel": "reference-aten-math-v2",
+ "order": 31
+}

@@ -1,0 +1,36 @@
+{
+ "method": "mhc",
+ "checkpoint": 31500,
+ "metrics_sha256": "420a51c055ac993a3840a270bfacd6fda37eb36ed91b0d482099261c43eb0607",
+ "model_hash": "c75f4a05151ce00a8a4848220fcf333064bef7a7f8e715bb00900b2047478a8e",
+ "from": {
+  "software": {
+   "native_source_sha256": "10bdba05fc1ebfb18ffc241484e683e0014154ec9f811305dd6bdc25d7a09459",
+   "reference_source_hash": "2130db89fb45daf6f0690de5f7c719f3903d47c878837b4dfb76954395ad97fb",
+   "science_hash": "e6e8b8473fc1312a27213d367212d1a32d4978feb4e8be9e5326f41687743034",
+   "git_commit": "4dd6ebb9f4f1f8b4571963c5df2aaa384eea7825"
+  },
+  "cost": {
+   "formula_version": "reference-aten-math-v2",
+   "flops_per_token": 4674357257.47247,
+   "dense_flops_per_token": 4672398325.44785,
+   "relative_error": 0.00041925621237193234,
+   "total_training_flops": 229754007919286859375
+  }
+ },
+ "to": {
+  "software": {
+   "science_hash": "44079398326a16ff40ba37493bc4b8668d26af1ac9ec15c98d10c56d4efcbdc3",
+   "reference_source_hash": "366fbfcee58abf4ba4b24dcb55152d0cd996b323bf5bc87039418201c0cdaa10",
+   "native_source_sha256": "19567919a437b7615c0bfb5c78302a899815271712d045681349494f1dc09e2e",
+   "git_commit": "51f4560b6162edcd9a79ffb4114c2fc37ce4824a"
+  },
+  "cost": {
+   "formula_version": "reference-aten-math-v2",
+   "flops_per_token": 4674363329.47247,
+   "dense_flops_per_token": 4672398325.44785,
+   "relative_error": 0.00042055575910926457,
+   "total_training_flops": 229754306370230859375
+  }
+ }
+}
