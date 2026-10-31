@@ -1,0 +1,8 @@
+# Training backend `fla_chunk64` on CUDA: DeltaNet and its hybrid, KDA, RetNet and GDN (through the KDA
+# kernels). The ELU+1 methods keep the backend name but use PyTorch IEEE FP32.
+# Install after `uv sync --frozen --extra gpu --extra upstream [--extra tracking]`:
+#   uv pip install --no-deps --require-hashes -r requirements/linear.txt
+# Kept outside pyproject.toml/uv.lock so native-run source manifests stay unchanged.
+# fla-core: MIT, Triton kernels only (torch/triton come from the locked environment).
+fla-core==0.5.2 --hash=sha256:5e830c85bad3d0d34677f98ac7074d08687a3756f0f0499d95ceb96eb6920761
+einops==0.8.1 --hash=sha256:919387eb55330f5757c6bea9165c5ff5cfe63a642682ea788a6d472576d81737

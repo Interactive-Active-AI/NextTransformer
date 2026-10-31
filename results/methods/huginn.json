@@ -1,0 +1,26 @@
+{
+ "id": "huginn",
+ "name": "Huginn · Recurrent-depth",
+ "family": "looped",
+ "tagline": "Reinject the input. Sample depth. Truncate the gradient.",
+ "description": "Each recursion reads both the evolving latent state and a fixed input representation. Training samples recurrent depth and backpropagates through the final recursions; earlier forward-only recursions still count toward training cost.",
+ "paperTitle": "Scaling up Test-Time Compute with Latent Reasoning: A Recurrent Depth Approach",
+ "paperUrl": "https://arxiv.org/abs/2502.05171",
+ "mechanism": [
+  "3 prelude + 8 core blocks × 1–4 sampled recursions + 3 coda; 3 recursions at evaluation",
+  "Keyed random sampling makes row-level initial noise and update-level depth reproducible",
+  "Concatenated input injection, sandwich RMSNorm and backpropagation through the final 2 recursions"
+ ],
+ "limitations": "A common-backbone adaptation. The registered truncated distribution averages 2.6503467 recursions, not its mean parameter of 3.",
+ "diagram": "loop",
+ "blocks": 14,
+ "ffn": 6528,
+ "params": 870581286,
+ "flops": 4.648951,
+ "error": -0.502,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/looped.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#looped-methods",
+ "costModel": "reference-aten-math-v1",
+ "order": 4
+}

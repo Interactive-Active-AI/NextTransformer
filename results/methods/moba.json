@@ -1,0 +1,26 @@
+{
+ "id": "moba",
+ "name": "Mixture of Block Attention · MoBA",
+ "family": "sparse",
+ "tagline": "Select blocks by query, attend within them by token.",
+ "description": "Each query scores pooled keys for each attention head. Historical blocks compete for top-k selection; the current block is always retained with strict causal attention. No additional teacher objective is introduced.",
+ "paperTitle": "MoBA: Mixture of Block Attention for Long-Context LLMs",
+ "paperUrl": "https://arxiv.org/abs/2502.13189",
+ "mechanism": [
+  "KV context is partitioned into 128-token blocks for query-dependent selection",
+  "The 256-token budget includes the mandatory current block",
+  "Token-level attention over the selected set, trained with the common language-model objective"
+ ],
+ "limitations": "The reference uses an independent gather implementation rather than the official fused kernel. Theoretical sparsity alone does not establish measured speed.",
+ "diagram": "sparse",
+ "blocks": 25,
+ "ffn": 6144,
+ "params": 1462765468,
+ "flops": 4.673521,
+ "error": 0.024,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/sparse.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#sparse-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 11
+}

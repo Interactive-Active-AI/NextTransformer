@@ -1,0 +1,116 @@
+{
+  "normalization": "(raw accuracy - random baseline) / (1 - random baseline)",
+  "provenance": "Baseline offsets verified against raw and centered results in all 24 original per-evaluation records. Imported tracking rows must also reproduce their logged CORE aggregate.",
+  "tasks": [
+    {
+      "id": "hellaswag_zeroshot",
+      "label": "HellaSwag \u00b7 0-shot",
+      "randomBaseline": 0.25
+    },
+    {
+      "id": "jeopardy",
+      "label": "Jeopardy",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "bigbench_qa_wikidata",
+      "label": "Wikidata QA",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "arc_easy",
+      "label": "ARC Easy",
+      "randomBaseline": 0.25
+    },
+    {
+      "id": "arc_challenge",
+      "label": "ARC Challenge",
+      "randomBaseline": 0.25
+    },
+    {
+      "id": "copa",
+      "label": "COPA",
+      "randomBaseline": 0.5
+    },
+    {
+      "id": "commonsense_qa",
+      "label": "CommonsenseQA",
+      "randomBaseline": 0.2
+    },
+    {
+      "id": "piqa",
+      "label": "PIQA",
+      "randomBaseline": 0.5
+    },
+    {
+      "id": "openbook_qa",
+      "label": "OpenBookQA",
+      "randomBaseline": 0.25
+    },
+    {
+      "id": "lambada_openai",
+      "label": "LAMBADA",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "hellaswag",
+      "label": "HellaSwag",
+      "randomBaseline": 0.25
+    },
+    {
+      "id": "winograd",
+      "label": "Winograd",
+      "randomBaseline": 0.5
+    },
+    {
+      "id": "winogrande",
+      "label": "WinoGrande",
+      "randomBaseline": 0.5
+    },
+    {
+      "id": "bigbench_dyck_languages",
+      "label": "Dyck languages",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "agi_eval_lsat_ar",
+      "label": "LSAT \u00b7 AR",
+      "randomBaseline": 0.2
+    },
+    {
+      "id": "bigbench_cs_algorithms",
+      "label": "CS algorithms",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "bigbench_operators",
+      "label": "Operators",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "bigbench_repeat_copy_logic",
+      "label": "Repeat copy",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "squad",
+      "label": "SQuAD",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "coqa",
+      "label": "CoQA",
+      "randomBaseline": 0.0
+    },
+    {
+      "id": "boolq",
+      "label": "BoolQ",
+      "randomBaseline": 0.62
+    },
+    {
+      "id": "bigbench_language_identification",
+      "label": "Language ID",
+      "randomBaseline": 0.091
+    }
+  ]
+}

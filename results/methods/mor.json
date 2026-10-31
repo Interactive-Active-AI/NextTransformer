@@ -1,0 +1,25 @@
+{
+ "id": "mor",
+ "name": "Mixture-of-Recursions · MoR",
+ "family": "looped",
+ "tagline": "Decide which tokens continue at each recursion boundary.",
+ "description": "The MoR adaptation in the historical native four-model experiment. All tokens enter the first recursion; two token routers determine whether each token continues into the second and third recursions.",
+ "paperTitle": "Mixture-of-Recursions: Learning Dynamic Recursive Depths for Adaptive Token-Level Computation",
+ "paperUrl": "https://arxiv.org/abs/2507.10524",
+ "mechanism": [
+  "3 prelude + 9 core blocks × up to 3 recursions + 3 coda",
+  "Target survival rates of 1 / 0.64 / 0.32, averaging 17.64 core-block executions",
+  "The same threshold routing is used for training and evaluation; exited tokens stop supplying in-loop KV"
+ ],
+ "limitations": "Trained under the original native protocol with the historical matrix-cost estimate, rather than the operator-level cost ledger.",
+ "diagram": "loop",
+ "params": 927994042,
+ "blocks": 15,
+ "flops": 4.774791,
+ "cohort": "native-v3",
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/native/model.py",
+ "error": -0.009101475719688997,
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#historical-native-track",
+ "costModel": "native-v3-matrix-estimate",
+ "order": 20
+}

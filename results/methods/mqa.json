@@ -1,0 +1,26 @@
+{
+ "id": "mqa",
+ "name": "Multi-Query Attention · MQA",
+ "family": "others",
+ "tagline": "All twelve query heads share one key head and one value head.",
+ "description": "Every layer keeps full causal attention with 12 query heads of dimension 128, but projects a single key/value head that every query reads. RoPE, the parameter-free QK RMSNorm and the ×1.2 scale act on the shared key once; the fused kernel broadcasts it, so the shared projections receive the sum of the query heads' gradients. Calibrated to 27 layers at FFN 6016 to fit the shared budget.",
+ "paperTitle": "Fast Transformer Decoding: One Write-Head is All You Need",
+ "paperUrl": "https://arxiv.org/abs/1911.02150",
+ "mechanism": [
+  "12 query heads, 1 key/value head, dimension 128",
+  "RoPE and QK RMSNorm × 1.2 on the shared key, broadcast to every query head",
+  "Full causal attention in all 27 layers; no value embeddings"
+ ],
+ "limitations": "Trained from scratch, not uptrained from a multi-head checkpoint. Value embeddings are disabled in this family because their width follows the key/value heads; the matching multi-head control without them has not been trained, so a gap to Dense cannot be attributed to key/value sharing alone. Attention arithmetic is charged per query head, and no KV-cache or decoding saving is measured. Single seed 42; trained from the frozen Others branch, not yet ported to the current code.",
+ "diagram": "attention",
+ "blocks": 27,
+ "ffn": 6016,
+ "params": 737673296,
+ "flops": 4.663762,
+ "error": -0.185,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/others.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 32
+}

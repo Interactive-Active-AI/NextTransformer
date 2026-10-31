@@ -1,0 +1,11 @@
+# Minimal direct dependencies; uv.lock is the authoritative complete environment.
+torch==2.9.1
+numpy==2.2.6
+pyarrow==21.0.0
+tiktoken==0.12.0
+jinja2==3.1.6
+PyYAML==6.0.3
+filelock==3.20.0
+pytest==8.4.2
+psutil==7.1.3
+huggingface_hub==1.26.0

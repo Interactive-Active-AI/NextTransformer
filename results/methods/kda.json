@@ -1,0 +1,26 @@
+{
+ "id": "kda",
+ "name": "Kimi Delta Attention · KDA",
+ "family": "linear",
+ "tagline": "Apply fine-grained forgetting before delta correction.",
+ "description": "Feature-wise decay first updates the memory, then a delta rule corrects the decayed state. The adaptation transfers only the KDA mixer, without the complete Kimi Linear hybrid architecture or MoE.",
+ "paperTitle": "Kimi Linear: An Expressive, Efficient Attention Architecture",
+ "paperUrl": "https://arxiv.org/abs/2510.26692",
+ "mechanism": [
+  "Feature-wise state decay followed by a delta update",
+  "Causal convolution of width 4, Q/K L2 normalization, β and a learned decay bias",
+  "Trained with FLA chunk kernels (chunk 64) and a fused causal convolution; FP64 recurrent oracle checks"
+ ],
+ "limitations": "The KDA mixer only, without Kimi Linear's MLA layers or MoE. The repository keeps constant 0/−3 gate initialization rather than Kimi's. The published formal run is the restarted KDA v2; a generation state cache is not implemented.",
+ "diagram": "state",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1412126344,
+ "flops": 4.692443,
+ "error": 0.429,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/linear.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#linear-attention",
+ "costModel": "reference-aten-math-v2",
+ "order": 15
+}

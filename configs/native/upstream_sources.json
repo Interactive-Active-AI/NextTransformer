@@ -1,0 +1,11 @@
+{
+  "commit": "92d63d4e8bb4df75c3b71618f31ddde2378b2bcd",
+  "files": {
+    "nanochat/gpt.py": "8cdedc2e418b9d4dc45884e07f59904fcdec066bb3d76664b2adf2d415f704e3",
+    "nanochat/dataloader.py": "5cc72d7207931f112d685ba8e04c112e1a4ab7756dbbb29b95bdb4908a21864d",
+    "nanochat/loss_eval.py": "00faad1e0ae8912022f79ee4bf583c4f9b4c058e4523c5674144648c49229fd6",
+    "nanochat/core_eval.py": "9303997ff17fa48ad5e5730f33b7e79a687cc2a1fdad928666bb63dc3514c51d",
+    "scripts/base_eval.py": "644083a99ded710f677b25168ca76fd0416dc7ef3890d346a72f76a20bb522fe",
+    "scripts/tok_train.py": "93237def990ddd96c9698bcc980881900e982dc8fc30dff913b132302b967aea"
+  }
+}

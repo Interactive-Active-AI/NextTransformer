@@ -1,0 +1,26 @@
+{
+ "id": "nsa",
+ "name": "Native Sparse Attention · NSA",
+ "family": "sparse",
+ "tagline": "Combine compressed, selected and local attention.",
+ "description": "Learned compression, selected attention and sliding-window attention run in parallel and merge through gates. Compression and selection both use 32-token blocks in this explicitly defined native adaptation.",
+ "paperTitle": "Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention",
+ "paperUrl": "https://arxiv.org/abs/2502.11089",
+ "mechanism": [
+  "Three attention branches: compression, selection and local context, each with a sigmoid gate",
+  "Non-overlapping compression and selection blocks of 32 tokens",
+  "A 256-token historical selection budget, plus the current tail and a local window of 512"
+ ],
+ "limitations": "This configuration does not cover arbitrary overlapping compression or unequal block sizes. All three branches must be included in the compute ledger.",
+ "diagram": "sparse",
+ "blocks": 23,
+ "ffn": 6144,
+ "params": 1380128008,
+ "flops": 4.631637,
+ "error": -0.872,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/sparse.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#sparse-attention",
+ "costModel": "reference-aten-math-v1",
+ "order": 9
+}

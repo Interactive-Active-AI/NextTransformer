@@ -1,0 +1,26 @@
+{
+ "id": "gqa",
+ "name": "Grouped-Query Attention · GQA",
+ "family": "others",
+ "tagline": "Four query heads share each of three key/value heads.",
+ "description": "Full causal attention with 12 query heads grouped four to a key/value head: three key/value heads of dimension 128. It is the native attention with three key/value heads and the same shared-key normalization as MQA, trained from scratch at 26 layers and FFN 6144.",
+ "paperTitle": "GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints",
+ "paperUrl": "https://arxiv.org/abs/2305.13245",
+ "mechanism": [
+  "12 query heads in 3 groups of 4; 3 key/value heads, dimension 128",
+  "RoPE and QK RMSNorm × 1.2 on each key head, broadcast within its group",
+  "Full causal attention in all 26 layers; no value embeddings"
+ ],
+ "limitations": "Three key/value heads is this project's registered choice. Trained from scratch, without uptraining from a multi-head checkpoint. Value embeddings are disabled in this family because their width follows the key/value heads; the matching multi-head control without them has not been trained. No KV-cache or decoding saving is measured. Single seed 42; trained from the frozen Others branch, not yet ported to the current code.",
+ "diagram": "attention",
+ "blocks": 26,
+ "ffn": 6144,
+ "params": 744751182,
+ "flops": 4.686943,
+ "error": 0.311,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/others.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 33
+}

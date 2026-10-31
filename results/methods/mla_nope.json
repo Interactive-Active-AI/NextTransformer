@@ -1,0 +1,36 @@
+{
+ "id": "mla_nope",
+ "name": "MLA-NoPE",
+ "family": "others",
+ "status": "pending",
+ "tagline": "Multi-head latent attention without rotary dimensions, as used in the KDA hybrid.",
+ "description": "Full causal multi-head latent attention in every layer: a 768-rank query latent, a 256-rank joint key/value latent, 12 heads with QK and V dimensions of 128, no rotary dimensions, and no value embeddings. It is the independently calibrated MLA control for the KDA + MLA-NoPE hybrid.",
+ "paperTitle": "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model",
+ "paperUrl": "https://arxiv.org/abs/2405.04434",
+ "mechanism": [
+  "26 MLA-NoPE layers: query latent 768, joint KV latent 256, 12 heads of 128, no RoPE",
+  "Explicit K/V reconstruction for training; parameter-free RMSNorm on both latents",
+  "FFN 6144; value embeddings removed"
+ ],
+ "limitations": "No reconstructed-head QK norm or output gate; a separately registered QK-normalized MLA has its own result. Registered and admitted within the shared budget; no formal result is published yet. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "custom",
+ "architecture": {
+  "kind": "custom",
+  "nodes": [
+   "Embedding (no VE)",
+   "MLA-NoPE ×26",
+   "LM head"
+  ],
+  "loop": false
+ },
+ "blocks": 26,
+ "ffn": 6144,
+ "params": 744751182,
+ "flops": 4.684529,
+ "error": 0.26,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/others.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 47
+}

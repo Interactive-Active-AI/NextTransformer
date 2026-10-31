@@ -1,0 +1,25 @@
+{
+ "id": "loopformer",
+ "name": "LoopFormer-Fixed2",
+ "family": "looped",
+ "tagline": "Condition shared computation on time and step size.",
+ "description": "A fixed-two-recursion adaptation from the historical native experiment. Time and step-size conditioning modulate the shared core’s input and residual update. FP32 normalization and bounded modulation limit amplification.",
+ "paperTitle": "LoopFormer: Elastic-Depth Looped Transformers for Latent Reasoning via Shortcut Modulation",
+ "paperUrl": "https://arxiv.org/abs/2602.11451",
+ "mechanism": [
+  "3 prelude + 9 core blocks × 2 recursions + 3 coda, for 24 block executions",
+  "Time t = 0 or 1/2, with step size dt = 1/2",
+  "FP32 conditional RMSNorm, 0.5 × tanh offsets and a separate low-learning-rate AdamW group"
+ ],
+ "limitations": "No short paths, teacher or consistency objective. This Fixed2 adaptation is not the paper’s complete elastic-depth recipe.",
+ "diagram": "loop",
+ "params": 1018436792,
+ "blocks": 15,
+ "flops": 4.775756,
+ "cohort": "native-v3",
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/native/model.py",
+ "error": 0.011106993525563325,
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#historical-native-track",
+ "costModel": "native-v3-matrix-estimate",
+ "order": 21
+}

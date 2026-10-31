@@ -1,0 +1,26 @@
+{
+ "id": "fixed_recursive",
+ "name": "Fixed Recursive",
+ "family": "looped",
+ "tagline": "Isolate weight sharing, without routing or conditioning.",
+ "description": "A shared-core control baseline. Every token traverses the same core twice, isolating the effect of parameter sharing and providing a control for the additional mechanisms used by adaptive looped models.",
+ "paperTitle": "Fixed Recursive · shared-core control baseline",
+ "paperUrl": "",
+ "mechanism": [
+  "3 prelude + 9 core blocks × 2 recursions + 3 coda",
+  "The shared core and its Value Embeddings are reused together",
+  "Full backpropagation through time with language-model loss only"
+ ],
+ "limitations": "A project control baseline, rather than a full reproduction of an individual Recursive Transformers paper.",
+ "diagram": "loop",
+ "blocks": 15,
+ "ffn": 6144,
+ "params": 927990968,
+ "flops": 4.663054,
+ "error": -0.2,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/looped.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#looped-methods",
+ "costModel": "reference-aten-math-v1",
+ "order": 3
+}

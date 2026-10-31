@@ -1,0 +1,8 @@
+{
+ "name": "toy_glu",
+ "family": "others",
+ "title": "Toy gated linear unit FFN (test plugin)",
+ "paper": {"title": "Test fixture for the ffn hook", "url": "https://github.com/Interactive-Active-AI/NextTransformer"},
+ "options": {"activation": "silu"},
+ "layer_multiple": 2
+}

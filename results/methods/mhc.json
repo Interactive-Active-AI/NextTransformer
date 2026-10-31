@@ -1,0 +1,37 @@
+{
+ "id": "mhc",
+ "name": "Manifold-Constrained Hyper-Connections · mHC",
+ "family": "residual",
+ "status": "pending",
+ "tagline": "Hyper-connections whose stream mixing is kept close to doubly stochastic.",
+ "description": "mHC with four streams on the full-attention shell: a single projection of the flattened 4×1536 stream produces the read, write and residual-mixing logits; the read and write gates are sigmoids, and the residual mixing matrix is projected toward the doubly stochastic manifold with 20 Sinkhorn-Knopp iterations computed in log space. Calibration narrowed the FFN to 6016 to stay within the shared budget.",
+ "paperTitle": "mHC: Manifold-Constrained Hyper-Connections",
+ "paperUrl": "https://arxiv.org/abs/2512.24880",
+ "mechanism": [
+  "Flattened 4×1536 stream with parameter-free RMSNorm and one 6144×24 projection for read, write and mixing logits",
+  "Read = σ, write = 2σ; residual mixing = 20 log-space Sinkhorn-Knopp normalizations (rows sum to one, columns approximately)",
+  "23 full-attention layers, FFN 6016, value embeddings; coefficients in at least FP32"
+ ],
+ "limitations": "Static biases start at Hyper-Connections' initialization because the paper does not state one. Twenty Sinkhorn iterations are approximate. Read results as paired differences from Standard Residual, noting the narrower FFN. Registered and admitted within the shared budget; no formal result is published yet. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "custom",
+ "architecture": {
+  "kind": "custom",
+  "nodes": [
+   "Embedding ×4 streams",
+   "mHC Sinkhorn mixing",
+   "23 blocks",
+   "Sum → LM head"
+  ],
+  "loop": false
+ },
+ "blocks": 23,
+ "ffn": 6016,
+ "params": 1353550818,
+ "flops": 4.674363,
+ "error": 0.042,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/residual.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#full-attention-dense-and-residual-family",
+ "costModel": "reference-aten-math-v2",
+ "order": 41
+}

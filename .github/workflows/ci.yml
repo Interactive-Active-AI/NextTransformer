@@ -1,0 +1,99 @@
+name: CI
+# Required checks for every pull request: checks, tests, site. A job skipped by its condition counts as passed.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CUDA_VISIBLE_DEVICES: ""
+  NANOCHAT_DTYPE: float32
+  TORCH_COMPILE_DISABLE: "1"
+  OMP_NUM_THREADS: "1"
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+      site: ${{ steps.changes.outputs.site }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --extra cpu
+      - name: What this change needs
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            uv run python -m nexttransformer.checks.changes --base "origin/${{ github.base_ref }}" --github-output "$GITHUB_OUTPUT"
+          else
+            printf 'tests=true\nsite=true\ncontract=false\naffected=\n' >> "$GITHUB_OUTPUT"
+          fi
+      - name: No credentials, local paths or machine details
+        run: uv run python -m nexttransformer.checks.public
+      - name: Run records and arena cards
+        run: |
+          uv run python -m nexttransformer.export_run --check
+          uv run python -m nexttransformer.arena --check
+          uv run python docs/scripts/generate.py --check
+      - name: Arena and plugin scope
+        if: github.event_name == 'pull_request'
+        run: uv run python -m nexttransformer.arena --scope "origin/${{ github.base_ref }}"
+      - name: Published methods still match their cost proofs
+        run: |
+          uv run python -m nexttransformer.protocol.fingerprint || {
+            echo "::error::This change touches code that published methods run. A maintainer runs the Full audit workflow and commits the regenerated proofs before merging (see the guide 'Changing shared code')."
+            exit 1
+          }
+      - name: Training contract
+        if: >-
+          github.event_name == 'pull_request' && steps.changes.outputs.contract == 'true'
+          && !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+          && !contains(github.event.pull_request.labels.*.name, 'core-approved')
+        run: |
+          echo "::error::This pull request changes the training contract (protocol, cost ledger, evaluation, trainer or data pipeline). Please open an issue first; a maintainer adds the core-approved label once the change is agreed."
+          exit 1
+
+  tests:
+    needs: checks
+    if: needs.checks.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --extra cpu
+      - run: uv run python -m pytest -q -n auto --dist worksteal --durations=10
+
+  site:
+    needs: checks
+    if: needs.checks.outputs.site == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            website/package-lock.json
+            docs/package-lock.json
+      - name: Website
+        working-directory: website
+        run: npm ci && npm test && npm run typecheck && npm run build
+      - name: Documentation
+        working-directory: docs
+        run: npm ci && npm run build

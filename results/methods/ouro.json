@@ -1,0 +1,26 @@
+{
+ "id": "ouro",
+ "name": "Ouro · LoopLM",
+ "family": "looped",
+ "tagline": "Train across depths, then refine the exit gate.",
+ "description": "Every recursion passes through the coda and language-model head. An exit distribution weights the depth-specific losses. A final stage freezes the backbone and trains only the gate; inference exits according to cumulative halting probability.",
+ "paperTitle": "Scaling Latent Reasoning via Looped Language Models",
+ "paperUrl": "https://arxiv.org/abs/2510.25741",
+ "mechanism": [
+  "3 prelude + 3 core blocks × up to 3 recursions; each recursion also executes 3 coda blocks and the head",
+  "Joint objective: exit-weighted cross entropy minus 0.1 × exit entropy",
+  "The final 1,024 updates train only the gate, continuing the same data stream and schedule"
+ ],
+ "limitations": "The reference path evaluates all recursions. The temporal definition of adjacent-depth gate supervision must be recorded with each implementation version.",
+ "diagram": "loop",
+ "blocks": 9,
+ "ffn": 6144,
+ "params": 607127805,
+ "flops": 4.65821,
+ "error": -0.304,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/models/looped.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#looped-methods",
+ "costModel": "reference-aten-math-v1",
+ "order": 5
+}

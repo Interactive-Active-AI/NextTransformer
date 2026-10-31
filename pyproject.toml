@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nexttransformer"
+version = "0.1.0"
+description = "Compute-controlled research on next-generation language model architectures"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "torch==2.9.1",
+    "numpy==2.2.6",
+    "pyarrow==21.0.0",
+    "tiktoken==0.12.0",
+    "jinja2==3.1.6",
+    "PyYAML==6.0.3",
+    "filelock==3.20.0",
+    "psutil==7.1.3",
+    "huggingface_hub==1.26.0",
+    "rustbpe>=0.1.0",
+]
+
+[project.optional-dependencies]
+gpu = ["torch==2.9.1"]
+cpu = ["torch==2.9.1"]
+tracking = ["wandb==0.30.0"]
+# Optional upstream integrations: the FA3 kernel hub, tracking, and dataset tooling.
+upstream = ["kernels>=0.11.7", "wandb>=0.21.3", "datasets>=3.0.0"]
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "pytest-xdist==3.8.0"]
+notebooks = ["ipykernel>=7.1.0", "matplotlib>=3.10.8", "python-dotenv>=1.2.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["nexttransformer", "nanochat"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: full-size cost-audit reproductions and multi-rank data-layout runs; skipped by default, run with -m slow",
+]
+addopts = "-m 'not slow'"
+testpaths = ["tests"]
+norecursedirs = [".agent-work", "local", "scratch", "node_modules", ".venv"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv]
+default-groups = ["dev"]
+conflicts = [[{extra = "cpu"}, {extra = "gpu"}]]
