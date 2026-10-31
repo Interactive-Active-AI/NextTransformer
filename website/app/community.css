@@ -17,6 +17,29 @@ a.community-card:hover{border-color:#ADA1C2;box-shadow:0 12px 30px rgba(116,99,1
 .header-link.subtle{color:#616B78}
 .community-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (max-width:760px){.community-grid,.community-grid.two{grid-template-columns:1fr}.community-card{min-height:0}}
-.repo-button{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:999px;border:1px solid #D9DEE4;background:#fff;color:#3F474F;font-size:13px;font-weight:600}
-.repo-button:hover{border-color:#92A8BE;background:#F0F4F8;color:#526B85}
-@media (max-width:760px){.repo-button span{display:none}.repo-button{padding:0 9px}}
+.repo-button {
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 999px;
+  border: 1px solid #A9BACC; background: linear-gradient(180deg, #F0F4F8, #E4EBF3); color: #405B77;
+  font-size: 13px; font-weight: 650; box-shadow: 0 2px 5px rgba(82,107,133,.10);
+}
+.repo-button:hover { background: #DCE6F0; border-color: #90A5BC; color: #354F6C; }
+.repo-button:focus-visible { outline: 2px solid #526B85; outline-offset: 3px; }
+.repo-stars {
+  display: inline-flex; align-items: center; gap: 4px; height: 24px; margin-right: -8px;
+  padding: 0 9px; border-radius: 999px; background: #D6E1ED; font-size: 12px; font-weight: 700;
+}
+@media (max-width:760px){.repo-button span{display:none}.repo-button{padding:0 10px}}
+
+/* Keep the two brand links and the actions from overlapping when stars appear. */
+@media (min-width: 761px) and (max-width: 1200px) {
+  .observatory .topbar { flex-wrap: wrap; height: auto; min-height: 66px; padding-block: 10px; gap: 8px 16px; }
+  .observatory .brand-cluster, .observatory .header-actions { flex: none; }
+  .observatory .header-actions { gap: 12px; margin-left: auto; }
+}
+@media (max-width: 480px) {
+  .repo-button .repo-stars { display: none; }
+}
+@media (max-width: 380px) {
+  .observatory .topbar { padding-inline: 10px; }
+  .observatory .iaai-brand b { display: none; }
+}
