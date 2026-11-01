@@ -55,6 +55,7 @@ sbatch --nodes=4 launch/slurm.sbatch --config configs/hybrid/gdn_hybrid.json --s
 若平台会在每个节点执行同一份任务入口，提交**一个**多节点作业，将下面的命令填为入口。把平台提供的节点数、每节点 GPU 数、从 0 开始的节点序号和主节点地址、端口对应到这些变量。示例配置 `launch/accelerate.yaml` 使用 PyTorch DDP，默认两台各 8 卡。以下参数可按实际资源覆盖默认值；`--num_processes` 是整个作业的 GPU 总数。平台负责分发命令，用户无需登录各节点。
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # 线性与混合方法走注册的 FLA Triton 路径
 accelerate launch --config_file launch/accelerate.yaml \
   --num_machines "$NNODES" --num_processes "$((NNODES * GPUS_PER_NODE))" \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \

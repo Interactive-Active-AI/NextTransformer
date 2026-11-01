@@ -57,6 +57,7 @@ sbatch --nodes=4 launch/slurm.sbatch --config configs/hybrid/gdn_hybrid.json --s
 If your platform runs a job entry point once per node, submit **one** multi-node job with this command as its entry point. Map the platform's node count, GPUs per node, zero-based node rank, and main node address and port to the variables below. The `launch/accelerate.yaml` configuration uses PyTorch DDP and defaults to two eight-GPU nodes. The launch arguments below override that topology; `--num_processes` is the total GPU count across the job. The platform dispatches the command to each node.
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # registered FLA Triton path (linear and hybrid methods)
 accelerate launch --config_file launch/accelerate.yaml \
   --num_machines "$NNODES" --num_processes "$((NNODES * GPUS_PER_NODE))" \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \

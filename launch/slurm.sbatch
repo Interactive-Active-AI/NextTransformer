@@ -20,6 +20,8 @@ MASTER_ADDR="$(scontrol show hostnames "$SLURM_JOB_NODELIST" | head -n 1)"
 export MASTER_PORT="${MASTER_PORT:-29500}"
 export NPROC_PER_NODE="${NPROC_PER_NODE:-${SLURM_GPUS_ON_NODE:-8}}"
 export NEXTTRANSFORMER_JOB_ID="$SLURM_JOB_ID"
+# Chunked linear backends (fla_chunk64) run the registered FLA Triton path; the trainer refuses to start without it.
+export FLA_DISABLE_BACKEND_DISPATCH="${FLA_DISABLE_BACKEND_DISPATCH:-1}"
 
 # One launcher per node; Accelerate starts one training process per allocated GPU.
 srun --nodes="$SLURM_NNODES" --ntasks="$SLURM_NNODES" --ntasks-per-node=1 --kill-on-bad-exit=1 \

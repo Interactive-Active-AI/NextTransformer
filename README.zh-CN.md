@@ -91,6 +91,7 @@ launch/train.sh --config configs/baseline/dense_full.json --site-config site.loc
 在训练环境中安装 `uv pip install accelerate==1.15.0`。创建一个每节点执行一次入口命令的分布式作业，在作业配置中把平台提供的节点编号、主节点地址和端口映射到下面三个变量：
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # 线性与混合方法走注册的 FLA Triton 路径
 accelerate launch --config_file launch/accelerate.yaml \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \
   -m nexttransformer.train --config configs/linear/gdn.json --site-config site.local.json \

@@ -93,6 +93,7 @@ launch/train.sh --config configs/baseline/dense_full.json --site-config site.loc
 Install `uv pip install accelerate==1.15.0` in the training environment. Submit one distributed job with the following per-node entry point. Map the platform's node rank, main node address and port to the three variables shown:
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # registered FLA Triton path (linear and hybrid methods)
 accelerate launch --config_file launch/accelerate.yaml \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \
   -m nexttransformer.train --config configs/linear/gdn.json --site-config site.local.json \
