@@ -58,7 +58,8 @@
 .sl-markdown-content { line-height: 1.75; }
 .sl-markdown-content h2 { letter-spacing: -0.01em; margin-top: 2.4rem; }
 .sl-markdown-content table { font-size: 0.92rem; }
-.sl-markdown-content th { background: var(--sl-color-gray-7, #F7F8FA); }
+.sl-markdown-content th { background: var(--sl-color-gray-6); }
+:root[data-theme='light'] .sl-markdown-content th { background: var(--sl-color-gray-7); }
 :root[data-theme='light'] .sl-markdown-content a { color: var(--nt-blue); text-underline-offset: 3px; }
 :root[data-theme='light'] .sl-markdown-content a:hover { color: var(--nt-lavender); }
 :root[data-theme='light'] .sl-markdown-content code:not(pre code) { background: #F4F1F8; color: #5D5170; border-radius: 6px; padding: 0.1em 0.35em; }
