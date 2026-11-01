@@ -42,7 +42,7 @@ result is an audited, file-backed record, and AI agents can research new archite
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/protocol/overview/"><img src=".github/assets/readme/card-protocol-en.webp" alt="A fair, explicit protocol: same data, tokens, optimizer, schedule and evaluation for every model; training compute matched to within 1% and audited over the whole run." width="100%"></a>
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-en.webp" alt="49B tokens of pretraining for a model with about 1.4B parameters, in 2–4 days on one 8-GPU node." width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-en.webp" alt="49B tokens of pretraining for a model with about 1.4B parameters, in 2–4 days on one 8-GPU node; 400B tokens and larger models are planned for November." width="100%"></a>
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/arena/task/"><img src=".github/assets/readme/card-agent-en.webp" alt="Agent-native research: hand the arena task to your agent; the full version, Arena v2, ships by November 14, 2026." width="100%"></a>
 

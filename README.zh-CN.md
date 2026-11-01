@@ -41,7 +41,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/"><img src=".github/assets/readme/card-protocol-zh.webp" alt="公平、明确的协议：每个模型使用相同的数据、token、优化器、调度和评测；训练算力对齐到 1% 以内，并对整个运行做审计。" width="100%"></a>
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-zh.webp" alt="用 49B tokens 预训练约 1.4B 参数的模型，单机 8 卡约需 2–4 天。" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-zh.webp" alt="用 49B tokens 预训练约 1.4B 参数的模型，单机 8 卡约需 2–4 天；11 月计划扩展到 400B tokens 与更大模型。" width="100%"></a>
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/task/"><img src=".github/assets/readme/card-agent-zh.webp" alt="Agent 原生研究：把竞技场任务交给你的 agent；完整版本 Arena v2 将于 2026 年 11 月 14 日前上线。" width="100%"></a>
 
