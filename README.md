@@ -74,7 +74,7 @@ uv pip install --no-deps --require-hashes -r requirements/linear.txt   # linear-
 **2. Prepare the data** (ClimbMix at a pinned revision, about 600 GB, plus the tokenizer and CORE bundle):
 
 ```bash
-cp site.native.example.json site.local.json        # set data_dir and resources
+cp site.native.example.json site.local.json        # set runtime_dir, resources and data_dir
 hf download karpathy/climbmix-400b-shuffle --repo-type dataset \
   --revision 915333b4f8b8684f39aeaafea600fea6f43fb703 --local-dir /path/to/climbmix-400b-shuffle
 source launch/env.sh --site-config site.local.json
@@ -93,6 +93,7 @@ launch/train.sh --config configs/baseline/dense_full.json --site-config site.loc
 Install `uv pip install accelerate==1.15.0` in the training environment. Submit one distributed job with the following per-node entry point. Map the platform's node rank, main node address and port to the three variables shown:
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # registered FLA Triton path (linear and hybrid methods)
 accelerate launch --config_file launch/accelerate.yaml \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \
   -m nexttransformer.train --config configs/linear/gdn.json --site-config site.local.json \

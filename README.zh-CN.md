@@ -72,7 +72,7 @@ uv pip install --no-deps --require-hashes -r requirements/linear.txt   # 线性�
 **2. 准备数据**（锁定版本的 ClimbMix，约 600 GB，以及分词器和 CORE 评测包）：
 
 ```bash
-cp site.native.example.json site.local.json        # 设置 data_dir 和 resources
+cp site.native.example.json site.local.json        # 设置 runtime_dir、resources 和 data_dir
 hf download karpathy/climbmix-400b-shuffle --repo-type dataset \
   --revision 915333b4f8b8684f39aeaafea600fea6f43fb703 --local-dir /path/to/climbmix-400b-shuffle
 source launch/env.sh --site-config site.local.json
@@ -91,6 +91,7 @@ launch/train.sh --config configs/baseline/dense_full.json --site-config site.loc
 在训练环境中安装 `uv pip install accelerate==1.15.0`。创建一个每节点执行一次入口命令的分布式作业，在作业配置中把平台提供的节点编号、主节点地址和端口映射到下面三个变量：
 
 ```bash
+export FLA_DISABLE_BACKEND_DISPATCH=1   # 线性与混合方法走注册的 FLA Triton 路径
 accelerate launch --config_file launch/accelerate.yaml \
   --machine_rank "$NODE_RANK" --main_process_ip "$MASTER_ADDR" --main_process_port "$MASTER_PORT" \
   -m nexttransformer.train --config configs/linear/gdn.json --site-config site.local.json \

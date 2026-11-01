@@ -35,7 +35,7 @@ launch/train.sh --config configs/sparse/qsa.json --site-config site.local.json -
 | `--smoke-steps`、`--smoke-val-tokens`、`--smoke-core-per-task` | 限定冒烟测试规模；测试不计入正式结果 |
 | `--log-every` | 训练日志间隔，默认每 10 次更新 |
 
-CUDA 上的分块线性后端使用 `requirements/linear.txt` 锁定的依赖，并设置 `NANOCHAT_DTYPE=bfloat16`、`FLA_DISABLE_BACKEND_DISPATCH=1`。优化器编译还需要 `setuptools`。六种已注册的混合架构共用同一训练入口，配置位于 `configs/hybrid/`。
+CUDA 上的分块线性后端使用 `requirements/linear.txt` 锁定的依赖，并设置 `NANOCHAT_DTYPE=bfloat16`、`FLA_DISABLE_BACKEND_DISPATCH=1`。`launch/train.sh` 与 `launch/slurm.sbatch` 会设置后者；用其他方式（例如 `accelerate launch`）启动训练器时需要自行 export。优化器编译还需要 `setuptools`。六种已注册的混合架构共用同一训练入口，配置位于 `configs/hybrid/`。
 
 ## 续训与恢复
 

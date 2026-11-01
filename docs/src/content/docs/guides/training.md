@@ -39,7 +39,7 @@ launch/train.sh --config configs/sparse/qsa.json --site-config site.local.json -
 | `--log-every` | Training log interval (default 10 updates) |
 
 Linear methods on CUDA with the chunked backend need the hash-pinned `requirements/linear.txt` and run with
-`NANOCHAT_DTYPE=bfloat16` and `FLA_DISABLE_BACKEND_DISPATCH=1`. The optimizer compiler also needs `setuptools`.
+`NANOCHAT_DTYPE=bfloat16` and `FLA_DISABLE_BACKEND_DISPATCH=1`. `launch/train.sh` and `launch/slurm.sbatch` set the latter; export it yourself when you start the trainer another way, for example with `accelerate launch`. The optimizer compiler also needs `setuptools`.
 
 All six registered hybrids use the same entry point with their files under `configs/hybrid/`.
 
