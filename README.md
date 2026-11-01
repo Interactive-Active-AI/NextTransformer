@@ -74,7 +74,7 @@ uv pip install --no-deps --require-hashes -r requirements/linear.txt   # linear-
 **2. Prepare the data** (ClimbMix at a pinned revision, about 600 GB, plus the tokenizer and CORE bundle):
 
 ```bash
-cp site.native.example.json site.local.json        # set data_dir and resources
+cp site.native.example.json site.local.json        # set runtime_dir, resources and data_dir
 hf download karpathy/climbmix-400b-shuffle --repo-type dataset \
   --revision 915333b4f8b8684f39aeaafea600fea6f43fb703 --local-dir /path/to/climbmix-400b-shuffle
 source launch/env.sh --site-config site.local.json

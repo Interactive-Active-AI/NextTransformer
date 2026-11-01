@@ -72,7 +72,7 @@ uv pip install --no-deps --require-hashes -r requirements/linear.txt   # 线性�
 **2. 准备数据**（锁定版本的 ClimbMix，约 600 GB，以及分词器和 CORE 评测包）：
 
 ```bash
-cp site.native.example.json site.local.json        # 设置 data_dir 和 resources
+cp site.native.example.json site.local.json        # 设置 runtime_dir、resources 和 data_dir
 hf download karpathy/climbmix-400b-shuffle --repo-type dataset \
   --revision 915333b4f8b8684f39aeaafea600fea6f43fb703 --local-dir /path/to/climbmix-400b-shuffle
 source launch/env.sh --site-config site.local.json
