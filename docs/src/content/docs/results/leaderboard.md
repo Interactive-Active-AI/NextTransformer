@@ -28,6 +28,7 @@ full-attention **Dense Baseline** at the same checkpoint: below zero is better f
 | [Multi-Query Attention · MQA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/mqa.json) | others | 0.6769 | +0.0098 | 31.96 | -1.13 | 4.664 |
 | [Standard Residual](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/residual_standard.json) | residual | 0.6740 | +0.0068 | 31.95 | -1.14 | 4.674 |
 | [DeepSeek Sparse Attention · DSA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/dsa.json) | sparse | 0.6679 | +0.0007 | 31.77 | -1.33 | 4.651 |
+| [Hybrid KDA + MLA-NoPE](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/kda_hybrid.json) | hybrid | 0.6738 | +0.0066 | 31.54 | -1.55 | 4.692 |
 | [Gated Linear Attention · GLA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gla.json) | linear | 0.6690 | +0.0018 | 31.11 | -1.99 | 4.701² |
 | [Kimi Delta Attention · KDA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/kda.json) | linear | 0.6671 | ±0.0000 | 31.06 | -2.03 | 4.692 |
 | [Mixture of Block Attention · MoBA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/moba.json) | sparse | 0.6740 | +0.0068 | 31.04 | -2.05 | 4.674 |
