@@ -37,7 +37,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 ## 亮点
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/"><img src=".github/assets/readme/card-framework-zh.webp" alt="架构图谱：全注意力、稀疏注意力、线性记忆、循环深度、残差连接和混合层，代表模型包括 MoBA、KDA、Ouro 和 AttnRes。" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/"><img src=".github/assets/readme/card-framework-zh.webp" alt="一个框架，集成前沿架构：注意力、稀疏、线性、循环、残差和混合架构，例如 GQA、NSA、MoBA、GDN、KDA、Ouro、AttnRes 和 GDN+SWA，都接入同一套训练器、数据和评测。" width="100%"></a>
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/"><img src=".github/assets/readme/card-protocol-zh.webp" alt="公平、明确的协议：每个模型使用相同的数据、token、优化器、调度和评测；训练算力对齐到 1% 以内，并对整个运行做审计。" width="100%"></a>
 

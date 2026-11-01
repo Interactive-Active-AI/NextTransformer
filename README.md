@@ -38,7 +38,7 @@ result is an audited, file-backed record, and AI agents can research new archite
 
 ## Highlights
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/methods/zoo/"><img src=".github/assets/readme/card-framework-en.webp" alt="Architecture atlas: dense and sparse attention, linear memory, recurrent depth, residual paths and hybrid layers, with examples including MoBA, KDA, Ouro and AttnRes." width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/methods/zoo/"><img src=".github/assets/readme/card-framework-en.webp" alt="Many architectures, one framework: attention, sparse, linear, looped, residual and hybrid models such as GQA, NSA, MoBA, GDN, KDA, Ouro, AttnRes and GDN+SWA plug into one shared trainer, data pipeline and evaluation." width="100%"></a>
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/protocol/overview/"><img src=".github/assets/readme/card-protocol-en.webp" alt="A fair, explicit protocol: same data, tokens, optimizer, schedule and evaluation for every model; training compute matched to within 1% and audited over the whole run." width="100%"></a>
 
