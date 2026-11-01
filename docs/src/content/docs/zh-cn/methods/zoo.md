@@ -30,7 +30,7 @@ description: 按模型族浏览已注册的架构、论文和结果状态。
 | 线性 | Gated DeltaNet · GDN (`gdn`) | [Gated Delta Networks: Improving Mamba2 with Delta Rule](https://arxiv.org/abs/2412.06464) | 已发布 |
 | 残差 | Standard Residual (`residual_standard`) | [Identity Mappings in Deep Residual Networks](https://arxiv.org/abs/1603.05027) | 已发布 |
 | 残差 | Block Attention Residuals · AttnRes (`attnres`) | [Attention Residuals](https://arxiv.org/abs/2603.15031) | 已发布 |
-| 残差 | Hyper-Connections · HC (`hc`) | [Hyper-Connections](https://arxiv.org/abs/2409.19606) | 待发布 |
+| 残差 | Hyper-Connections · HC (`hc`) | [Hyper-Connections](https://arxiv.org/abs/2409.19606) | 已发布 |
 | 残差 | Manifold-Constrained Hyper-Connections · mHC (`mhc`) | [mHC: Manifold-Constrained Hyper-Connections](https://arxiv.org/abs/2512.24880) | 已发布 |
 | 混合 | Hybrid GDN + MHA (`gdn_hybrid`) | [Gated Delta Networks: Improving Mamba2 with Delta Rule](https://arxiv.org/abs/2412.06464) | 已发布 |
 | 混合 | Hybrid GDN + SWA (`gdn_hybrid_swa`) | [Gated Delta Networks: Improving Mamba2 with Delta Rule](https://arxiv.org/abs/2412.06464) | 已发布 |

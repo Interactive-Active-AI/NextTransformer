@@ -2,7 +2,6 @@
  "id": "hc",
  "name": "Hyper-Connections · HC",
  "family": "residual",
- "status": "pending",
  "tagline": "Four residual streams; every sublayer reads from and writes back to them through learned connections.",
  "description": "Dynamic Hyper-Connections with expansion rate 4 on the full-attention shell: the embedding is replicated into four streams, each attention and FFN sublayer reads a learned mixture of the streams and writes its output back with learned weights, and the streams are summed before the final norm. Branches stay 1536 wide. At initialization the model reproduces Standard Residual, so the comparison isolates the learned connections.",
  "paperTitle": "Hyper-Connections",
@@ -12,7 +11,7 @@
   "Dynamic read, write and mixing weights with zero-initialized projections and gate scales of 0.01; parameter-free RMSNorm",
   "23 full-attention layers, FFN 6144, value embeddings; native residual scalars and backout frozen and unused"
  ],
- "limitations": "Uses the native parameter-free RMSNorm for the dynamic mappings instead of LayerNorm, and the shared auxiliary AdamW group without weight decay on the dynamic projections. Read results as paired differences from Standard Residual. Registered and admitted within the shared budget; no formal result is published yet. Parameters, memory and speed are outcomes, not controls.",
+ "limitations": "Single seed 42. Uses the native parameter-free RMSNorm for the dynamic mappings instead of LayerNorm, and the shared auxiliary AdamW group without weight decay on the dynamic projections. Read results as paired differences from Standard Residual. Gradient norms stayed finite but were larger and spikier than Standard Residual's. Parameters, memory and speed are outcomes, not controls.",
  "diagram": "custom",
  "architecture": {
   "kind": "custom",

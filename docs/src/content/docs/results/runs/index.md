@@ -21,7 +21,7 @@ leaderboard is measured against it.
 
 Both share the Dense shell and were trained as independent single-segment runs: cumulative compute **+0.041%**
 (Standard Residual) and **+0.160%** (Block AttnRes). Read-only audits of both run directories found no problems. Read
-AttnRes as a paired difference from Standard Residual. [mHC](./mhc/) completed in four segments and reached 35.3278 CORE ×100. Its run notes include the registered switch to log-space Sinkhorn and the paired comparison. HC is awaiting a published result.
+AttnRes as a paired difference from Standard Residual. [mHC](./mhc/) completed in four segments and reached 35.3278 CORE ×100. Its run notes include the registered switch to log-space Sinkhorn and the paired comparison. [HC](./hc/) completed in four segments with unchanged source and reached 35.0943 CORE ×100, second on CORE; its run notes compare the whole Residual family.
 
 ## Linear attention
 
@@ -70,4 +70,4 @@ into the strict matched comparison would require independent full-cost evidence.
 
 ## Coming soon
 
-The observatory lists five models awaiting results: HC, DeltaNet–MHA, KDA–MLA-NoPE, GDN–QSA and MoBA–MHA.
+The observatory lists four models awaiting results: DeltaNet–MHA, KDA–MLA-NoPE, GDN–QSA and MoBA–MHA.

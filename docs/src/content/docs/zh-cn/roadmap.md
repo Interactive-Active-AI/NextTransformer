@@ -16,7 +16,6 @@ description: NextTransformer 接下来的计划。
 
 ## 即将发布的结果
 
-- **残差族：** Hyper-Connections（HC）。
 - **Hybrid：** DeltaNet、KDA + MLA-NoPE、QSA 和 MoBA 的 hybrid。
 - **审计：** looped 和 sparse 运行的独立运行目录审计；已发布 hybrid 的 pilot 和续训验收证据。
 

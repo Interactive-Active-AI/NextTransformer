@@ -14,7 +14,7 @@ sidebar:
 
 ## 残差连接（`residual_standard`、`attnres`）
 
-两个模型使用相同的 Dense 骨干，各自独立训练一段。Standard Residual 的累计算力偏差为 **+0.041%**，AttnRes 为 **+0.160%**，原运行目录均已通过只读审计。分析 AttnRes 的作用时，应与 Standard Residual 配对比较。[mHC](./mhc/) 分四段完成训练，最终 CORE ×100 为 35.3278，续训记录保留了对数域 Sinkhorn 的切换。HC 的正式结果仍待发布。
+两个模型使用相同的 Dense 骨干，各自独立训练一段。Standard Residual 的累计算力偏差为 **+0.041%**，AttnRes 为 **+0.160%**，原运行目录均已通过只读审计。分析 AttnRes 的作用时，应与 Standard Residual 配对比较。[mHC](./mhc/) 分四段完成训练，最终 CORE ×100 为 35.3278，续训记录保留了对数域 Sinkhorn 的切换。[HC](./hc/) 分四段完成训练，源码未变，最终 CORE ×100 为 35.0943，CORE 排名第二；它的运行说明比较了整个残差族。
 
 ## 线性注意力
 
@@ -49,4 +49,4 @@ SSSL、MoR、LoopFormer 和 Circle Loop 是项目首批运行，采用当时的�
 
 ## 待发布的方法
 
-观测站中待发布结果的模型为 HC、DeltaNet–MHA、KDA–MLA-NoPE、GDN–QSA 和 MoBA–MHA。
+观测站中待发布结果的模型为 DeltaNet–MHA、KDA–MLA-NoPE、GDN–QSA 和 MoBA–MHA。

@@ -18,7 +18,6 @@ description: What is coming next to NextTransformer.
 
 ## Upcoming results
 
-- **Residual:** Hyper-Connections (HC).
 - **Hybrids:** DeltaNet, KDA + MLA-NoPE, QSA and MoBA hybrids.
 - **Audits:** independent run-directory audits for the looped and sparse runs; pilot and resume acceptance evidence for
   the published hybrids.
