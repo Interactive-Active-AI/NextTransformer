@@ -207,8 +207,11 @@ export default function Architecture({ methodId, large = false, nodes, loop = tr
           </g>)}
           <Path d={`M207 ${104+lane*48}H250 M342 ${104+lane*48}H385`} color={C[['blue','purple','rose'][lane] as keyof typeof C]} dashed={lane===0} arrow={false}/>
         </g>)}
-        <Path d="M484 95V215H525" color={C.purple}/>
-        <Text x={529} y={107} size={12} color={C.purple}>Σ pₜhₜ</Text>
+        <Text x={534} y={77} size={12} anchor="middle" color={C.muted}>OUTPUT</Text>
+        {[0,1,2].map(lane=><g key={lane}>
+          <Path d={`M480 ${104+lane*48}H500`} color={C.purple}/>
+          <Text x={534} y={109+lane*48} size={13} anchor="middle" color={C.purple} weight={600}>Σ pₜhₜ</Text>
+        </g>)}
         <Caption y={247}>Weighted state mixture · remainder + ponder cost</Caption>
         <Caption y={270}>The reference backend still evaluates all candidate passes.</Caption>
       </>;
