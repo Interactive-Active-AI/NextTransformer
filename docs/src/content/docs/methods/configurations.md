@@ -38,6 +38,7 @@ GFLOPs per input token and the deviation from the SSSL anchor (4.67239832544785)
 | hybrid | `moba_hybrid` | 25 | 6,016 | 1,452,935,068 | 4.659989 | -0.266% | joint |
 | hybrid | `qsa_hybrid` | 24 | 5,760 | 1,405,174,202 | 4.691637 | +0.412% | burnin, joint |
 | others | `dense` (SSSL) | 24 | 6,144 | 1,384,122,122 | 4.672398 | +0.000% | joint |
+| others | `gated_attention` | 21 | 6,272 | 1,306,658,420 | 4.644093 | -0.606% | joint |
 
 Blocks count physical layers; looped methods reuse them across loops, so their unfolded depth is larger (see the
 [source notes](../sources/)). Multi-stage methods weight each stage by its updates: DSA, QSA, Seer and the QSA hybrid run

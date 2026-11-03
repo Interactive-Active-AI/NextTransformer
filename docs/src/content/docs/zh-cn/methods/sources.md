@@ -105,6 +105,7 @@ DSA、QSA 和 Seer 均从随机初始化开始，在总计 46,875 次更新中�
 | `dense`（SSSL） | 24 块中 18 层用短窗口 512，6 层做全局注意力。它是历史模型和冻结算力锚点；本基准以每层完整注意力的 Dense 为基线，SSSL 单列为其他方法。 |
 | `mqa`、`gqa` | 原生注意力减少 KV 头数（`n_kv_head`），沿用 RoPE 和 QK 归一化。已发布训练来自冻结源码，主线移植待完成。 |
 | `mla_qknorm`、`mla_nope_qknorm` | 带 QK 归一化的多头潜在注意力，分别保留和移除旋转维度。已发布训练来自冻结源码，主线移植待完成。 |
+| `gated_attention` | [门控注意力](https://arxiv.org/abs/2505.06708)的 G1 位置：每个头的 SDPA 输出按元素乘以 `σ(X W_θ)`，门控分数逐头、逐通道计算，参见[官方代码](https://github.com/qiuzh20/gated_attention/tree/f4c2a5f6ffd6ec709e0c60072c95ed4f5ce5b5d2)。其余部分沿用 Dense 基线的注意力（VE、RoPE、QK 归一化、每层完整注意力）；门控无偏置，由块的预归一化输入计算，在 `c_proj` 之前施加。官方代码把 W_θ 并入 `q_proj`，此处为独立的 1536 × 1536 线性层 `c_gate`，按 `c_q` 的均匀分布规则初始化，并与 `c_q` 一样由 Muon 训练。校准后深度降为 21 层，FFN 加宽到 6272。选项 `granularity: headwise` 改为每个头一个分数。插件位于 `nexttransformer/methods/gated_attention`。 |
 
 训练时显式重建 MLA 的 K/V，再调用共有注意力接口。重建后的头不再做 QK 归一化，也没有输出门。没有归一化的 MLA 在 Muon 下可能出现 logits 增长，因此 QK 归一化变体单独注册。
 
