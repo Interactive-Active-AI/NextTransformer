@@ -1,8 +1,9 @@
-"""Opt-in test against an actual HuggingArch checkout, with a temporary custom cache.
+"""Opt-in test against the installed HuggingArch dependency, with a temporary cache.
 
-NEXTT_HUGGINGARCH_ROOT=/path/to/HuggingArch \
-NEXTT_HUGGINGARCH_PYTHON=/path/to/HuggingArch/.venv/bin/python \
+NEXTT_HUGGINGARCH_PYTHON=tools/huggingarch/.venv/bin/python \
 python -m pytest -q tests/test_huggingarch_upstream.py
+
+Set NEXTT_HUGGINGARCH_ROOT only to test a source checkout override.
 """
 import importlib.util
 import json
@@ -13,7 +14,8 @@ import sys
 
 
 def live_check(upstream, temporary):
-    sys.path.insert(0, str(upstream))
+    if upstream:
+        sys.path.insert(0, str(upstream))
     from backend import custom_id
     worker_path = Path(__file__).resolve().parents[1] / "nexttransformer/integrations/huggingarch_worker.py"
     spec = importlib.util.spec_from_file_location("worker", worker_path)
@@ -81,13 +83,13 @@ def test_real_huggingarch(tmp_path):
     import pytest
     upstream = os.environ.get("NEXTT_HUGGINGARCH_ROOT")
     python = os.environ.get("NEXTT_HUGGINGARCH_PYTHON")
-    if not upstream or not python:
-        pytest.skip("set NEXTT_HUGGINGARCH_ROOT and NEXTT_HUGGINGARCH_PYTHON for the upstream integration test")
-    result = subprocess.run([python, str(Path(__file__).resolve()), upstream, str(tmp_path)],
+    if not python:
+        pytest.skip("set NEXTT_HUGGINGARCH_PYTHON for the upstream integration test")
+    result = subprocess.run([python, str(Path(__file__).resolve()), upstream or "-", str(tmp_path)],
                             capture_output=True, text=True, timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr
     assert "PASS: real HuggingArch" in result.stdout
 
 
 if __name__ == "__main__":
-    live_check(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve())
+    live_check(Path(sys.argv[1]).resolve() if sys.argv[1] != "-" else None, Path(sys.argv[2]).resolve())

@@ -131,6 +131,21 @@ def test_failed_model_does_not_hide_other_results(bundle, tmp_path, monkeypatch)
     assert report["models"][1]["result"]["settings"]["seq_len"] == 64
 
 
+def test_default_uses_installed_dependency_without_checkout(bundle, monkeypatch):
+    calls = []
+    def worker(request, python, timeout):
+        assert request["huggingarch_root"] is None
+        assert python == Path(sys.executable).absolute()
+        calls.append(request)
+        return {"status": "registered", "huggingarch_version": "0.2.0", "huggingarch_revision": "test-commit"}
+    monkeypatch.setattr(bridge, "run_worker", worker)
+    assert bridge.main(["register", "--bundle", str(bundle), "--methods", "dense_full"]) == 0
+    assert len(calls) == 1
+    result = bridge.read_json(bundle / "dense_full/register.json")
+    assert result["huggingarch_revision"] == "test-commit"
+    assert result["huggingarch_version"] == "0.2.0"
+
+
 def test_worker_real_subprocess_contract(bundle, tmp_path):
     # A tiny upstream double exercises process isolation, not the training interpreter's imports.
     upstream = tmp_path / "upstream checkout"

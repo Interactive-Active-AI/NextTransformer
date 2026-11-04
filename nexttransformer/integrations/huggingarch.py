@@ -15,6 +15,7 @@ import math
 from pathlib import Path
 import re
 import subprocess
+import sys
 from urllib.parse import quote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -157,7 +158,7 @@ def run_worker(request, python, timeout):
     worker = Path(__file__).with_name("huggingarch_worker.py")
     try:
         proc = subprocess.run([str(python), str(worker)], input=json.dumps(request),
-                              cwd=request["huggingarch_root"], text=True, capture_output=True, timeout=timeout)
+                              cwd=request.get("huggingarch_root"), text=True, capture_output=True, timeout=timeout)
         if proc.returncode:
             return {"status": "error", "error": f"Worker exited {proc.returncode}: {proc.stderr[-2000:]}"}
         result = json.loads(proc.stdout)
@@ -173,8 +174,8 @@ def run_worker(request, python, timeout):
 def run_bundle(args):
     bundle = args.bundle.resolve()
     manifest = load_bundle(bundle)
-    upstream = args.huggingarch_root.resolve()
-    if not (upstream / "backend/custom_model.py").is_file():
+    upstream = args.huggingarch_root.resolve() if args.huggingarch_root else None
+    if upstream and not (upstream / "backend/custom_model.py").is_file():
         raise ValueError("--huggingarch-root must be a HuggingArch checkout")
     python = args.huggingarch_python.absolute()  # Preserve venv symlinks.
     if not python.is_file():
@@ -188,11 +189,13 @@ def run_bundle(args):
     failures = 0
     for model in models:
         request = dict(action=args.command, name=model["name"], directory=str(bundle / model["directory"]),
-                       huggingarch_root=str(upstream), batch_size=args.batch_size,
+                       huggingarch_root=str(upstream) if upstream else None, batch_size=args.batch_size,
                        seq_len=args.seq_len, dtype=args.dtype)
         result = run_worker(request, python, args.timeout)
+        if upstream:
+            result["huggingarch_revision"] = git_revision(upstream)
         result.update(model_id=model["model_id"], content_sha256=model["content_sha256"],
-                      huggingarch_revision=git_revision(upstream), checkpoint_validated=False)
+                      checkpoint_validated=False)
         if args.command == "analyze":
             result["settings"] = {key: request[key] for key in ("batch_size", "seq_len", "dtype")}
         write_json(bundle / model["directory"] / (args.command + ".json"), result)
@@ -301,8 +304,9 @@ def main(argv=None):
         command = commands.add_parser(name)
         command.add_argument("--bundle", type=Path, required=True)
         command.add_argument("--methods", nargs="+")
-        command.add_argument("--huggingarch-root", type=Path, required=True)
-        command.add_argument("--huggingarch-python", type=Path, required=True)
+        command.add_argument("--huggingarch-root", type=Path, help="optional source checkout override")
+        command.add_argument("--huggingarch-python", type=Path, default=Path(sys.executable),
+                             help="optional interpreter override; defaults to this Python's installed dependency")
         command.add_argument("--base-url")
         command.add_argument("--batch-size", type=positive_int, default=1)
         command.add_argument("--seq-len", type=positive_int, default=2048)

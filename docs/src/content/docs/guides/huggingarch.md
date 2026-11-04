@@ -13,6 +13,23 @@ training cost evidence alongside available HuggingArch parameter counts, prefill
 layer groups. Full analysis JSON is retained. No service, GPU, checkpoint, dataset or model execution is
 needed to export or browse the report.
 
+## What the dependency takes as input
+
+HuggingArch's Python entry point is `backend.analyzer.analyze_model(model_id, batch_size, seq_len, dtype)`.
+For a local model, `model_id` resolves to the following registered inputs:
+
+| Input | Purpose | Required? |
+| --- | --- | --- |
+| `config.json` | Model dimensions, architecture-specific options and explicit weight dtype | Yes |
+| Forward source and helpers | Ground truth for authoring/reviewing the architecture spec | For custom registration/spec generation |
+| `spec.yaml` and any custom components | The declarative graph the analysis engine evaluates | Yes, for analysis |
+| `batch_size`, `seq_len`, `dtype` | Requested analysis conditions | Defaults supplied; configurable |
+| Safetensors tensor headers | Reconcile shapes, dtypes and stored bytes against a real checkpoint | Optional for estimates; required for checkpoint validation |
+
+The analyzer does not accept an arbitrary `torch.nn.Module` or infer its exact computation from config alone.
+Source registration prepares the material for a spec; it is not a replacement for that spec. Once a spec exists,
+the installed Python dependency computes the analysis without a web server or a spec-generation agent.
+
 ## 1. Export configurations and source
 
 Run from the NextTransformer checkout:
@@ -53,21 +70,29 @@ Use `export --weight-dtype float32` (or `float16`) to change it. This is an expl
 unquantized weight storage, not evidence of the training checkpoint's actual tensor dtypes.
 The assumption is recorded in the report and participates in the model identity.
 
-## 2. Register with an isolated HuggingArch installation
+## 2. Register using the declared dependency
 
-HuggingArch currently requires Python 3.13+. Keep it in a separate environment from the training stack.
-The adapter was checked against commit `facbbbc96856e558b9084a94a5070b2e2c86cf0b`; its CLI/API may change.
+The tool declares HuggingArch as a Git-pinned Python dependency in `tools/huggingarch/pyproject.toml`,
+with transitive versions in its `uv.lock`. No manual clone, source path or interpreter path is needed:
 
 ```bash
-git clone https://github.com/shenh10/HuggingArch.git ../HuggingArch
-git -C ../HuggingArch checkout facbbbc96856e558b9084a94a5070b2e2c86cf0b
-uv sync --project ../HuggingArch --python 3.13
-
-python -m nexttransformer.integrations.huggingarch register \
-  --bundle .agent-work/huggingarch \
-  --huggingarch-root ../HuggingArch \
-  --huggingarch-python ../HuggingArch/.venv/bin/python
+uv run --project tools/huggingarch --frozen \
+  python -m nexttransformer.integrations.huggingarch register \
+  --bundle .agent-work/huggingarch
 ```
+
+Run this from the NextTransformer repository root. `uv` installs the dependency and selects Python 3.13.
+The normal adapter imports the installed package, and records its version and Git revision in the result.
+The pinned upstream revision is `facbbbc96856e558b9084a94a5070b2e2c86cf0b`.
+
+The tool project is separate because the dependency constraints conflict: NextTransformer pins
+`huggingface-hub==1.26.0`, while HuggingArch's `transformers>=5.20.0` requires `huggingface-hub>=1.31.0`.
+HuggingArch also requires Python 3.13+, while training supports Python 3.10–3.13. The tool uses CPU PyTorch;
+installing it does not upgrade the training environment or download CUDA runtimes.
+
+If HuggingArch is already installed in a compatible Python environment, simply run
+`python -m nexttransformer.integrations.huggingarch register --bundle .agent-work/huggingarch` there.
+For upstream development only, `--huggingarch-root` and `--huggingarch-python` remain optional overrides.
 
 Registration calls HuggingArch's `backend.custom_model.register`. Each model has a content-addressed name
 such as `custom:nextt-gdn-<hash>` and is stored in HuggingArch's local custom-model cache. Repeating registration
@@ -93,10 +118,9 @@ or invalid specs remain visibly incomplete instead of being replaced by a dense 
 ## 4. Analyze and browse
 
 ```bash
-python -m nexttransformer.integrations.huggingarch analyze \
+uv run --project tools/huggingarch --frozen \
+  python -m nexttransformer.integrations.huggingarch analyze \
   --bundle .agent-work/huggingarch \
-  --huggingarch-root ../HuggingArch \
-  --huggingarch-python ../HuggingArch/.venv/bin/python \
   --batch-size 1 --seq-len 2048 --dtype bfloat16
 ```
 

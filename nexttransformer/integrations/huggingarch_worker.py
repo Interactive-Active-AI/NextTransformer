@@ -1,10 +1,11 @@
-"""Subprocess adapter, executed with HuggingArch's Python, not the training environment.
+"""Subprocess adapter importing the installed HuggingArch dependency.
 
 Keep imports of NextTransformer out of this file. The JSON protocol is private to
 integrations.huggingarch; upstream diagnostics go to stderr.
 """
 import contextlib
 import hashlib
+from importlib import metadata
 import json
 from pathlib import Path
 import sys
@@ -56,11 +57,24 @@ def perform(request):
 
 def main():
     request = json.loads(sys.stdin.read())
-    # The checkout is explicit; never import an unrelated installed `backend`.
-    sys.path.insert(0, request["huggingarch_root"])
+    if not request.get("huggingarch_root") and sys.version_info < (3, 13):
+        print(json.dumps({"status": "error", "error": "HuggingArch requires Python 3.13+. Run with uv run --project tools/huggingarch python -m nexttransformer.integrations.huggingarch"}))
+        return
+    # Normal operation imports the dependency. A checkout is only a developer override.
+    if request.get("huggingarch_root"):
+        sys.path.insert(0, request["huggingarch_root"])
     try:
+        package = None
+        if not request.get("huggingarch_root"):
+            package = metadata.distribution("huggingarch")
         with contextlib.redirect_stdout(sys.stderr):
             result = perform(request)
+        if package:
+            result["huggingarch_version"] = package.version
+            direct = json.loads(package.read_text("direct_url.json") or "{}")
+            result["huggingarch_revision"] = direct.get("vcs_info", {}).get("commit_id")
+    except metadata.PackageNotFoundError:
+        result = {"status": "error", "error": "HuggingArch is not installed. Run with uv run --project tools/huggingarch python -m nexttransformer.integrations.huggingarch"}
     except Exception as exc:
         result = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
     print(json.dumps(result, default=str, allow_nan=False))
