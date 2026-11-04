@@ -64,6 +64,19 @@ model:
     assert summary["weight_bytes"] == 512  # explicit BF16 storage assumption
     assert summary["total_flops"] == 1024  # 4 positions x 2 x 8 x 16
     assert "resolved" not in result["analysis"]
+    # Reusing a serving spec must not need an agent binary or provider credentials.
+    from backend import custom_model
+    original_generate = custom_model.run_spec_generation
+    def unexpected_generation(*args, **kwargs):
+        raise AssertionError("Existing spec must not start an agent")
+    custom_model.run_spec_generation = unexpected_generation
+    try:
+        ready = worker.perform(dict(request, action="generate"))
+        assert ready["status"] == "spec_ready" and ready["reused"]
+        assert (directory / "spec.yaml").read_text() == spec_path.read_text()
+        assert ready["cached_spec_sha256"] == result["cached_spec_sha256"]
+    finally:
+        custom_model.run_spec_generation = original_generate
     request["batch_size"] = 2
     larger = worker.perform(request)
     assert larger["analysis"]["summary"]["total_flops"] == 2048
@@ -76,7 +89,7 @@ model:
         assert "differs from the bundle" in str(exc)
     else:
         raise AssertionError("Changed source must not reuse an existing spec")
-    print("PASS: real HuggingArch registration, reuse, missing spec, analysis, units and stale-source refusal")
+    print("PASS: real HuggingArch registration, spec reuse without an agent, missing spec, analysis, units and stale-source refusal")
 
 
 def test_real_huggingarch(tmp_path):

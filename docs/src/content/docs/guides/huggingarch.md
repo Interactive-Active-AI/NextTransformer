@@ -58,6 +58,8 @@ index.html / report.json          # per-model report
 <method>/nexttransformer-config.json
 <method>/forward.py               # source text with repository-relative filename banners
 <method>/register.json            # written by register
+<method>/generate.json / generate.log # upstream generation outcome and diagnostics
+<method>/spec.yaml                # copy of the published spec, written by generate
 <method>/analyze.json             # written by analyze, including failures and analysis inputs
 ```
 
@@ -97,21 +99,47 @@ For upstream development only, `--huggingarch-root` and `--huggingarch-python` r
 Registration calls HuggingArch's `backend.custom_model.register`. Each model has a content-addressed name
 such as `custom:nextt-gdn-<hash>` and is stored in HuggingArch's local custom-model cache. Repeating registration
 reuses identical material and preserves an existing spec. Changed configs or source produce new identities;
-edited bundles and conflicting cached files are refused. No agent is launched by the bridge.
+edited bundles and conflicting cached files are refused. Registration does not launch an agent.
 
-## 3. Generate and review the specs
+## 3. Generate each spec once using the upstream agent
 
-Use your own HuggingArch instance; the public hosted instance cannot read these local files.
-Copy the model ID from the report into its Inspector. For a registered model without a spec, HuggingArch
-offers its normal spec-generation workflow. Configure its agent as described in the upstream documentation,
-or use the generated `prompt.md` to author `spec.yaml` manually in the custom-model cache.
+```bash
+uv run --project tools/huggingarch --frozen \
+  python -m nexttransformer.integrations.huggingarch generate \
+  --bundle .agent-work/huggingarch --agent-cli codex
+```
+
+`generate` registers missing models and calls HuggingArch's `backend.custom_model.run_spec_generation`.
+The upstream agent reads the configuration and forward source, authors the spec, and runs its validation
+and publication pipeline. The bridge contains no per-architecture conversion rules and never constructs
+a PyTorch model. It accepts every exported method; support for its operations remains an upstream concern.
+
+An existing cached spec is reused without starting an agent or rewriting it. Each model identity is fixed
+by its configuration and source hash, so changing either produces a new identity and a separate spec.
+Batch size and analysis context do not change the spec identity. `generate.json` records whether generation
+reused a spec and copies its SHA-256; `validation: existing_spec` does not claim a fresh validation run.
+The serving spec and any components remain in HuggingArch's cache; the bundle's YAML copy is for inspection.
+
+Install and authenticate your chosen upstream agent (`codex`, `claude` or `kimi`) before first generation.
+Omitting `--agent-cli` uses HuggingArch's configured agent. Generation can incur the agent provider's usage
+charges; subsequent analysis uses the cached spec without an LLM call. `--timeout` bounds generation to
+600 seconds per model by default. Generation logs are kept in `<method>/generate.log`, including agent or
+validation failures. Use `--methods mha_no_ve` to generate just one model before processing the full bundle.
+
+An upstream generation failure stays `generation_failed`; a draft YAML is not promoted by this bridge.
+In particular, these exports have no checkpoint headers: upstream's checkpoint validation gates may block
+publication even if a draft can be evaluated. We do not bypass those gates or claim checkpoint validation.
+An already reviewed spec registered through HuggingArch remains usable for weights-less estimates.
+
+You can alternatively use your own HuggingArch Inspector's generation workflow. The public hosted instance
+cannot read the local files. Both paths use the same upstream custom-model identity and serving cache.
 
 Review the spec against the exported source, particularly value embeddings, ReLU-squared MLPs, QK norm,
 residual scalars/backout, sparse selection, shared recurrent weights and input-dependent halting. A familiar
 method name does not establish equivalence with the paper's original model. Dynamic routes need explicit
 assumptions in the spec; this bridge does not infer a measured average depth.
 
-This PR provides the registration/reporting bridge; **it does not ship validated specs for all methods**.
+This integration delegates generation and validation; **it does not ship validated specs for all methods**.
 Some methods may require new HuggingArch components before their full graph can be represented. Missing
 or invalid specs remain visibly incomplete instead of being replaced by a dense approximation.
 
@@ -125,7 +153,8 @@ uv run --project tools/huggingarch --frozen \
 ```
 
 Open the report again. Each model runs in a separate subprocess with a per-model timeout (`--timeout`,
-default 120 seconds). One failing model does not prevent the other results or the report from being written.
+default 120 seconds for analysis). An analysis never starts an agent; it only evaluates the existing spec.
+One failing model does not prevent the other results or the report from being written.
 Use `--methods` to retry a subset. The command exits nonzero if any selected model remains incomplete.
 Rerunning analysis replaces that model's prior result, including replacing old success with a new failure.
 
@@ -133,13 +162,15 @@ Rerunning analysis replaces that model's prior result, including replacing old s
 | --- | --- |
 | `exported` | Local bundle exists; register it. |
 | `registered` | Config and source are available to HuggingArch; generate/review the spec. |
+| `spec_ready` | An existing spec was reused, or upstream generation completed and published a spec. |
+| `generation_failed` | Upstream agent/validation failed or published no spec; inspect `generate.log`. |
 | `registration_warning` | Registration could not prepare its prompt; inspect the recorded error and upstream dependencies. |
 | `not_registered` | Register in the same HuggingArch environment/user account. |
 | `needs_spec` | Generate and review the missing spec, then rerun analysis. |
 | `analyzed` | A spec-derived result is available; this does **not** mean checkpoint validation passed. |
 | `error` | Timeout, invalid spec, incompatible upstream API or another failure; inspect the error and retry. |
 
-To add Inspector links, pass `--base-url "$HUGGINGARCH_URL"` to register, analyze or report, where
+To add Inspector links, pass `--base-url "$HUGGINGARCH_URL"` to register, generate, analyze or report, where
 `HUGGINGARCH_URL` is the URL of your existing local instance. The bridge does not start or expose a server.
 The HTML and its relative file links also work without any server or external JavaScript:
 
@@ -147,6 +178,23 @@ The HTML and its relative file links also work without any server or external Ja
 python -m nexttransformer.integrations.huggingarch report \
   --bundle .agent-work/huggingarch --base-url "$HUGGINGARCH_URL"
 ```
+
+For a bounded smoke with the repository's small debug configuration:
+
+```bash
+python -m nexttransformer.integrations.huggingarch export \
+  --methods mha_no_ve --smoke --output .agent-work/huggingarch-smoke
+uv run --project tools/huggingarch --frozen \
+  python -m nexttransformer.integrations.huggingarch generate \
+  --bundle .agent-work/huggingarch-smoke --agent-cli codex --timeout 180
+uv run --project tools/huggingarch --frozen \
+  python -m nexttransformer.integrations.huggingarch analyze \
+  --bundle .agent-work/huggingarch-smoke
+```
+
+`--smoke` requires explicit methods, gives the debug configuration its own identity, and attaches no formal
+training cost evidence. If generation fails, analysis remains incomplete. Without `--seq-len`, analysis
+uses each exported configuration's context length (12 in this smoke), not a hard-coded 2,048.
 
 ## Reading the numbers
 

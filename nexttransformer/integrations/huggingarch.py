@@ -12,8 +12,10 @@ import hashlib
 from html import escape
 import json
 import math
+import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import sys
 from urllib.parse import quote, urlsplit
@@ -68,7 +70,9 @@ def source_bundle(root, method):
     return sources, "\n\n".join(f"# Source: {name}\n{text}" for name, text in sources.items())
 
 
-def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16"):
+def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16", smoke=False):
+    if smoke and not methods:
+        raise ValueError("Smoke export requires an explicit --methods selection")
     available = configurations(root)
     selected = sorted(available) if not methods else list(dict.fromkeys(methods))
     unknown = set(selected) - available.keys()
@@ -83,6 +87,8 @@ def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16"):
         path = available[method]
         raw = read_json(path)
         native = method.startswith("native-")
+        if smoke and native:
+            raise ValueError("Smoke export currently supports registered methods, not historical native configurations")
         if native:
             from nexttransformer.models.native.config import NativeModelConfig
             config = NativeModelConfig(**raw["model"])
@@ -91,6 +97,12 @@ def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16"):
             from nexttransformer.protocol.spec import load_config
             config = load_config(path)
             model = config.serialized()
+        if smoke:
+            from nexttransformer.models.config import debug_config
+            config = debug_config(method)
+            model = config.serialized()
+            raw = dict(model=model, model_hash=config.fingerprint, profile="smoke",
+                       parent_config=path.relative_to(root).as_posix(), parent_model_hash=raw.get("model_hash"))
         sources, forward = source_bundle(root, method)
         # model_type must never accidentally select a stock Llama/Qwen spec.
         exported = dict(model, model_type="nexttransformer_" + method.replace("-", "_"),
@@ -104,7 +116,7 @@ def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16"):
         proof = read_json(path.parent / proof_path) if proof_path else {}
         if proof and proof.get("model_hash") != raw.get("model_hash"):
             raise ValueError(f"Cost proof model hash mismatch: {method}")
-        entry = dict(method=method, family="native" if native else path.parent.name,
+        entry = dict(method=method, family="native" if native else path.parent.name, profile="smoke" if smoke else "configured",
                      name=name, model_id="custom:" + name, directory=method,
                      config_path=path.relative_to(root).as_posix(),
                      content_sha256=content_hash, model_hash=raw.get("model_hash"),
@@ -157,11 +169,23 @@ def load_bundle(bundle):
 def run_worker(request, python, timeout):
     worker = Path(__file__).with_name("huggingarch_worker.py")
     try:
-        proc = subprocess.run([str(python), str(worker)], input=json.dumps(request),
-                              cwd=request.get("huggingarch_root"), text=True, capture_output=True, timeout=timeout)
+        with subprocess.Popen([str(python), str(worker)], stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              cwd=request.get("huggingarch_root"), text=True,
+                              start_new_session=True) as proc:
+            try:
+                stdout, stderr = proc.communicate(json.dumps(request), timeout=timeout)
+            except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                # Generation spawns an agent and validator; stop the whole job.
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                proc.communicate()
+                raise
         if proc.returncode:
-            return {"status": "error", "error": f"Worker exited {proc.returncode}: {proc.stderr[-2000:]}"}
-        result = json.loads(proc.stdout)
+            return {"status": "error", "error": f"Worker exited {proc.returncode}: {stderr[-2000:]}"}
+        result = json.loads(stdout)
         if not isinstance(result, dict) or "status" not in result:
             raise ValueError("Missing worker status")
         return result
@@ -190,7 +214,8 @@ def run_bundle(args):
     for model in models:
         request = dict(action=args.command, name=model["name"], directory=str(bundle / model["directory"]),
                        huggingarch_root=str(upstream) if upstream else None, batch_size=args.batch_size,
-                       seq_len=args.seq_len, dtype=args.dtype)
+                       seq_len=args.seq_len or read_json(bundle / model["directory"] / "config.json")["max_position_embeddings"],
+                       dtype=args.dtype, agent_cli=getattr(args, "agent_cli", None))
         result = run_worker(request, python, args.timeout)
         if upstream:
             result["huggingarch_revision"] = git_revision(upstream)
@@ -199,8 +224,12 @@ def run_bundle(args):
         if args.command == "analyze":
             result["settings"] = {key: request[key] for key in ("batch_size", "seq_len", "dtype")}
         write_json(bundle / model["directory"] / (args.command + ".json"), result)
+        if args.command == "generate" and result["status"] == "spec_ready":
+            analysis_path = bundle / model["directory"] / "analyze.json"
+            if analysis_path.exists() and read_json(analysis_path)["status"] != "analyzed":
+                analysis_path.unlink()  # Clear an obsolete needs_spec/error result.
         print(f"{model['method']}: {result['status']}")
-        failures += result["status"] not in ("registered", "analyzed")
+        failures += result["status"] not in ("registered", "analyzed", "spec_ready")
     render_report(bundle, args.base_url)
     return 1 if failures else 0
 
@@ -227,8 +256,8 @@ def render_report(bundle, base_url=None):
         directory = bundle / model["directory"]
         analysis_path = directory / "analyze.json"
         registration_path = directory / "register.json"
-        result = read_json(analysis_path) if analysis_path.exists() else (
-            read_json(registration_path) if registration_path.exists() else {"status": "exported"})
+        result_path = next((p for p in (analysis_path, directory / "generate.json", registration_path) if p.exists()), None)
+        result = read_json(result_path) if result_path else {"status": "exported"}
         if result.get("content_sha256", model["content_sha256"]) != model["content_sha256"]:
             raise ValueError("Analysis provenance does not match bundle")
         analysis = result.get("analysis", {}) if result["status"] == "analyzed" else {}
@@ -255,9 +284,12 @@ def render_report(bundle, base_url=None):
                        f'{escape(str(result.get("error", "")))}</p><p>Checkpoint validation: unavailable (weights-less export).</p>'
                        f'<p>Assumed unquantized weight dtype: {escape(model["weight_dtype_assumption"])}.</p>'
                        f'<p>Analysis inputs: {escape(json.dumps(settings))}</p>'
-                       f'<p>Training evidence: {escape(str(model["cost_record"] or "Not supplied for historical native configs"))}</p>'
+                       f'<p>Configuration profile: {escape(model.get("profile", "configured"))}</p>'
+                       f'<p>Training evidence: {escape(str(model["cost_record"] or "Not supplied for this configuration"))}</p>'
                        f'<p><a href="{method}/config.json">Config</a> · <a href="{method}/forward.py">Forward source</a> · '
                        f'<a href="{method}/nexttransformer-config.json">Original configuration</a>'
+                       + (f' · <a href="{method}/spec.yaml">Generated architecture spec</a>' if (directory / "spec.yaml").exists() else "")
+                       + (f' · <a href="{method}/generate.log">Generation log</a>' if (directory / "generate.log").exists() else "")
                        + (f' · <a href="{method}/analyze.json">Full analysis JSON</a>' if analysis_path.exists() else "")
                        + f'</p>{breakdown}</section>')
         records.append(dict(model=model, result=result))
@@ -295,12 +327,13 @@ def main(argv=None):
     export = commands.add_parser("export", help="export all registered and historical native configurations")
     export.add_argument("--output", type=Path, required=True)
     export.add_argument("--methods", nargs="+")
+    export.add_argument("--smoke", action="store_true", help="export explicitly selected debug-sized models without formal cost evidence")
     export.add_argument("--weight-dtype", choices=("bfloat16", "float16", "float32"), default="bfloat16",
                         help="explicit unquantized weight precision assumption (no checkpoint is exported)")
     report = commands.add_parser("report", help="render local results without HuggingArch or a server")
     report.add_argument("--bundle", type=Path, required=True)
     report.add_argument("--base-url", help="URL of your own HuggingArch instance")
-    for name in ("register", "analyze"):
+    for name in ("register", "generate", "analyze"):
         command = commands.add_parser(name)
         command.add_argument("--bundle", type=Path, required=True)
         command.add_argument("--methods", nargs="+")
@@ -309,13 +342,17 @@ def main(argv=None):
                              help="optional interpreter override; defaults to this Python's installed dependency")
         command.add_argument("--base-url")
         command.add_argument("--batch-size", type=positive_int, default=1)
-        command.add_argument("--seq-len", type=positive_int, default=2048)
+        command.add_argument("--seq-len", type=positive_int, help="defaults to each exported model's context length")
         command.add_argument("--dtype", choices=("bfloat16", "float16", "float32"), default="bfloat16")
-        command.add_argument("--timeout", type=positive_int, default=120, help="per-model timeout in seconds")
+        command.add_argument("--timeout", type=positive_int, default=600 if name == "generate" else 120,
+                             help="per-model timeout in seconds (generate: 600; others: 120)")
+        if name == "generate":
+            command.add_argument("--agent-cli", choices=("codex", "claude", "kimi"),
+                                 help="upstream agent; defaults to HuggingArch's configured agent")
     args = parser.parse_args(argv)
     try:
         if args.command == "export":
-            manifest = export_bundle(args.output.resolve(), args.methods, weight_dtype=args.weight_dtype)
+            manifest = export_bundle(args.output.resolve(), args.methods, weight_dtype=args.weight_dtype, smoke=args.smoke)
             print(f"Exported {len(manifest['models'])} models: {args.output / 'index.html'}")
         elif args.command == "report":
             render_report(args.bundle.resolve(), args.base_url)

@@ -102,11 +102,89 @@ def test_unsafe_inspector_urls_are_rejected(url):
 
 
 def test_timeout_is_a_model_error(monkeypatch):
-    def timeout(*args, **kwargs):
-        raise subprocess.TimeoutExpired(args[0], 1)
-    monkeypatch.setattr(subprocess, "run", timeout)
+    killed = []
+    class Process:
+        pid = 42
+        calls = 0
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            pass
+        def communicate(self, *args, **kwargs):
+            self.calls += 1
+            if self.calls == 1:
+                raise subprocess.TimeoutExpired("worker", 1)
+            return "", ""
+    monkeypatch.setattr(subprocess, "Popen", lambda *a, **kw: Process())
+    monkeypatch.setattr(bridge.os, "killpg", lambda pid, sig: killed.append(pid))
     result = bridge.run_worker({"huggingarch_root": "."}, Path(sys.executable), 1)
     assert result["status"] == "error" and "exceeded" in result["error"]
+    assert killed == [42]
+
+
+def test_smoke_export_has_no_formal_training_evidence(tmp_path):
+    with pytest.raises(ValueError, match="explicit"):
+        bridge.export_bundle(tmp_path / "all", smoke=True)
+    manifest = bridge.export_bundle(tmp_path / "small", ["mha_no_ve"], smoke=True)
+    model = manifest["models"][0]
+    assert model["profile"] == "smoke"
+    assert model["parameters"] is None and model["training_flops_per_token"] is None
+    config = bridge.read_json(tmp_path / "small/mha_no_ve/config.json")
+    assert config["hidden_size"] == 48 and config["max_position_embeddings"] == 12
+
+
+@pytest.mark.parametrize("exit_code,publish", [(0, True), (1, False), (0, False)])
+def test_generate_delegates_once_and_preserves_failed_status(tmp_path, monkeypatch, exit_code, publish):
+    from nexttransformer.integrations import huggingarch_worker as worker
+    from types import ModuleType
+
+    directory = tmp_path / "bundle"
+    directory.mkdir()
+    bridge.write_json(directory / "config.json", {"model_type": "test"})
+    (directory / "forward.py").write_text("# architecture")
+    cache = tmp_path / "cache"
+    calls = []
+    def load(name):
+        path = cache / "spec.yaml"
+        return {"config": {"model_type": "test"},
+                "forward_source": "# ======== forward.py ========\n# architecture",
+                "spec_yaml": path.read_text() if path.exists() else ""}
+    def register(**kwargs):
+        cache.mkdir()
+        (cache / "prompt.md").write_text("upstream prompt")
+        return {"status": {}}
+    def generate(name, agent_cli=None):
+        calls.append((name, agent_cli))
+        print("upstream generation and validation")
+        if publish:
+            (cache / "spec.yaml").write_text("# published upstream spec")
+        return exit_code
+    monkeypatch.setitem(sys.modules, "backend", ModuleType("backend"))
+    monkeypatch.setitem(sys.modules, "backend.custom_id", SimpleNamespace(model_path=lambda name: cache))
+    monkeypatch.setitem(sys.modules, "backend.custom_model", SimpleNamespace(
+        load=load, register=register, run_spec_generation=generate))
+    request = dict(action="generate", name="test", directory=str(directory), agent_cli="codex")
+    result = worker.perform(request)
+    assert calls == [("test", "codex")]
+    assert "validation" in (directory / "generate.log").read_text()
+    if exit_code or not publish:
+        assert result["status"] == "generation_failed"
+        assert not (directory / "spec.yaml").exists()
+    else:
+        assert result["status"] == "spec_ready" and not result["reused"]
+        assert result["validation"] == "upstream_generation_gate"
+        again = worker.perform(request)
+        assert again["reused"] and len(calls) == 1
+        assert again["cached_spec_sha256"] == result["cached_spec_sha256"]
+        assert (directory / "spec.yaml").read_text() == "# published upstream spec"
+
+
+def test_ready_spec_replaces_obsolete_missing_spec_in_report(bundle, monkeypatch):
+    bridge.write_json(bundle / "dense_full/analyze.json", {"status": "needs_spec"})
+    monkeypatch.setattr(bridge, "run_worker", lambda *args: {"status": "spec_ready", "reused": False})
+    assert bridge.main(["generate", "--bundle", str(bundle), "--methods", "dense_full"]) == 0
+    report = bridge.read_json(bundle / "report.json")
+    assert report["models"][0]["result"]["status"] == "spec_ready"
 
 
 def test_failed_model_does_not_hide_other_results(bundle, tmp_path, monkeypatch):

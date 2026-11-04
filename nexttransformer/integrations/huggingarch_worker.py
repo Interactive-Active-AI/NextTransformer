@@ -26,6 +26,29 @@ def perform(request):
         expected = "# ======== forward.py ========\n" + forward
         if cached["config"] != config or cached["forward_source"] != expected:
             raise ValueError("Existing custom model differs from the bundle; refusing to reuse or overwrite it")
+    if request["action"] == "generate":
+        registered = perform(dict(request, action="register"))
+        if registered["status"] != "registered":
+            return registered
+        cached = load(name)
+        reused = bool(cached["spec_yaml"])
+        if not reused:
+            from backend.custom_model import run_spec_generation
+
+            # Keep upstream's agent, validation, locking and publication together.
+            # A failed run's overlay is a draft, never a serving spec.
+            with (directory / "generate.log").open("w", encoding="utf-8", buffering=1) as log:
+                with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
+                    code = run_spec_generation(name, agent_cli=request.get("agent_cli"))
+            if code != 0:
+                return {"status": "generation_failed", "error": "Upstream generation/validation failed; see generate.log"}
+            cached = load(name)
+        if not cached["spec_yaml"]:
+            return {"status": "generation_failed", "error": "Upstream did not publish a spec; see generate.log"}
+        (directory / "spec.yaml").write_text(cached["spec_yaml"], encoding="utf-8")
+        return {"status": "spec_ready", "reused": reused,
+                "cached_spec_sha256": hashlib.sha256(cached["spec_yaml"].encode()).hexdigest(),
+                "validation": "existing_spec" if reused else "upstream_generation_gate"}
     if request["action"] == "register":
         if cached is not None:
             if not cached["spec_yaml"] and not (model_path(name) / "prompt.md").is_file():
