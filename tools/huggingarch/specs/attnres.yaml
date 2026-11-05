@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_attnres
   model_id:
-  - custom:nextt-attnres-b1f28145719913e3
+  - custom:nextt-attnres
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

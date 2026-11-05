@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_qsa
   model_id:
-  - custom:nextt-qsa-db05c9e60bdbde5d
+  - custom:nextt-qsa
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

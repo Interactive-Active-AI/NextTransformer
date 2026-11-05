@@ -1,10 +1,10 @@
-# Fixed spec for custom:nextt-deeploop-61acdb3570b2de27
+# Fixed spec for custom:nextt-deeploop
 # Scope: fixed exported configuration, complete causal full-sequence inference
 # Checkpoint unavailable; do not mark checkpoint_validated or valid true.
 # Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
 match:
   model_id:
-  - custom:nextt-deeploop-61acdb3570b2de27
+  - custom:nextt-deeploop
   model_type:
   - nexttransformer_deeploop
 dims:

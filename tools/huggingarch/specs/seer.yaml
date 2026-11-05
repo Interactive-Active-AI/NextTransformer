@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_seer
   model_id:
-  - custom:nextt-seer-2d8f48de5b28f93d
+  - custom:nextt-seer
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

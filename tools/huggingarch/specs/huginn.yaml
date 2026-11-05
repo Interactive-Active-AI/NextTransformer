@@ -1,10 +1,10 @@
-# Fixed spec for custom:nextt-huginn-1aa2c952eaebb5db
+# Fixed spec for custom:nextt-huginn
 # Scope: evaluation only: eval_loops=3, row_offset=0, routing_seed=1729; all prelude/core/coda work retained
 # Checkpoint unavailable; do not mark checkpoint_validated or valid true.
 # Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
 match:
   model_id:
-  - custom:nextt-huginn-1aa2c952eaebb5db
+  - custom:nextt-huginn
   model_type:
   - nexttransformer_huginn
 dims:

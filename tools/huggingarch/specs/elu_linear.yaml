@@ -1,4 +1,4 @@
-# Fixed architecture for custom:nextt-elu_linear-43d20a4af8823656; content_sha256 43d20a4af8823656f74ab164ad94ddffd13cfb77486bbfafab5a9b9b49f936c4
+# Fixed architecture for custom:nextt-elu_linear
 # Source: exported forward.py LinearMixer.forward, recurrent_attention, ReferenceLM._embed_reference/_block/_readout; backbone.Block.forward.
 # Cache declarations estimate architectural streaming states; source rejects kv_cache and only supports full-sequence execution.
 # Custom scan FLOPs use direct recurrent arithmetic; registered chunk64 implementation and GPU fusion differ in operation schedule.
@@ -6,7 +6,7 @@
 # scale_const values, norm epsilons and RoPE pairing/theta are source-derived display formulas: upstream has no numeric attributes for them.
 match:
   model_id:
-  - custom:nextt-elu_linear-43d20a4af8823656
+  - custom:nextt-elu_linear
   model_type:
   - nexttransformer_elu_linear
 dims:

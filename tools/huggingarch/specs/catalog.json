@@ -5,24 +5,8 @@
   "models": [
     {
       "method": "attnres",
-      "model_id": "custom:nextt-attnres-b1f28145719913e3",
-      "content_sha256": "b1f28145719913e393fe4f3fe70440a838b05a57a116586ff840f4442b0bfbc0",
+      "model_id": "custom:nextt-attnres",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-attnres-b1f28145719913e3/prompt.md",
-        "sha256": "21647e1638e201f2b2ba103c64ce8c62f54f497dedb34ca7bc699475e04c5e01",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1355882760,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -35,7 +19,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "attnres.yaml",
-      "spec_sha256": "20ca13af51c1b44678317b33a6e6a0a55ba24d11e1a0aca906ecbc561f975c77",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -46,90 +29,62 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-attnres-b1f28145719913e3: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355882760,
-            "total_flops": 22511748715,
-            "weight_bytes": 2711765520,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355882760,
-            "total_flops": 45023497430,
-            "weight_bytes": 2711765520,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355882760,
-            "total_flops": 3178413179851,
-            "weight_bytes": 2711765520,
-            "num_layers": 1
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "attnres",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "attnres_groups": 8,
+        "model_type": "nexttransformer_attnres",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "deeploop",
-      "model_id": "custom:nextt-deeploop-61acdb3570b2de27",
-      "content_sha256": "61acdb3570b2de27fc3142d4b2911592c8ae1032e3dab43af0217fccf62f03b9",
+      "model_id": "custom:nextt-deeploop",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "deeploop",
-        "path": "custom_models/nextt-deeploop-61acdb3570b2de27/prompt.md",
-        "sha256": "6c05368dcd319ca4fc250eb1765d55e3e61d2eca4a968bec83f944a23b28af96",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "09d687225ce96f5db066778cc45e7699916f24c4289229b9f9252343033e0454",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 742392722,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -145,7 +100,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "deeploop.yaml",
-      "spec_sha256": "bb65cdfa44c83f83d70a5c0b0a47775f04204ac05222c4db20969f194bb8bb69",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -156,65 +110,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-deeploop-61acdb3570b2de27: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742392722,
-            "total_flops": 23397554459,
-            "weight_bytes": 1484785444,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742392722,
-            "total_flops": 46795108918,
-            "weight_bytes": 1484785444,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742392722,
-            "total_flops": 2955766350795,
-            "weight_bytes": 1484785444,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "deeploop",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 24,
+        "pre_layers": 0,
+        "core_layers": 12,
+        "post_layers": 0,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_deeploop",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 12,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "deltanet",
-      "model_id": "custom:nextt-deltanet-a8f5a83dad06ac90",
-      "content_sha256": "a8f5a83dad06ac9097ad6ee77c01aa7bbf407f947a98fde81c83a9f74a1931ad",
+      "model_id": "custom:nextt-deltanet",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-deltanet-a8f5a83dad06ac90/prompt.md",
-        "sha256": "372b545a9980f2cec336e3b8f4d0fcbdd6f22d74f2f8b4c018cb8958dd30304d",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1463690268,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -230,7 +180,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "deltanet.yaml",
-      "spec_sha256": "a0c22809a93a43ce83dcf05a93df1cd85eb46f3e568573661089e317c8249a3b",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -241,44 +190,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-deltanet-a8f5a83dad06ac90: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1463690268,
-            "total_flops": 24788557019,
-            "weight_bytes": 2927380536,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1463690268,
-            "total_flops": 49577114038,
-            "weight_bytes": 2927380536,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1463690268,
-            "total_flops": 3172935695307,
-            "weight_bytes": 2927380536,
-            "num_layers": 25
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -311,27 +224,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "deltanet",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_deltanet",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "deltanet_hybrid",
-      "model_id": "custom:nextt-deltanet_hybrid-5c44d8e8cc65c0e7",
-      "content_sha256": "5c44d8e8cc65c0e738b5ee168db281da969b55c333f5267bef9a4aa89b248617",
+      "model_id": "custom:nextt-deltanet_hybrid",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-deltanet_hybrid-5c44d8e8cc65c0e7/prompt.md",
-        "sha256": "841249269e712f5117a207a1ae1ca5e7e18a5025a77f2af7634c2dcbe87e4e1a",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1403810314,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -347,7 +292,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "deltanet_hybrid.yaml",
-      "spec_sha256": "0feab8fb2423b4caf0a63cad7bc96900b8d1a6fe73f0b956b07996bc902b9206",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -358,44 +302,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-deltanet_hybrid-5c44d8e8cc65c0e7: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1403810314,
-            "total_flops": 24426929627,
-            "weight_bytes": 2807620628,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1403810314,
-            "total_flops": 48853859254,
-            "weight_bytes": 2807620628,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1403810314,
-            "total_flops": 3152465558475,
-            "weight_bytes": 2807620628,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -428,52 +336,85 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "deltanet_hybrid",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6400,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "layer_mixers": [
+          "deltanet",
+          "attention",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "attention",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet",
+          "deltanet"
+        ],
+        "model_type": "nexttransformer_deltanet_hybrid",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 6400,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "dense",
-      "model_id": "custom:nextt-dense-c49ff1bb63037b08",
-      "content_sha256": "c49ff1bb63037b081f0060ecffedf8acacd00ab81f8a9583d81e1fdc8d0cf331",
+      "model_id": "custom:nextt-dense",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "dense",
-        "path": "custom_models/nextt-dense-c49ff1bb63037b08/prompt.md",
-        "sha256": "23ff2f8f7370e9acc3bca1f4d79fdc6b0065776cbef081fe6be992a1dcb3db97",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "52a6766bc896b907c09ba47d347f7e77b644b155bce700e51346e83d0f521547",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1384122122,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -487,7 +428,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "dense.yaml",
-      "spec_sha256": "9f4169ffb0097160a4559cd30ab6729be5f21969c432b7e2e36ad323656e28d5",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -498,90 +438,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-dense-c49ff1bb63037b08: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 23395784987,
-            "weight_bytes": 2768244244,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 46791569974,
-            "weight_bytes": 2768244244,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 2955539858379,
-            "weight_bytes": 2768244244,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "dense",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_dense",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "dense_full",
-      "model_id": "custom:nextt-dense_full-ccd2d36a710f7e84",
-      "content_sha256": "ccd2d36a710f7e8443d237a9f2ccb7647e0bea39fc5a3c31ccf9447dae9f096b",
+      "model_id": "custom:nextt-dense_full",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "dense_full",
-        "path": "custom_models/nextt-dense_full-ccd2d36a710f7e84/prompt.md",
-        "sha256": "874fe7192bd5df5286e5320f04ea3ff9b12f2a96fbb18eaa0d14bed664ab4e94",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "ddaf291f6637190b964d360c407190239504ca8973e7ceac01cca37e4095569f",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1355810568,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -595,7 +506,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "dense_full.yaml",
-      "spec_sha256": "518a3c741f1e0fa807ba54803140927560d1eea72ce2d074b95d0c5bed69d016",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -606,66 +516,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-dense_full-ccd2d36a710f7e84: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 22488258875,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 44976517750,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 3175406480331,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "dense_full",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_dense_full",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "dsa",
-      "model_id": "custom:nextt-dsa-c1e83311935857e1",
-      "content_sha256": "c1e83311935857e12c5a761315ccc467e2ba1a5b5f2ce019a48187052d692029",
+      "model_id": "custom:nextt-dsa",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-dsa-c1e83311935857e1/prompt.md",
-        "sha256": "9bc424bcc5d70be823acf6f9a48c1fd27d52ebc25403635440d9a469dd718b58",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1316236406,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -679,7 +584,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "dsa.yaml",
-      "spec_sha256": "85a43d813778bab00eedfdbb4bc556849fd9def08d9ef5648349b7a30b11d08a",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -690,65 +594,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-dsa-c1e83311935857e1: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1316236406,
-            "total_flops": 22853538907,
-            "weight_bytes": 2632472812,
-            "num_layers": 44
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1316236406,
-            "total_flops": 45707077814,
-            "weight_bytes": 2632472812,
-            "num_layers": 44
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1316236406,
-            "total_flops": 3087281241035,
-            "weight_bytes": 2632472812,
-            "num_layers": 44
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "dsa",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6400,
+        "layers": 22,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_dsa",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 22,
+        "intermediate_size": 6400,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "elu_linear",
-      "model_id": "custom:nextt-elu_linear-43d20a4af8823656",
-      "content_sha256": "43d20a4af8823656f74ab164ad94ddffd13cfb77486bbfafab5a9b9b49f936c4",
+      "model_id": "custom:nextt-elu_linear",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-elu_linear-43d20a4af8823656/prompt.md",
-        "sha256": "75f941636f7592223e2bf07c52ec314ba8177ab690d8810ab9b5b706c93768fb",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1462765468,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -764,7 +664,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "elu_linear.yaml",
-      "spec_sha256": "5b6e91320566b568516e64e09750a425a6f0313e1bd5a13ddf57b74a9d81d42b",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -775,44 +674,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-elu_linear-43d20a4af8823656: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 24596230619,
-            "weight_bytes": 2925530936,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 49192461238,
-            "weight_bytes": 2925530936,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 3148317916107,
-            "weight_bytes": 2925530936,
-            "num_layers": 25
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -845,27 +708,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "elu_linear",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_elu_linear",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "elu_norm",
-      "model_id": "custom:nextt-elu_norm-1772d4b99144ea92",
-      "content_sha256": "1772d4b99144ea92586b640d675820c701c358809c83a8a9dcf989af4bfe3722",
+      "model_id": "custom:nextt-elu_norm",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-elu_norm-1772d4b99144ea92/prompt.md",
-        "sha256": "c737de4864374b8c2ee5246d7eb4d33c0196286708fd1ba3b1b7da753d744c72",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1462768668,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -881,7 +776,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "elu_norm.yaml",
-      "spec_sha256": "64cd800171fba100bf8d7a4e2865d8f212c87d688554686256b6e48d337187ed",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -892,44 +786,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-elu_norm-1772d4b99144ea92: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 24595616219,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 49191232438,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 3148239272907,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -962,27 +820,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "elu_norm",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_elu_norm",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "elu_qknorm",
-      "model_id": "custom:nextt-elu_qknorm-f38262b1a612d8cf",
-      "content_sha256": "f38262b1a612d8cfe7c5bff89612732a283e2d3f52721b1e31b0f1a552789048",
+      "model_id": "custom:nextt-elu_qknorm",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-elu_qknorm-f38262b1a612d8cf/prompt.md",
-        "sha256": "0dae6520c68fe891ce49040fe34e0b21c337cf1556d436b4ab57cd53a4ffe4ff",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1462768668,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -998,7 +888,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "elu_qknorm.yaml",
-      "spec_sha256": "b4cc0112eedc2aff8010790e699a74242a42c28592a6bab160f60097ff1c4da7",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1009,44 +898,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-elu_qknorm-f38262b1a612d8cf: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 24599302619,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 49198605238,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462768668,
-            "total_flops": 3148711132107,
-            "weight_bytes": 2925537336,
-            "num_layers": 25
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1079,52 +932,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "elu_qknorm",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_elu_qknorm",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "fixed_recursive",
-      "model_id": "custom:nextt-fixed_recursive-78ced6d0708e9d8b",
-      "content_sha256": "78ced6d0708e9d8bd19a0c8322f8ec33adff8112a33b2e8f7a30d8e952d0fa53",
+      "model_id": "custom:nextt-fixed_recursive",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "fixed_recursive",
-        "path": "custom_models/nextt-fixed_recursive-78ced6d0708e9d8b/prompt.md",
-        "sha256": "10467b25de6162c391d0d804e5f32bfc92ce515bebec40b4941d09518195d55a",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "65c4b4dd661c5de8b6d27336fb1e5e6deb9848792094abd82fc637f06d03da24",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 927990968,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -1139,7 +999,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "fixed_recursive.yaml",
-      "spec_sha256": "2aa03e15fdc10259458a5e6c0486c5e71afdb2dec07b696a1e4f5fc3d47a5080",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1150,65 +1009,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-fixed_recursive-78ced6d0708e9d8b: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 927990968,
-            "total_flops": 23395784987,
-            "weight_bytes": 1855981936,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 927990968,
-            "total_flops": 46791569974,
-            "weight_bytes": 1855981936,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 927990968,
-            "total_flops": 2955539858379,
-            "weight_bytes": 1855981936,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "fixed_recursive",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_fixed_recursive",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 15,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "gdn",
-      "model_id": "custom:nextt-gdn-69935f52bf74d456",
-      "content_sha256": "69935f52bf74d45640c036ccedb26601133a25d34dadc62d7bb132643163a8ff",
+      "model_id": "custom:nextt-gdn",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-gdn-69935f52bf74d456/prompt.md",
-        "sha256": "f7bc848e4d59043f6b258306c8624f6457d643c45701814253f8ce0ab1aa14bf",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1411349680,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1224,7 +1079,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "gdn.yaml",
-      "spec_sha256": "4a9f253ca44b855c7f9b524ab947421cafcceaaff3168bccac6d61260a7ce0ed",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1235,44 +1089,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-gdn-69935f52bf74d456: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411349680,
-            "total_flops": 24760986947,
-            "weight_bytes": 2822699360,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411349680,
-            "total_flops": 49521973342,
-            "weight_bytes": 2822699360,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411349680,
-            "total_flops": 3169406655987,
-            "weight_bytes": 2822699360,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1305,27 +1123,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "gdn",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_gdn",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "gdn_hybrid",
-      "model_id": "custom:nextt-gdn_hybrid-c22e136af1c5aade",
-      "content_sha256": "c22e136af1c5aadee4dcbd07c753a26726bb3f909c619f8233521dc23f2296da",
+      "model_id": "custom:nextt-gdn_hybrid",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-gdn_hybrid-c22e136af1c5aade/prompt.md",
-        "sha256": "dd3b7463f82363e5e718d047b4b41be271ee18055d19b22b26e1d1ac4c1dba19",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1399275962,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1341,7 +1191,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "gdn_hybrid.yaml",
-      "spec_sha256": "84e50f9f97a99a04095ae8be9aa3b8d7a2184a93110c1ba920557ae741664453",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1352,44 +1201,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-gdn_hybrid-c22e136af1c5aade: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1399275962,
-            "total_flops": 24268177163,
-            "weight_bytes": 2798551924,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1399275962,
-            "total_flops": 48536353894,
-            "weight_bytes": 2798551924,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1399275962,
-            "total_flops": 3183781526907,
-            "weight_bytes": 2798551924,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1422,27 +1235,85 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "gdn_hybrid",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 5760,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "layer_mixers": [
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention",
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention",
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention",
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention",
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention",
+          "gdn",
+          "gdn",
+          "gdn",
+          "attention"
+        ],
+        "model_type": "nexttransformer_gdn_hybrid",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 5760,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "gdn_hybrid_swa",
-      "model_id": "custom:nextt-gdn_hybrid_swa-8c8cdc99523ad1a1",
-      "content_sha256": "8c8cdc99523ad1a152621d56602db0ce2a7feaef95391b8c177d478b1926d49b",
+      "model_id": "custom:nextt-gdn_hybrid_swa",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-gdn_hybrid_swa-8c8cdc99523ad1a1/prompt.md",
-        "sha256": "c11243a7f28d824a9b3bd6e0825ba256a083e3393cd1366e0326da59a48cc4b5",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1329681662,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1458,7 +1329,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "gdn_hybrid_swa.yaml",
-      "spec_sha256": "017d26c33f4b6e20f79774b48eb2cbf9dc6a9a3b513bdbb42b9ea371af8b0353",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1469,44 +1339,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-gdn_hybrid_swa-8c8cdc99523ad1a1: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1329681662,
-            "total_flops": 23498377475,
-            "weight_bytes": 2659363324,
-            "num_layers": 22
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1329681662,
-            "total_flops": 46996754686,
-            "weight_bytes": 2659363324,
-            "num_layers": 22
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1329681662,
-            "total_flops": 3149792611539,
-            "weight_bytes": 2659363324,
-            "num_layers": 22
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1539,27 +1373,84 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "gdn_hybrid_swa",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6528,
+        "layers": 22,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "sliding_window": 2048,
+        "layer_mixers": [
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa",
+          "gdn",
+          "swa"
+        ],
+        "model_type": "nexttransformer_gdn_hybrid_swa",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 22,
+        "intermediate_size": 6528,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "gla",
-      "model_id": "custom:nextt-gla-c69fae05f6a3a367",
-      "content_sha256": "c69fae05f6a3a36779c0e5fd05a602f1018b2148bde26f550d24213bee835207",
+      "model_id": "custom:nextt-gla",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-gla-c69fae05f6a3a367/prompt.md",
-        "sha256": "7530f5a3edab919ed636e8a2bc3abb4c1e1115c62f37df4d67631adcca506524",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1411207816,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1575,7 +1466,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "gla.yaml",
-      "spec_sha256": "7d889519914994ace893a0ee34b2d32ab1426b6156b62beb63a67aaf3ff2b9d1",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1586,44 +1476,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-gla-c69fae05f6a3a367: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411207816,
-            "total_flops": 24605490203,
-            "weight_bytes": 2822415632,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411207816,
-            "total_flops": 49210980406,
-            "weight_bytes": 2822415632,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1411207816,
-            "total_flops": 3149503142859,
-            "weight_bytes": 2822415632,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1656,28 +1510,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "gla",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_gla",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "hc",
-      "model_id": "custom:nextt-hc-f5bded2891986013",
-      "content_sha256": "f5bded2891986013f4914785616f9a921263d09976d54c2ba8745523fcf3d989",
+      "model_id": "custom:nextt-hc",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-hc-f5bded2891986013/prompt.md",
-        "sha256": "07b8b1506fe03faaafd93bbe9a08ae7fa3a0462d9c59f2e2136ac3352dac2504",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1356235700,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1691,7 +1576,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "hc.yaml",
-      "spec_sha256": "574b8ca1271cf659101b12fcb7a0ba88c4290e34c4b6c51cca08f7933955d418",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1702,90 +1586,63 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-hc-f5bded2891986013: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1356235700,
-            "total_flops": 22604285883,
-            "weight_bytes": 2712471400,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1356235700,
-            "total_flops": 45208571766,
-            "weight_bytes": 2712471400,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1356235700,
-            "total_flops": 3190257937355,
-            "weight_bytes": 2712471400,
-            "num_layers": 1
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "hc",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "residual_streams": 4,
+        "residual_gate_init": 0.01,
+        "model_type": "nexttransformer_hc",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "huginn",
-      "model_id": "custom:nextt-huginn-1aa2c952eaebb5db",
-      "content_sha256": "1aa2c952eaebb5dbc7342eb0e15b04f789a6ac38f652c68e04cb002813151b51",
+      "model_id": "custom:nextt-huginn",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "huginn",
-        "path": "custom_models/nextt-huginn-1aa2c952eaebb5db/prompt.md",
-        "sha256": "6703b4a5432d8e1fea5cd1acf8b88fda1640407b873c14e7cb6c79ed70117ead",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "51b838d61778e5028362a15eed78d5b65a64ebd41996b8a149e8fbd1bae0d15f",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 870581286,
       "analysis_scope": "evaluation only: eval_loops=3, row_offset=0, routing_seed=1729; all prelude/core/coda work retained",
@@ -1801,7 +1658,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "huginn.yaml",
-      "spec_sha256": "21709255577f4a253515f3f4dac6e825dddcd767f595d45590bc4c390b09ec3e",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1812,65 +1668,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-huginn-1aa2c952eaebb5db: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 870581286,
-            "total_flops": 30430042523,
-            "weight_bytes": 1741162572,
-            "num_layers": 30
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 870581286,
-            "total_flops": 60860085046,
-            "weight_bytes": 1741162572,
-            "num_layers": 30
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 870581286,
-            "total_flops": 3855837320139,
-            "weight_bytes": 1741162572,
-            "num_layers": 30
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "huginn",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6528,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 8,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 4,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_huginn",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 14,
+        "intermediate_size": 6528,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "kda",
-      "model_id": "custom:nextt-kda-dc5adedb26157d1b",
-      "content_sha256": "dc5adedb26157d1b62d4799fdcde3062429a0132f256338d015e2d9bffa42456",
+      "model_id": "custom:nextt-kda",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-kda-dc5adedb26157d1b/prompt.md",
-        "sha256": "47ef715e290286dcf8519b778556f32ba43b5d82752eabf5084ab41ba961e49a",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1412126344,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -1886,7 +1738,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "kda.yaml",
-      "spec_sha256": "115699b9a1a367e85a95a309adea041a914e71a12148b742caf21d6c4099b476",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -1897,44 +1748,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-kda-dc5adedb26157d1b: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1412126344,
-            "total_flops": 24788153627,
-            "weight_bytes": 2824252688,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1412126344,
-            "total_flops": 49576236598,
-            "weight_bytes": 2824252688,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1412126344,
-            "total_flops": 3172875087819,
-            "weight_bytes": 2824252688,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -1967,27 +1782,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "kda",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_kda",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "kda_hybrid",
-      "model_id": "custom:nextt-kda_hybrid-4cbc00ef4814d894",
-      "content_sha256": "4cbc00ef4814d8943fe3c721658f48122dc467d1265c1f708fe1088ac0ae449d",
+      "model_id": "custom:nextt-kda_hybrid",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-kda_hybrid-4cbc00ef4814d894/prompt.md",
-        "sha256": "8e7f3337761587716229ba0e096aca97e08c08edaf29fd03dafa0fa74a57ce3d",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 793542986,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2003,7 +1850,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "kda_hybrid.yaml",
-      "spec_sha256": "f072c53ee9c664e90ca884f2d90628b9d8278d01dda0c95153fb28726acb5d5b",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2014,44 +1860,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-kda_hybrid-4cbc00ef4814d894: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 793542986,
-            "total_flops": 24211907675,
-            "weight_bytes": 1587085972,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 793542986,
-            "total_flops": 48423760054,
-            "weight_bytes": 1587085972,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 793542986,
-            "total_flops": 3176572064715,
-            "weight_bytes": 1587085972,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -2084,27 +1894,90 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "kda_hybrid",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6016,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "q_rank": 768,
+        "kv_rank": 256,
+        "qk_nope_dim": 128,
+        "qk_rope_dim": 0,
+        "v_head_dim": 128,
+        "layer_mixers": [
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope",
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope",
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope",
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope",
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope",
+          "kda",
+          "kda",
+          "kda",
+          "mla_nope"
+        ],
+        "model_type": "nexttransformer_kda_hybrid",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 6016,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "kda_no_ve",
-      "model_id": "custom:nextt-kda_no_ve-3dc24a9570fa4936",
-      "content_sha256": "3dc24a9570fa4936c2d162f93469f6493bb2a24800901898971b2c55c4aabdd4",
+      "model_id": "custom:nextt-kda_no_ve",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-kda_no_ve-3dc24a9570fa4936/prompt.md",
-        "sha256": "77327ae3d4eed52827cdea4f0abf1d530642bf9f38c0dacb67c6693f467d69ca",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 808144840,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2120,7 +1993,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "kda_no_ve.yaml",
-      "spec_sha256": "8c93e261eb0ae32bf722216e7734d35779b57eef7650535cb38992796383480f",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2131,44 +2003,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-kda_no_ve-3dc24a9570fa4936: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 808144840,
-            "total_flops": 24787496987,
-            "weight_bytes": 1616289680,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 808144840,
-            "total_flops": 49574923318,
-            "weight_bytes": 1616289680,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 808144840,
-            "total_flops": 3172791037899,
-            "weight_bytes": 1616289680,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -2201,52 +2037,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "kda_no_ve",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_kda_no_ve",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "mha_no_ve",
-      "model_id": "custom:nextt-mha_no_ve-ed42bf4ae6591d45",
-      "content_sha256": "ed42bf4ae6591d45fc6712109c2c09dc2f8b7ee650b55290989fb0a1dc6f440b",
+      "model_id": "custom:nextt-mha_no_ve",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "mha_no_ve",
-        "path": "custom_models/nextt-mha_no_ve-ed42bf4ae6591d45/prompt.md",
-        "sha256": "493334c3621a3b872ef5beb1f658f845f380acde8fefe0a7706332b81a977110",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "6064f26a9a42446c9243921c6dadee59ca5682bba6b29208fee9eef615b20b3c",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 751829064,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -2260,7 +2103,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "mha_no_ve.yaml",
-      "spec_sha256": "9ba9d5eb660faed0e75c7edf162c8083f3fb42f67e6478432f829e6bd36dcbe3",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2271,66 +2113,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-mha_no_ve-ed42bf4ae6591d45: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 751829064,
-            "total_flops": 22487602235,
-            "weight_bytes": 1503658128,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 751829064,
-            "total_flops": 44975204470,
-            "weight_bytes": 1503658128,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 751829064,
-            "total_flops": 3175322430411,
-            "weight_bytes": 1503658128,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "mha_no_ve",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_mha_no_ve",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "mhc",
-      "model_id": "custom:nextt-mhc-b0da25700bdf14c3",
-      "content_sha256": "b0da25700bdf14c3f6979b1649112965c15d80b856ae035ac6e62c5f71a94a83",
+      "model_id": "custom:nextt-mhc",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-mhc-b0da25700bdf14c3/prompt.md",
-        "sha256": "0899adc5dc21cb3891751f4a57f480d254f4029b8cc13b8450ac4b3a6ed9e4b7",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1353550818,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2344,7 +2181,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "mhc.yaml",
-      "spec_sha256": "1b8961fa55a1909562f4c9223dd2ed4d7eb4237611b7090ef3782f7926265a79",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2355,90 +2191,64 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-mhc-b0da25700bdf14c3: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1353550818,
-            "total_flops": 22479439675,
-            "weight_bytes": 2707101636,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1353550818,
-            "total_flops": 44958879350,
-            "weight_bytes": 2707101636,
-            "num_layers": 1
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1353550818,
-            "total_flops": 3174277622731,
-            "weight_bytes": 2707101636,
-            "num_layers": 1
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "mhc",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6016,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "residual_streams": 4,
+        "residual_gate_init": 0.01,
+        "sinkhorn_iterations": 20,
+        "model_type": "nexttransformer_mhc",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6016,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "mla_nope",
-      "model_id": "custom:nextt-mla_nope-40c351a9d6e30319",
-      "content_sha256": "40c351a9d6e303197d816f38d375be6d1cc1afe8b7ebd6bf81f18a357363a1d0",
+      "model_id": "custom:nextt-mla_nope",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "mla_nope",
-        "path": "custom_models/nextt-mla_nope-40c351a9d6e30319/prompt.md",
-        "sha256": "2051df68971fd275f4f59da699b8d73f391d8285cff6b0d9333146055042df63",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "ab9bfc8b4ba0b42f194a78a50e050581c822600265478c4a097aa5ad5dbc60fc",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 744751182,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -2453,7 +2263,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "mla_nope.yaml",
-      "spec_sha256": "27d68958c2918ec42cb861bc3071da8e1611639a186eeecd0b8260245781c7a7",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2464,66 +2273,66 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-mla_nope-40c351a9d6e30319: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 744751182,
-            "total_flops": 22258963419,
-            "weight_bytes": 1489502364,
-            "num_layers": 26
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 744751182,
-            "total_flops": 44517926838,
-            "weight_bytes": 1489502364,
-            "num_layers": 26
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 744751182,
-            "total_flops": 3184783915979,
-            "weight_bytes": 1489502364,
-            "num_layers": 26
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "mla_nope",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 26,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "q_rank": 768,
+        "kv_rank": 256,
+        "qk_nope_dim": 128,
+        "qk_rope_dim": 0,
+        "v_head_dim": 128,
+        "model_type": "nexttransformer_mla_nope",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 26,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "moba",
-      "model_id": "custom:nextt-moba-64172580f437bf4d",
-      "content_sha256": "64172580f437bf4d02f4b1aa645f53a879e5272f55f2dee9194431b852faa967",
+      "model_id": "custom:nextt-moba",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-moba-64172580f437bf4d/prompt.md",
-        "sha256": "64948d05a48c42c5a3408ad7da45a73e1c6a2fe70ecf5b1cd10ad57c7eb55c4d",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1462765468,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2537,7 +2346,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "moba.yaml",
-      "spec_sha256": "bc7805fcad2a0b6f95669373f7b1bdbbabe74d713738ac71f8bff2fae9e3c871",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2548,66 +2356,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-moba-64172580f437bf4d: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 24923710619,
-            "weight_bytes": 2925530936,
-            "num_layers": 50
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 49847421238,
-            "weight_bytes": 2925530936,
-            "num_layers": 50
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1462765468,
-            "total_flops": 3192053365707,
-            "weight_bytes": 2925530936,
-            "num_layers": 50
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "moba",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_moba",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "moba_hybrid",
-      "model_id": "custom:nextt-moba_hybrid-da223f69b439e8ac",
-      "content_sha256": "da223f69b439e8acf217c4dfeb0d4c6e52482067d97c7ef2f2f3ce7ad8d2ae79",
+      "model_id": "custom:nextt-moba_hybrid",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-moba_hybrid-da223f69b439e8ac/prompt.md",
-        "sha256": "5d744f0ac3e02231ba023dfccd0a65f534b6a1c30d6f6c2530249af34aa442f6",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1452935068,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2621,7 +2424,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "moba_hybrid.yaml",
-      "spec_sha256": "be03b8382ed4e29ff321ee4317afd17b1279306c8af1e22770323ba2354d36eb",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2632,66 +2434,88 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-moba_hybrid-da223f69b439e8ac: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1452935068,
-            "total_flops": 24534594043,
-            "weight_bytes": 2905870136,
-            "num_layers": 50
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1452935068,
-            "total_flops": 49069188086,
-            "weight_bytes": 2905870136,
-            "num_layers": 50
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1452935068,
-            "total_flops": 3180755536843,
-            "weight_bytes": 2905870136,
-            "num_layers": 50
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "moba_hybrid",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6016,
+        "layers": 25,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "layer_mixers": [
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "moba",
+          "attention",
+          "attention",
+          "attention"
+        ],
+        "model_type": "nexttransformer_moba_hybrid",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 25,
+        "intermediate_size": 6016,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "native-circle",
-      "model_id": "custom:nextt-native-circle-3752741e72738b06",
-      "content_sha256": "3752741e72738b06ff39434c65b0c6bf4646bad9814e672ddb6008d53acf96f6",
+      "model_id": "custom:nextt-native-circle",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-native-circle-3752741e72738b06/prompt.md",
-        "sha256": "d63f20339c298b509f596283d4e4104244fe162811296957568c522b52953604",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 927992523,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2704,7 +2528,6 @@
       ],
       "status": "unsupported",
       "spec_file": null,
-      "spec_sha256": null,
       "reason": "Value-dependent compact-token axis with runtime max across batch and original-position causal/window masks",
       "missing_capability": {
         "capability": "Value-dependent compact-token axis with runtime max across batch and original-position causal/window masks",
@@ -2730,28 +2553,63 @@
           "source": "nexttransformer/models/native/circle.py:62-87; nexttransformer/models/native/halter.py:29-45",
           "operation": "First9 steps dense; selected before/after states feed delta-depth halter at each exit, sigmoid(-score)>=0.5 forms absorbing survivors; selected updates weighted by previous q; physical ring weights shared."
         }
+      },
+      "config": {
+        "architecture": "circle",
+        "dense_layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "recursions": 3,
+        "activation_checkpointing": false,
+        "fourier_dim": 256,
+        "loop_modulation_bound": 0.5,
+        "loop_condition_lr_multiplier": 0.5,
+        "loop_condition_grad_clip": 1.0,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "width": 1536,
+        "heads": 12,
+        "mlp_width": 6144,
+        "window_pattern": "SSSL",
+        "circle_max_steps": 27,
+        "circle_target_steps": 17.5,
+        "circle_method": "sparse_gate",
+        "circle_budget_mode": "mean_survival",
+        "circle_halter": "delta_depth",
+        "circle_halter_eps": 1e-06,
+        "circle_exit_interval": 1,
+        "circle_threshold": 0.5,
+        "circle_routing_seed": 1729,
+        "circle_budget_beta": 0.9,
+        "circle_random_warmup": 256,
+        "circle_route_transition": 768,
+        "circle_depth_rho": 1.0,
+        "circle_shape_weight": 0.1,
+        "circle_dual_lr": 0.05,
+        "circle_dual_limit": 2.0,
+        "circle_halter_lr_multiplier": 0.5,
+        "circle_halter_grad_clip": 1.0,
+        "mor_target_survival": [
+          0.64,
+          0.32
+        ],
+        "mor_budget_strength": 1.0,
+        "mor_dual_lr": 0.05,
+        "mor_dual_limit": 10.0,
+        "model_type": "nexttransformer_native_circle",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 15,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "native-dense",
-      "model_id": "custom:nextt-native-dense-09547bea17a8ae8f",
-      "content_sha256": "09547bea17a8ae8fb8b66ae9cdc59f1bfcf54f759e31a19b24318c1fb6a5159e",
+      "model_id": "custom:nextt-native-dense",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-native-dense-09547bea17a8ae8f/prompt.md",
-        "sha256": "2ea3e54fc94aa0ee7bcdc50d41ed4128bebd2f2eed4fe6f516fd2974e914e729",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1384122122,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2763,7 +2621,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "native-dense.yaml",
-      "spec_sha256": "d8c70bb161d2502d757f21a14da32df7d5c701f6f4c56fd72dfff6c0f0b2669e",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2774,66 +2631,65 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-native-dense-09547bea17a8ae8f: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 23395784987,
-            "weight_bytes": 2768244244,
-            "num_layers": 48
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 46791569974,
-            "weight_bytes": 2768244244,
-            "num_layers": 48
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1384122122,
-            "total_flops": 2955539858379,
-            "weight_bytes": 2768244244,
-            "num_layers": 48
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "architecture": "dense",
+        "dense_layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "recursions": 1,
+        "activation_checkpointing": false,
+        "fourier_dim": 256,
+        "loop_modulation_bound": 0.5,
+        "loop_condition_lr_multiplier": 0.5,
+        "loop_condition_grad_clip": 1.0,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "width": 1536,
+        "heads": 12,
+        "mlp_width": 6144,
+        "window_pattern": "SSSL",
+        "circle_max_steps": 27,
+        "circle_target_steps": 17.5,
+        "circle_method": "sparse_gate",
+        "circle_budget_mode": "mean_survival",
+        "circle_halter": "delta_depth",
+        "circle_halter_eps": 1e-06,
+        "circle_exit_interval": 1,
+        "circle_threshold": 0.5,
+        "circle_routing_seed": 1729,
+        "circle_budget_beta": 0.9,
+        "circle_random_warmup": 256,
+        "circle_route_transition": 768,
+        "circle_depth_rho": 1.0,
+        "circle_shape_weight": 0.1,
+        "circle_dual_lr": 0.05,
+        "circle_dual_limit": 2.0,
+        "circle_halter_lr_multiplier": 0.5,
+        "circle_halter_grad_clip": 1.0,
+        "mor_target_survival": [
+          0.64,
+          0.32
+        ],
+        "mor_budget_strength": 1.0,
+        "mor_dual_lr": 0.05,
+        "mor_dual_limit": 10.0,
+        "model_type": "nexttransformer_native_dense",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "native-loopformer",
-      "model_id": "custom:nextt-native-loopformer-80918fa4022fb983",
-      "content_sha256": "80918fa4022fb9837118ff7e1fdd80bed5ec061c9c6a271000807e519e61af8f",
+      "model_id": "custom:nextt-native-loopformer",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-native-loopformer-80918fa4022fb983/prompt.md",
-        "sha256": "dd5be4261e7d6455b86a157cbf2b26ef880179904f3ddc1135070124cc3d7fe4",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1018436792,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2847,7 +2703,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "native-loopformer.yaml",
-      "spec_sha256": "014e0e05b3722021915765e61c046f26848e9520faf8d7e65161152f0ec94cce",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -2858,66 +2713,65 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-native-loopformer-80918fa4022fb983: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1018436792,
-            "total_flops": 23760246043,
-            "weight_bytes": 2036873584,
-            "num_layers": 62
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1018436792,
-            "total_flops": 47520492086,
-            "weight_bytes": 2036873584,
-            "num_layers": 62
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1018436792,
-            "total_flops": 2956129042379,
-            "weight_bytes": 2036873584,
-            "num_layers": 62
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "architecture": "loopformer",
+        "dense_layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "recursions": 2,
+        "activation_checkpointing": false,
+        "fourier_dim": 256,
+        "loop_modulation_bound": 0.5,
+        "loop_condition_lr_multiplier": 0.5,
+        "loop_condition_grad_clip": 1.0,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "width": 1536,
+        "heads": 12,
+        "mlp_width": 6144,
+        "window_pattern": "SSSL",
+        "circle_max_steps": 27,
+        "circle_target_steps": 17.5,
+        "circle_method": "sparse_gate",
+        "circle_budget_mode": "mean_survival",
+        "circle_halter": "delta_depth",
+        "circle_halter_eps": 1e-06,
+        "circle_exit_interval": 1,
+        "circle_threshold": 0.5,
+        "circle_routing_seed": 1729,
+        "circle_budget_beta": 0.9,
+        "circle_random_warmup": 256,
+        "circle_route_transition": 768,
+        "circle_depth_rho": 1.0,
+        "circle_shape_weight": 0.1,
+        "circle_dual_lr": 0.05,
+        "circle_dual_limit": 2.0,
+        "circle_halter_lr_multiplier": 0.5,
+        "circle_halter_grad_clip": 1.0,
+        "mor_target_survival": [
+          0.64,
+          0.32
+        ],
+        "mor_budget_strength": 1.0,
+        "mor_dual_lr": 0.05,
+        "mor_dual_limit": 10.0,
+        "model_type": "nexttransformer_native_loopformer",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 15,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "native-mor",
-      "model_id": "custom:nextt-native-mor-843c443a9a777b23",
-      "content_sha256": "843c443a9a777b238e7e32b0bf6b6fb573343c4eace9dcebfab2515aa75709f2",
+      "model_id": "custom:nextt-native-mor",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-native-mor-843c443a9a777b23/prompt.md",
-        "sha256": "5eb0cc4b23ae287ce9d829603bd6eb0c6685fd84d1210a0f95ef8c92fa0350c6",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 927994042,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2930,7 +2784,6 @@
       ],
       "status": "unsupported",
       "spec_file": null,
-      "spec_sha256": null,
       "reason": "Value-dependent compact-token axis with runtime max across batch and original-position causal/window masks",
       "missing_capability": {
         "capability": "Value-dependent compact-token axis with runtime max across batch and original-position causal/window masks",
@@ -2956,28 +2809,63 @@
           "source": "nexttransformer/models/native/model.py:210-231",
           "operation": "norm(x.float()) -> learned router logits -> hard(logits>=0); absorbing alive; compact core passes after first recursion; q-gated residual update."
         }
+      },
+      "config": {
+        "architecture": "mor",
+        "dense_layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "recursions": 3,
+        "activation_checkpointing": false,
+        "fourier_dim": 256,
+        "loop_modulation_bound": 0.5,
+        "loop_condition_lr_multiplier": 0.5,
+        "loop_condition_grad_clip": 1.0,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "width": 1536,
+        "heads": 12,
+        "mlp_width": 6144,
+        "window_pattern": "SSSL",
+        "circle_max_steps": 27,
+        "circle_target_steps": 17.5,
+        "circle_method": "sparse_gate",
+        "circle_budget_mode": "mean_survival",
+        "circle_halter": "delta_depth",
+        "circle_halter_eps": 1e-06,
+        "circle_exit_interval": 1,
+        "circle_threshold": 0.5,
+        "circle_routing_seed": 1729,
+        "circle_budget_beta": 0.9,
+        "circle_random_warmup": 256,
+        "circle_route_transition": 768,
+        "circle_depth_rho": 1.0,
+        "circle_shape_weight": 0.1,
+        "circle_dual_lr": 0.05,
+        "circle_dual_limit": 2.0,
+        "circle_halter_lr_multiplier": 0.5,
+        "circle_halter_grad_clip": 1.0,
+        "mor_target_survival": [
+          0.64,
+          0.32
+        ],
+        "mor_budget_strength": 1.0,
+        "mor_dual_lr": 0.05,
+        "mor_dual_limit": 10.0,
+        "model_type": "nexttransformer_native_mor",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 15,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "nsa",
-      "model_id": "custom:nextt-nsa-7e56a2c85151f8b4",
-      "content_sha256": "7e56a2c85151f8b4d514c2409a94152fda3f5feb47b7d23d788f25ed4f4d00ec",
+      "model_id": "custom:nextt-nsa",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-nsa-7e56a2c85151f8b4/prompt.md",
-        "sha256": "e46015dd2202e7289263b6f5f4157dbbde7570387ddb4cc2d2e29186ce2dedc1",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1381293832,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -2991,7 +2879,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "nsa.yaml",
-      "spec_sha256": "aa2fe167e3ad8c80b5a9651790ba00b2f25390f23c3a6aab9011b94cc0fd6c6f",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3002,90 +2889,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-nsa-7e56a2c85151f8b4: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1381293832,
-            "total_flops": 24409711259,
-            "weight_bytes": 2762587664,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1381293832,
-            "total_flops": 48819422518,
-            "weight_bytes": 2762587664,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1381293832,
-            "total_flops": 3171233536971,
-            "weight_bytes": 2762587664,
-            "num_layers": 46
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "nsa",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 32,
+        "compression_size": 32,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_nsa",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "ouro",
-      "model_id": "custom:nextt-ouro-f2dd46b26bd0f0ce",
-      "content_sha256": "f2dd46b26bd0f0ce66b83e7eaabcfb5413e33ee4fdb952bc193bc418bd66010c",
+      "model_id": "custom:nextt-ouro",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "ouro",
-        "path": "custom_models/nextt-ouro-f2dd46b26bd0f0ce/prompt.md",
-        "sha256": "bb8e10c333d30711d4e91e5d35257f77f54f43387900adb1933a5e750bae890c",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "98adeb6f231b302ce097360dc3f49a931654cbf2fd43d649ee6f5171c3280640",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 607127805,
       "analysis_scope": "source evaluation: all max_loops=3 paths/codas/heads computed; token-wise exit_distribution quantile=.5 selection after full work",
@@ -3101,7 +2959,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "ouro.yaml",
-      "spec_sha256": "9b0b702b2b67eca127e46cd4b4692507b454d5c9b0eb99cbb9d4d918ceb0fafd",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3112,66 +2969,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-ouro-f2dd46b26bd0f0ce: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 607127805,
-            "total_flops": 23902684491,
-            "weight_bytes": 1214255610,
-            "num_layers": 21
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 607127805,
-            "total_flops": 47805368982,
-            "weight_bytes": 1214255610,
-            "num_layers": 21
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 607127805,
-            "total_flops": 3039852249035,
-            "weight_bytes": 1214255610,
-            "num_layers": 21
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "ouro",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 3,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_ouro",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 9,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "qsa",
-      "model_id": "custom:nextt-qsa-db05c9e60bdbde5d",
-      "content_sha256": "db05c9e60bdbde5d0cb074739e31d3b98b4afd550e524d101555708743e3dc6c",
+      "model_id": "custom:nextt-qsa",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-qsa-db05c9e60bdbde5d/prompt.md",
-        "sha256": "b12c21f8e699063715d1bdb3793f72ba102caf0b3a9aa6133d495810d4666872",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1378420488,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -3185,7 +3037,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "qsa.yaml",
-      "spec_sha256": "d2ae11e4866d88dcd69f150b43f60cd34f3e5c641c4f6043763bd340920415dd",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3196,66 +3047,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-qsa-db05c9e60bdbde5d: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1378420488,
-            "total_flops": 23240294107,
-            "weight_bytes": 2756840976,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1378420488,
-            "total_flops": 46480588214,
-            "weight_bytes": 2756840976,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1378420488,
-            "total_flops": 3069516782539,
-            "weight_bytes": 2756840976,
-            "num_layers": 46
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "qsa",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_qsa",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "qsa_hybrid",
-      "model_id": "custom:nextt-qsa_hybrid-fdb761ba17acf585",
-      "content_sha256": "fdb761ba17acf585243239866d01b0d64d2a0e71b26e1542c23ff2a42e660c78",
+      "model_id": "custom:nextt-qsa_hybrid",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-qsa_hybrid-fdb761ba17acf585/prompt.md",
-        "sha256": "a7d72e33e28137115455833a3862ecd1a05b33a06ca6e36e7c4c741712c6b771",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1405174202,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -3269,7 +3115,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "qsa_hybrid.yaml",
-      "spec_sha256": "a658a3c7c90d319ed64f2bef61a35c38d17e3d07dfbdb285ceb571d13e7eab68",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3280,90 +3125,87 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-qsa_hybrid-fdb761ba17acf585: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1405174202,
-            "total_flops": 24464360267,
-            "weight_bytes": 2810348404,
-            "num_layers": 48
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1405174202,
-            "total_flops": 48928720102,
-            "weight_bytes": 2810348404,
-            "num_layers": 48
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1405174202,
-            "total_flops": 3156158127483,
-            "weight_bytes": 2810348404,
-            "num_layers": 48
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "qsa_hybrid",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 5760,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "layer_mixers": [
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa",
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa",
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa",
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa",
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa",
+          "gdn",
+          "gdn",
+          "gdn",
+          "qsa"
+        ],
+        "model_type": "nexttransformer_qsa_hybrid",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 24,
+        "intermediate_size": 5760,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "residual_standard",
-      "model_id": "custom:nextt-residual_standard-74aa82c153ab9d4a",
-      "content_sha256": "74aa82c153ab9d4a204c9720a0c380332685ce9aad360d9efb397925a6c20663",
+      "model_id": "custom:nextt-residual_standard",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "residual_standard",
-        "path": "custom_models/nextt-residual_standard-74aa82c153ab9d4a/prompt.md",
-        "sha256": "20ba82ecdaaa0819e6805e8a284149050b8630024e8c5415978feb57f646e637",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "4ea5d22e586fe32dcfef5d5d8d2e8e23d7825a53994fbfb38bf55fd4103c482e",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1355810568,
       "analysis_scope": "fixed exported configuration, complete causal full-sequence inference",
@@ -3378,7 +3220,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "residual_standard.yaml",
-      "spec_sha256": "db68354039d021157c395d6ce037a4b777d64fb13282b6ac4dd1d5eab42cd04e",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3389,65 +3230,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-residual_standard-74aa82c153ab9d4a: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 22486489403,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 44972978806,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1355810568,
-            "total_flops": 3175179987915,
-            "weight_bytes": 2711621136,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "residual_standard",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "L",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_residual_standard",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "retnet",
-      "model_id": "custom:nextt-retnet-582baf09668f9e04",
-      "content_sha256": "582baf09668f9e04cda2bd1e56336a0ae9f9f4ae7503b762128c9c2b8a7c8840",
+      "model_id": "custom:nextt-retnet",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-retnet-582baf09668f9e04/prompt.md",
-        "sha256": "d3e52f806248b1cf663da3a80e5f2d4b581a2bdb9ad14a517053fce3241f1e73",
-        "shared_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "shared_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "config_matches_export": true,
-        "reviewed_sections": [
-          "shared authoring priority / phases1-4 and exact task/reflection",
-          "primitive table and custom-op signatures/coupling",
-          "inline block/cache/schema",
-          "shared forward LinearMixer/recurrent_attention/CausalDepthwise/backbone/ReferenceLM/MLAAttention",
-          "model-specific config,model_type,identity task; system+forward identical across all13 and reviewed once"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1410077320,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -3463,7 +3300,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "retnet.yaml",
-      "spec_sha256": "11d1787e89e360aa4fced5bd4b499e8e3b98b3dfd094de9e5070b1a34f565873",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3474,44 +3310,8 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-retnet-582baf09668f9e04: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1410077320,
-            "total_flops": 24568183835,
-            "weight_bytes": 2820154640,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1410077320,
-            "total_flops": 49136367670,
-            "weight_bytes": 2820154640,
-            "num_layers": 23
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1410077320,
-            "total_flops": 3144727927755,
-            "weight_bytes": 2820154640,
-            "num_layers": 23
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
       },
       "forward_mapping": [
         {
@@ -3544,28 +3344,59 @@
           "source": "forward.py:3890-3945",
           "graph": "c_q -> weight-free q-rank norm -> q_up; c_k -> weight-free kv-rank norm -> c_v -> K/V split; no RoPE; standard causal score/softmax/apply -> c_proj"
         }
-      ]
+      ],
+      "config": {
+        "method": "retnet",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "fla_chunk64",
+        "scale": "formal",
+        "model_type": "nexttransformer_retnet",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
+      }
     },
     {
       "method": "seer",
-      "model_id": "custom:nextt-seer-2d8f48de5b28f93d",
-      "content_sha256": "2d8f48de5b28f93dd2bbde1a98515a8fdadf72b55247f24e171cca3902256439",
+      "model_id": "custom:nextt-seer",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "path": "custom_models/nextt-seer-2d8f48de5b28f93d/prompt.md",
-        "sha256": "1c69590b7ea2241c36b6b1fa603bb1ee78381aac8537467db9fa6c26e0213315",
-        "common_system_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "common_forward_sha256": "f8df5c3abf1d1889020d83be7d4b439331c6e6d2ace05b036c86d1b1cb0334e8",
-        "reviewed_sections": [
-          "Structure inventory and four authoring/validation phases",
-          "Primitive operation and custom_ops contracts",
-          "Component manifest; inspected Nemotron ReLU2, GQA partial-RoPE DSA, HC pre/read components",
-          "Model input/inline graph/dim binding/cache schema; Qwen2 reference",
-          "Corresponding model-specific configuration and task",
-          "Corresponding source mechanisms in identical supplied full source bundle",
-          "Bidirectional forward reflection and constants-not-expressible checklist"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 1387464456,
       "analysis_scope": "Full-sequence inference; prefill architecture estimates only.",
@@ -3579,7 +3410,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "seer.yaml",
-      "spec_sha256": "d4ef1e13fb97f2ea2dfcaf1c8a218aafb18f68cfae7bdb1d524d70d11a931401",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3590,90 +3420,61 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-seer-2d8f48de5b28f93d: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1387464456,
-            "total_flops": 23775341451,
-            "weight_bytes": 2774928912,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1387464456,
-            "total_flops": 47550682902,
-            "weight_bytes": 2774928912,
-            "num_layers": 46
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 1387464456,
-            "total_flops": 3100836373451,
-            "weight_bytes": 2774928912,
-            "num_layers": 46
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "seer",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6272,
+        "layers": 23,
+        "pre_layers": 3,
+        "core_layers": 9,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 64,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_seer",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 23,
+        "intermediate_size": 6272,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     },
     {
       "method": "ut_act",
-      "model_id": "custom:nextt-ut_act-13564be93814d2f6",
-      "content_sha256": "13564be93814d2f6e4beb828986418436dfe2e67887d77bba939229956c34a3d",
+      "model_id": "custom:nextt-ut_act",
       "author": "GPT-6.1 Sol",
-      "prompt": {
-        "method": "ut_act",
-        "path": "custom_models/nextt-ut_act-13564be93814d2f6/prompt.md",
-        "sha256": "c8d59ccad2dac5a0d5399323452439b2ddb58118933c56117f9e75ff2ea8a7a7",
-        "prefix_sha256": "905903ac5c96899f49f79c468040b442a1cde849a133ce8812a9d9d6c4f3d1d4",
-        "source_sections": [
-          "# Source: nanochat/common.py",
-          "# Source: nanochat/flash_attention.py",
-          "# Source: nanochat/optim.py",
-          "# Source: nexttransformer/models/__init__.py",
-          "# Source: nexttransformer/models/backbone.py",
-          "# Source: nexttransformer/models/config.py",
-          "# Source: nexttransformer/models/linear.py",
-          "# Source: nexttransformer/models/lm.py",
-          "# Source: nexttransformer/models/looped.py",
-          "# Source: nexttransformer/models/native/__init__.py",
-          "# Source: nexttransformer/models/native/budget.py",
-          "# Source: nexttransformer/models/native/circle.py",
-          "# Source: nexttransformer/models/native/conditioning.py",
-          "# Source: nexttransformer/models/native/config.py",
-          "# Source: nexttransformer/models/native/depth.py",
-          "# Source: nexttransformer/models/native/halter.py",
-          "# Source: nexttransformer/models/native/model.py",
-          "# Source: nexttransformer/models/others.py",
-          "# Source: nexttransformer/models/plugins.py",
-          "# Source: nexttransformer/models/registry.py",
-          "# Source: nexttransformer/models/residual.py",
-          "# Source: nexttransformer/models/sparse.py",
-          "# Source: nexttransformer/models/sparse_kernels.py",
-          "# Source: nexttransformer/protocol/spec.py"
-        ],
-        "task_instruction_tail_sha256": "3cff4dd1030c68d201910e78f0c492aaed2eb44b52a7114dcde905ca108cda21",
-        "reviewed_sections": [
-          "upstream shared system/workflow/schema/primitive and authoring rules (identical-prefix deduplicated)",
-          "per-model Ground Truth2 exact formal config",
-          "task identity/config.model_type requirement and shared forward mapping/checklist tail",
-          "relevant forward components from shared Ground Truth1: backbone.py, lm.py, looped.py, others.py"
-        ]
-      },
       "checkpoint_validated": false,
       "meta_model_parameters": 742394259,
       "analysis_scope": "source full-sequence evaluation: all max_loops=3 core passes; per-token alive masks, accumulated ACT weights, epsilon=.01; no runtime pruning",
@@ -3689,7 +3490,6 @@
       ],
       "status": "analysis_checked",
       "spec_file": "ut_act.yaml",
-      "spec_sha256": "ab172d2db47503e4d300d6f407113e0acbc27081e83ed47c86973c0d656588ae",
       "supported_settings": {
         "min_seq_len": 2,
         "max_seq_len": 2048
@@ -3700,44 +3500,55 @@
         "graph_geometry": "passed",
         "numerical_equivalence": "not_tested",
         "upstream_publication_validation": {
-          "exception": "CheckpointUnavailable",
-          "message": "Cannot read checkpoint metadata for custom:nextt-ut_act-13564be93814d2f6: safetensors fetch returned no model_storage_bytes"
-        },
-        "analysis_cases": [
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742394259,
-            "total_flops": 23397260283,
-            "weight_bytes": 1484788518,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 2,
-              "seq_len": 16,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742394259,
-            "total_flops": 46794078198,
-            "weight_bytes": 1484788518,
-            "num_layers": 24
-          },
-          {
-            "settings": {
-              "batch_size": 1,
-              "seq_len": 2048,
-              "dtype": "bfloat16"
-            },
-            "total_params": 742394259,
-            "total_flops": 2955728696267,
-            "weight_bytes": 1484788518,
-            "num_layers": 24
-          }
-        ]
+          "exception": "CheckpointUnavailable"
+        }
+      },
+      "config": {
+        "method": "ut_act",
+        "width": 1536,
+        "heads": 12,
+        "vocab_size": 32768,
+        "sequence_len": 2048,
+        "mlp_width": 6144,
+        "layers": 24,
+        "pre_layers": 3,
+        "core_layers": 6,
+        "post_layers": 3,
+        "loops": 2,
+        "window_pattern": "SSSL",
+        "max_loops": 3,
+        "act_epsilon": 0.01,
+        "ponder_weight": 0.01,
+        "huginn_mean": 3.0,
+        "huginn_sigma": 0.5,
+        "huginn_backprop_loops": 2,
+        "routing_seed": 1729,
+        "eval_loops": 3,
+        "ouro_entropy_weight": 0.1,
+        "ouro_gate_steps": 1024,
+        "ouro_exit_quantile": 0.5,
+        "sparse_topk": 256,
+        "block_size": 128,
+        "compression_size": 4,
+        "local_window": 512,
+        "index_heads": 4,
+        "index_dim": 128,
+        "index_rope_dim": 64,
+        "index_loss_weight": 1.0,
+        "burnin_steps": 512,
+        "slots": 64,
+        "gate_rank": 16,
+        "conv_size": 4,
+        "reference_chunk": 32,
+        "backend": "reference",
+        "scale": "formal",
+        "model_type": "nexttransformer_ut_act",
+        "hidden_size": 1536,
+        "num_attention_heads": 12,
+        "num_hidden_layers": 12,
+        "intermediate_size": 6144,
+        "max_position_embeddings": 2048,
+        "tie_word_embeddings": false
       }
     }
   ]

@@ -4,7 +4,6 @@ Keep imports of NextTransformer out of this file. The JSON protocol is private t
 integrations.huggingarch; upstream diagnostics go to stderr.
 """
 import contextlib
-import hashlib
 from importlib import metadata
 import json
 from pathlib import Path
@@ -72,7 +71,6 @@ def perform(request):
             return {"status": "generation_failed", "error": "Upstream did not publish a spec; see generate.log"}
         (directory / "spec.yaml").write_text(cached["spec_yaml"], encoding="utf-8")
         return {"status": "spec_ready", "reused": reused,
-                "cached_spec_sha256": hashlib.sha256(cached["spec_yaml"].encode()).hexdigest(),
                 "validation": "existing_spec" if reused else "upstream_generation_gate"}
     if request["action"] == "register":
         source_spec = directory / "spec.yaml"
@@ -117,8 +115,7 @@ def perform(request):
         return {"status": "needs_spec", "error": "Generate and review a spec in HuggingArch's Inspector, then analyze again"}
     if not result.get("success"):
         return {"status": "error", "error": result.get("error", "HuggingArch analysis failed")}
-    spec = cached["spec_yaml"]
-    return {"status": "analyzed", "cached_spec_sha256": hashlib.sha256(spec.encode()).hexdigest() if spec else None,
+    return {"status": "analyzed",
             "analysis": {k: v for k, v in result.items() if k != RESOLVED_KEY}}
 
 

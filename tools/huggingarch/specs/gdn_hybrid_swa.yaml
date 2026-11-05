@@ -1,4 +1,4 @@
-# Fixed architecture for custom:nextt-gdn_hybrid_swa-8c8cdc99523ad1a1; content_sha256 8c8cdc99523ad1a152621d56602db0ce2a7feaef95391b8c177d478b1926d49b
+# Fixed architecture for custom:nextt-gdn_hybrid_swa
 # Source: exported forward.py LinearMixer.forward, recurrent_attention, ReferenceLM._embed_reference/_block/_readout; backbone.Block.forward.
 # Cache declarations estimate architectural streaming states; source rejects kv_cache and only supports full-sequence execution.
 # Custom scan FLOPs use direct recurrent arithmetic; registered chunk64 implementation and GPU fusion differ in operation schedule.
@@ -6,7 +6,7 @@
 # scale_const values, norm epsilons and RoPE pairing/theta are source-derived display formulas: upstream has no numeric attributes for them.
 match:
   model_id:
-  - custom:nextt-gdn_hybrid_swa-8c8cdc99523ad1a1
+  - custom:nextt-gdn_hybrid_swa
   model_type:
   - nexttransformer_gdn_hybrid_swa
 dims:

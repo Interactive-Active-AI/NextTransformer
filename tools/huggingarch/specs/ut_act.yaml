@@ -1,10 +1,10 @@
-# Fixed spec for custom:nextt-ut_act-13564be93814d2f6
+# Fixed spec for custom:nextt-ut_act
 # Scope: source full-sequence evaluation: all max_loops=3 core passes; per-token alive masks, accumulated ACT weights, epsilon=.01; no runtime pruning
 # Checkpoint unavailable; do not mark checkpoint_validated or valid true.
 # Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
 match:
   model_id:
-  - custom:nextt-ut_act-13564be93814d2f6
+  - custom:nextt-ut_act
   model_type:
   - nexttransformer_ut_act
 dims:

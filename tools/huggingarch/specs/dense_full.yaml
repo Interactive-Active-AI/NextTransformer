@@ -1,10 +1,10 @@
-# Fixed spec for custom:nextt-dense_full-ccd2d36a710f7e84
+# Fixed spec for custom:nextt-dense_full
 # Scope: fixed exported configuration, complete causal full-sequence inference
 # Checkpoint unavailable; do not mark checkpoint_validated or valid true.
 # Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
 match:
   model_id:
-  - custom:nextt-dense_full-ccd2d36a710f7e84
+  - custom:nextt-dense_full
   model_type:
   - nexttransformer_dense_full
 dims:

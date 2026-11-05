@@ -113,7 +113,6 @@ model:
         ready = worker.perform(dict(request, action="generate"))
         assert ready["status"] == "spec_ready" and ready["reused"]
         assert (directory / "spec.yaml").read_text() == spec_path.read_text()
-        assert ready["cached_spec_sha256"] == result["cached_spec_sha256"]
     finally:
         custom_model.run_spec_generation = original_generate
     request["batch_size"] = 2

@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_moba_hybrid
   model_id:
-  - custom:nextt-moba_hybrid-da223f69b439e8ac
+  - custom:nextt-moba_hybrid
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

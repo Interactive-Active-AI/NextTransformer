@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_mhc
   model_id:
-  - custom:nextt-mhc-b0da25700bdf14c3
+  - custom:nextt-mhc
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

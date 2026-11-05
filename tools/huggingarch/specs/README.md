@@ -9,8 +9,7 @@ would misrepresent their actual execution.
 GPT-6.1 Sol subagents authored the specs using each model's **HuggingArch-generated
 `prompt.md`**, including its schema, source material and bidirectional review
 instructions. Identical shared prompt sections were reviewed once per group;
-model-specific configuration and task sections were reviewed individually. Prompt
-hashes and section records are in [catalog.json](catalog.json).
+model-specific configuration and task sections were reviewed individually. Supported configurations, checks and limitations are in [catalog.json](catalog.json).
 
 Each supplied spec has passed independent checks with the pinned installed
 HuggingArch engine:
@@ -42,15 +41,15 @@ uv run --project tools/huggingarch --frozen python -m nexttransformer.integratio
 uv run --project tools/huggingarch --frozen python -m nexttransformer.integrations.huggingarch analyze --bundle .agent-work/models
 ```
 
-Export copies a spec and its review only when the full configuration/source hash
-matches. Registration installs it without an agent call and refuses to overwrite
-a different cached spec. Analysis also rejects mismatched specs and contexts
-outside the authored range (2–2,048 tokens). The all-model command reports the two
-unsupported native models and exits nonzero while retaining the other results;
-use `--methods` to select supported models only.
+Export copies a spec and its review when the explicit supported configuration
+matches. Registration uses stable names such as `custom:nextt-dense`, installs the
+spec without an agent call, and refuses to overwrite conflicting cached material.
+Analysis rejects contexts outside the authored range (2–2,048 tokens). The all-model
+command reports the two unsupported native models and exits nonzero while retaining
+the other JSON results; use `--methods` to select supported models only.
 
-Changing source or configuration creates a new model identity. Re-author and
-recheck the corresponding spec before updating the catalog. Do not change a spec
-hash to suppress a review mismatch without repeating its checks. Authoring scripts,
-prompts, temporary caches and full analysis logs are deliberately not runtime
-dependencies or checked-in artifacts.
+When source or configuration changes, re-author and check the corresponding spec,
+and update its supported configuration and limitations. The integration does not
+hash sources, prompts or specs; source compatibility is maintained in code review.
+Authoring scripts, prompts, temporary caches and full analysis logs are not runtime
+dependencies or checked-in artifacts. Only JSON reports are generated.

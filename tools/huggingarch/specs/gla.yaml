@@ -1,7 +1,7 @@
 
 match:
   model_id:
-  - custom:nextt-gla-c69fae05f6a3a367
+  - custom:nextt-gla
   model_type:
   - nexttransformer_gla
 dims:

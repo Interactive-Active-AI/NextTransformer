@@ -32,6 +32,8 @@ def test_export_all_without_torch_or_huggingarch(tmp_path):
     assert dense["training_flops_per_token"] == pytest.approx(4674661693.46476)
     assert not dense["checkpoint_validated"]
     assert "torch" not in proc.stderr
+    assert {m["method"] for m in models if not (output / m["directory"] / "spec.yaml").exists()} == {
+        "native-circle", "native-mor"}
 
 
 def test_looped_export_preserves_weight_sharing(tmp_path):
@@ -47,14 +49,11 @@ def test_looped_export_preserves_weight_sharing(tmp_path):
     assert "# Source: nexttransformer/models/backbone.py" in source
 
 
-def test_identity_is_reproducible_and_content_bound(bundle, tmp_path):
+def test_names_are_stable_and_export_requires_empty_directory(bundle, tmp_path):
     other = tmp_path / "other"
     bridge.export_bundle(other, ["dense_full", "native-circle"])
     assert bridge.load_bundle(other) == bridge.load_bundle(bundle)
-    with (other / "dense_full/forward.py").open("a") as stream:
-        stream.write("# modified source\n")
-    with pytest.raises(ValueError, match="Bundle changed"):
-        bridge.load_bundle(other)
+    assert bridge.load_bundle(other)["models"][0]["model_id"] == "custom:nextt-dense_full"
     with pytest.raises(ValueError, match="must be empty"):
         bridge.export_bundle(bundle)
 
@@ -66,68 +65,55 @@ def test_unknown_method_does_not_create_output(tmp_path):
     assert not output.exists()
 
 
-def test_reviewed_spec_requires_exact_identity_and_unchanged_artifact(tmp_path):
+def test_fixed_spec_requires_matching_configuration(tmp_path):
     directory = tmp_path / "tools/huggingarch/specs"
     directory.mkdir(parents=True)
-    text = "# reviewed artifact\n"
+    text = "# fixed artifact\n"
     (directory / "test.yaml").write_text(text)
-    entry = dict(method="test", content_sha256="source-and-config", spec_file="test.yaml",
-                 spec_sha256=bridge.digest(text.encode()))
+    entry = dict(method="test", config={"hidden_size": 16}, spec_file="test.yaml")
     bridge.write_json(directory / "catalog.json", {"models": [entry]})
-    assert bridge.reviewed_spec(tmp_path, entry) == (text, entry)
-    assert bridge.reviewed_spec(tmp_path, dict(entry, content_sha256="changed")) is None
-    (directory / "test.yaml").write_text("# modified\n")
-    with pytest.raises(ValueError, match="spec changed"):
-        bridge.reviewed_spec(tmp_path, entry)
+    assert bridge.reviewed_spec(tmp_path, entry, entry["config"]) == (text, entry)
+    assert bridge.reviewed_spec(tmp_path, entry, {"hidden_size": 8}) is None
+    assert bridge.reviewed_spec(tmp_path, entry, dict(entry["config"], torch_dtype="float32")) == (text, entry)
 
 
-def test_export_copies_reviewed_spec_and_evidence(tmp_path, monkeypatch):
-    text = "# authored spec\n"
-    def spec(root, model):
-        return text, dict(status="analysis_checked", content_sha256=model["content_sha256"],
-                          spec_sha256=bridge.digest(text.encode()))
-    monkeypatch.setattr(bridge, "reviewed_spec", spec)
+def test_export_copies_spec_and_rejects_incompatible_configuration(tmp_path):
     bridge.export_bundle(tmp_path, ["mha_no_ve"])
-    assert (tmp_path / "mha_no_ve/spec.yaml").read_text() == text
+    assert (tmp_path / "mha_no_ve/spec.yaml").is_file()
     assert bridge.read_json(tmp_path / "mha_no_ve/spec-review.json")["status"] == "analysis_checked"
-    (tmp_path / "mha_no_ve/spec.yaml").write_text("# unreviewed modification")
-    with pytest.raises(ValueError, match="review is stale"):
+    path = tmp_path / "mha_no_ve/config.json"
+    config = bridge.read_json(path)
+    config["hidden_size"] = 48
+    bridge.write_json(path, config)
+    with pytest.raises(ValueError, match="does not support the configuration"):
         bridge.load_bundle(tmp_path)
 
 
-def test_weight_precision_is_explicit_and_changes_identity(tmp_path):
+def test_weight_precision_is_explicit_and_reuses_graph(tmp_path):
     bf16, fp32 = tmp_path / "bf16", tmp_path / "fp32"
     bridge.export_bundle(bf16, ["dense_full"])
     bridge.export_bundle(fp32, ["dense_full"], weight_dtype="float32")
     first = bridge.load_bundle(bf16)["models"][0]
     second = bridge.load_bundle(fp32)["models"][0]
-    assert first["model_id"] != second["model_id"]
+    assert first["model_id"] == second["model_id"]
     assert second["weight_dtype_assumption"] == "float32"
-    assert "Assumed unquantized weight dtype: float32" in (fp32 / "index.html").read_text()
+    assert (fp32 / "dense_full/spec.yaml").read_text() == (bf16 / "dense_full/spec.yaml").read_text()
 
 
-def test_report_separates_costs_and_escapes_external_text(bundle):
-    model = bridge.load_bundle(bundle)["models"][0]
-    bridge.write_json(bundle / "dense_full/analyze.json", dict(
-        status="analyzed", content_sha256=model["content_sha256"], settings={"batch_size": 2, "seq_len": 64},
-        analysis={"summary": {"total_params": 123, "total_flops_gflops": 7, "weight_bytes": 1024**3},
-                  "layer_groups": [{"name": "<script>alert(1)</script>", "total_params": 22, "total_flops": 2e9}]}))
-    bridge.render_report(bundle, "http://localhost:49217")
-    html = (bundle / "index.html").read_text()
-    assert "<script>" not in html and "&lt;script&gt;" in html
-    assert "Training GFLOPs/token" in html and "Prefill GFLOPs" in html
-    assert "4.6747" in html and "1,355,810,568" in html
-    assert "Checkpoint validation: unavailable" in html
-    assert "custom%3Anextt-dense_full-" in html
-    assert "native-circle" in html and "exported" in html
-    assert "<td>—</td>" in html
-    assert "1.0000" in html  # weight bytes converted to GiB
-
-
-@pytest.mark.parametrize("url", ["javascript:alert(1)", "file:///tmp/x", "https://u:p@host", "https://host/?token=x"])
-def test_unsafe_inspector_urls_are_rejected(url):
-    with pytest.raises(ValueError):
-        bridge.inspector_url(url, "custom:a")
+def test_json_report_preserves_upstream_results_and_separates_training_costs(bundle):
+    result = dict(status="analyzed", settings={"batch_size": 2, "seq_len": 64},
+                  analysis={"summary": {"total_params": 123, "total_flops_gflops": 7, "weight_bytes": 1024**3},
+                            "layer_groups": [{"name": "projection", "total_params": 22, "total_flops": 2e9}]})
+    bridge.write_json(bundle / "dense_full/analyze.json", result)
+    report = bridge.write_report(bundle)
+    assert bridge.read_json(bundle / "report.json") == report
+    assert report["models"][0]["result"] == result
+    assert report["models"][0]["model"]["parameters"] == 1355810568
+    assert report["models"][0]["model"]["training_flops_per_token"] == pytest.approx(4674661693.46476)
+    assert report["models"][1]["result"]["status"] == "exported"
+    assert report["models"][1]["model"]["parameters"] is None
+    assert not (bundle / "index.html").exists()
+    assert "sha256" not in (bundle / "report.json").read_text()
 
 
 def test_timeout_is_a_model_error(monkeypatch):
@@ -160,6 +146,8 @@ def test_smoke_export_has_no_formal_training_evidence(tmp_path):
     assert model["parameters"] is None and model["training_flops_per_token"] is None
     config = bridge.read_json(tmp_path / "small/mha_no_ve/config.json")
     assert config["hidden_size"] == 48 and config["max_position_embeddings"] == 12
+    assert model["name"] == "nextt-mha_no_ve-smoke"
+    assert not (tmp_path / "small/mha_no_ve/spec.yaml").exists()
 
 
 @pytest.mark.parametrize("exit_code,publish", [(0, True), (1, False), (0, False)])
@@ -204,7 +192,6 @@ def test_generate_delegates_once_and_preserves_failed_status(tmp_path, monkeypat
         assert result["validation"] == "upstream_generation_gate"
         again = worker.perform(request)
         assert again["reused"] and len(calls) == 1
-        assert again["cached_spec_sha256"] == result["cached_spec_sha256"]
         assert (directory / "spec.yaml").read_text() == "# published upstream spec"
 
 
@@ -223,13 +210,13 @@ def test_failed_model_does_not_hide_other_results(bundle, tmp_path, monkeypatch)
     calls = []
     def worker(request, python, timeout):
         calls.append(request)
-        if request["name"].startswith("nextt-dense_full-"):
+        if request["name"] == "nextt-dense_full":
             return {"status": "error", "error": "bad spec"}
         return {"status": "needs_spec", "error": "Generate a spec"}
     monkeypatch.setattr(bridge, "run_worker", worker)
     args = SimpleNamespace(bundle=bundle, huggingarch_root=upstream, huggingarch_python=Path(sys.executable),
                            methods=None, command="analyze", batch_size=2, seq_len=64,
-                           dtype="bfloat16", timeout=1, base_url=None)
+                           dtype="bfloat16", timeout=1)
     assert bridge.run_bundle(args) == 1
     assert len(calls) == 2
     assert bridge.read_json(bundle / "dense_full/analyze.json")["status"] == "error"
@@ -279,5 +266,5 @@ def test_worker_real_subprocess_contract(bundle, tmp_path):
     request = dict(action="analyze", name="test", directory=str(bundle), huggingarch_root=str(upstream),
                    batch_size=1, seq_len=64, dtype="bfloat16")
     result = bridge.run_worker(request, Path(sys.executable), 10)
-    assert result == {"status": "analyzed", "cached_spec_sha256": None,
+    assert result == {"status": "analyzed",
                       "analysis": {"success": True, "summary": {"total_params": 123}}}

@@ -2,7 +2,7 @@ match:
   model_type:
   - nexttransformer_qsa_hybrid
   model_id:
-  - custom:nextt-qsa_hybrid-fdb761ba17acf585
+  - custom:nextt-qsa_hybrid
 dims:
   d_model: config.hidden_size
   n_heads: config.num_attention_heads

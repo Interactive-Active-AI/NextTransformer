@@ -1,10 +1,10 @@
-# Fixed spec for custom:nextt-residual_standard-74aa82c153ab9d4a
+# Fixed spec for custom:nextt-residual_standard
 # Scope: fixed exported configuration, complete causal full-sequence inference
 # Checkpoint unavailable; do not mark checkpoint_validated or valid true.
 # Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
 match:
   model_id:
-  - custom:nextt-residual_standard-74aa82c153ab9d4a
+  - custom:nextt-residual_standard
   model_type:
   - nexttransformer_residual_standard
 dims:

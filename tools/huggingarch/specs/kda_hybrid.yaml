@@ -1,4 +1,4 @@
-# Fixed architecture for custom:nextt-kda_hybrid-4cbc00ef4814d894; content_sha256 4cbc00ef4814d8943fe3c721658f48122dc467d1265c1f708fe1088ac0ae449d
+# Fixed architecture for custom:nextt-kda_hybrid
 # Source: exported forward.py LinearMixer.forward, recurrent_attention, ReferenceLM._embed_reference/_block/_readout; backbone.Block.forward.
 # Cache declarations estimate architectural streaming states; source rejects kv_cache and only supports full-sequence execution.
 # Custom scan FLOPs use direct recurrent arithmetic; registered chunk64 implementation and GPU fusion differ in operation schedule.
@@ -6,7 +6,7 @@
 # scale_const values, norm epsilons and RoPE pairing/theta are source-derived display formulas: upstream has no numeric attributes for them.
 match:
   model_id:
-  - custom:nextt-kda_hybrid-4cbc00ef4814d894
+  - custom:nextt-kda_hybrid
   model_type:
   - nexttransformer_kda_hybrid
 dims:
