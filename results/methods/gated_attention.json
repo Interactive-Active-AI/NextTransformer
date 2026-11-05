@@ -1,0 +1,26 @@
+{
+ "id": "gated_attention",
+ "name": "Gated Attention",
+ "family": "others",
+ "tagline": "A query-dependent sigmoid gate scales every head's attention output before the output projection.",
+ "description": "The Dense Baseline's full causal attention with the G1 gate of Qiu et al.: each head's scaled dot-product attention output is multiplied elementwise by σ(X W_θ), computed from the same pre-normalized input as q, k and v, before the output projection. The gate is a bias-free 1536 × 1536 projection per layer, initialized like the query projection and trained by Muon; value embeddings, RoPE and QK-norm are the Dense Baseline's. The gates add 2,359,296 parameters per layer; calibration to the shared budget reduced the depth from 23 to 21 layers and widened the FFN to 6272 (−0.606%).",
+ "paperTitle": "Gated Attention for Large Language Models: Non-linearity, Sparsity, and Attention-Sink-Free",
+ "paperUrl": "https://arxiv.org/abs/2505.06708",
+ "mechanism": [
+  "G1 gate: Y' = Y ⊙ σ(X W_θ) on each head's attention output, before the output projection",
+  "Elementwise, head-specific scores (12 heads × 128 channels) from the pre-normalized block input; no bias",
+  "Full causal attention with value embeddings in all 21 layers; FFN 6272"
+ ],
+ "limitations": "The paper's results come from a 15B-total MoE and 1.7B dense models trained with AdamW on 400B tokens or more; here the gate trains with Muon on 49B tokens, under a matched compute budget that costs it two of the Dense Baseline's 23 layers. The official code fuses the gate into the query projection; here it is a separate projection computing the same function. The headwise variant (one score per head, about +0.1% compute at the Dense shape) is a plugin option, not this configuration. No formal run yet, so it has no published result. Parameters, memory and speed are outcomes, not controls.",
+ "diagram": "attention",
+ "blocks": 21,
+ "ffn": 6272,
+ "params": 1306658420,
+ "flops": 4.644093,
+ "error": -0.606,
+ "codeUrl": "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/methods/gated_attention/__init__.py",
+ "cohort": "reference-v1",
+ "sourceUrl": "https://interactive-active-ai.github.io/NextTransformer/docs/methods/sources/#others",
+ "costModel": "reference-aten-math-v2",
+ "order": 46
+}
