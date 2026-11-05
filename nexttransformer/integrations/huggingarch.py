@@ -70,6 +70,28 @@ def source_bundle(root, method):
     return sources, "\n\n".join(f"# Source: {name}\n{text}" for name, text in sources.items())
 
 
+def reviewed_spec(root, model):
+    """Reuse an authored artifact only for its exact config/source identity."""
+    directory = root / "tools/huggingarch/specs"
+    catalog_path = directory / "catalog.json"
+    if not catalog_path.exists():
+        return None
+    for entry in read_json(catalog_path)["models"]:
+        if (entry["method"] != model["method"]
+                or entry["content_sha256"] != model["content_sha256"]):
+            continue
+        if not entry.get("spec_file"):
+            return None, entry
+        path = directory / entry["spec_file"]
+        if path.name != model["method"] + ".yaml" or path.parent != directory:
+            raise ValueError("Invalid reviewed spec filename")
+        text = path.read_text(encoding="utf-8")
+        if digest(text.encode()) != entry["spec_sha256"]:
+            raise ValueError("Reviewed spec changed; update its review before exporting")
+        return text, entry
+    return None
+
+
 def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16", smoke=False):
     if smoke and not methods:
         raise ValueError("Smoke export requires an explicit --methods selection")
@@ -128,14 +150,18 @@ def export_bundle(output, methods=None, root=ROOT, weight_dtype="bfloat16", smok
                      source_sha256={p: digest(text.encode()) for p, text in sources.items()},
                      checkpoint_validated=False)
         entries.append(entry)
-        prepared.append((method, exported, forward, raw))
+        prepared.append((method, exported, forward, raw, reviewed_spec(root, entry)))
     output.mkdir(parents=True, exist_ok=True)
-    for method, config, forward, raw in prepared:
+    for method, config, forward, raw, spec in prepared:
         directory = output / method
         directory.mkdir()
         write_json(directory / "config.json", config)
         write_json(directory / "nexttransformer-config.json", raw)
         (directory / "forward.py").write_text(forward, encoding="utf-8")
+        if spec:
+            if spec[0] is not None:
+                (directory / "spec.yaml").write_text(spec[0], encoding="utf-8")
+            write_json(directory / "spec-review.json", spec[1])
     manifest = dict(schema_version=1, source_revision=git_revision(root),
                     huggingarch_tested_revision=UPSTREAM_REVISION, notice=NOTICE, models=entries)
     write_json(output / "manifest.json", manifest)
@@ -163,6 +189,12 @@ def load_bundle(bundle):
         if (actual != model["content_sha256"] or model["name"] != expected_name
                 or model["model_id"] != "custom:" + expected_name):
             raise ValueError(f"Bundle changed for {name}; export a new bundle before registering or analyzing")
+        review_path = directory / "spec-review.json"
+        if review_path.exists():
+            review = read_json(review_path)
+            if (review.get("content_sha256") != actual or (review.get("spec_sha256")
+                    and review["spec_sha256"] != digest((directory / "spec.yaml").read_bytes()))):
+                raise ValueError(f"Spec review is stale for {name}; export a new bundle")
     return manifest
 
 
@@ -261,6 +293,8 @@ def render_report(bundle, base_url=None):
         if result.get("content_sha256", model["content_sha256"]) != model["content_sha256"]:
             raise ValueError("Analysis provenance does not match bundle")
         analysis = result.get("analysis", {}) if result["status"] == "analyzed" else {}
+        review_path = directory / "spec-review.json"
+        review = read_json(review_path) if review_path.exists() else {}
         summary = analysis.get("summary", {})
         method = escape(model["method"])
         link = (f'<a href="{escape(inspector_url(base_url, model["model_id"]), quote=True)}">Open Inspector</a>'
@@ -274,7 +308,7 @@ def render_report(bundle, base_url=None):
         groups = []
         for group in analysis.get("layer_groups", []):
             groups.append("<tr>" + "".join(f"<td>{escape(str(value))}</td>" for value in (
-                group.get("name", ""), group.get("count", 1), number(group.get("total_params")),
+                group.get("stack_name") or group.get("name", ""), group.get("count", 1), number(group.get("total_params")),
                 number(group.get("total_flops"), 1e9))) + "</tr>")
         breakdown = ('<table><caption>HuggingArch layer groups</caption><thead><tr><th>Name</th><th>Count</th>'
                      '<th>Parameters</th><th>FLOPs (G)</th></tr></thead><tbody>' + "".join(groups) + '</tbody></table>') if groups else ""
@@ -286,13 +320,19 @@ def render_report(bundle, base_url=None):
                        f'<p>Analysis inputs: {escape(json.dumps(settings))}</p>'
                        f'<p>Configuration profile: {escape(model.get("profile", "configured"))}</p>'
                        f'<p>Training evidence: {escape(str(model["cost_record"] or "Not supplied for this configuration"))}</p>'
+                       + ('<details><summary>Spec scope and limitations</summary><p>'
+                          + escape(str(review.get("analysis_scope", "Full-sequence prefill"))) + '</p><ul>'
+                          + ''.join('<li>' + escape(str(note)) + '</li>' for note in review.get("limitations", []))
+                          + '</ul></details>' if review else '')
+                       +
                        f'<p><a href="{method}/config.json">Config</a> · <a href="{method}/forward.py">Forward source</a> · '
                        f'<a href="{method}/nexttransformer-config.json">Original configuration</a>'
                        + (f' · <a href="{method}/spec.yaml">Generated architecture spec</a>' if (directory / "spec.yaml").exists() else "")
+                       + (f' · <a href="{method}/spec-review.json">Spec review and assumptions</a>' if (directory / "spec-review.json").exists() else "")
                        + (f' · <a href="{method}/generate.log">Generation log</a>' if (directory / "generate.log").exists() else "")
                        + (f' · <a href="{method}/analyze.json">Full analysis JSON</a>' if analysis_path.exists() else "")
                        + f'</p>{breakdown}</section>')
-        records.append(dict(model=model, result=result))
+        records.append(dict(model=model, result=result, spec_review=review))
     html = '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NextTransformer · HuggingArch analysis</title><style>
 body{font:16px/1.55 system-ui,sans-serif;margin:2rem auto;padding:0 1rem;max-width:1280px;color:#182838;background:#f7f9fc}

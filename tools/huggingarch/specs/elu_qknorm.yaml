@@ -1,0 +1,2075 @@
+# Fixed architecture for custom:nextt-elu_qknorm-f38262b1a612d8cf; content_sha256 f38262b1a612d8cfe7c5bff89612732a283e2d3f52721b1e31b0f1a552789048
+# Source: exported forward.py LinearMixer.forward, recurrent_attention, ReferenceLM._embed_reference/_block/_readout; backbone.Block.forward.
+# Cache declarations estimate architectural streaming states; source rejects kv_cache and only supports full-sequence execution.
+# Custom scan FLOPs use direct recurrent arithmetic; registered chunk64 implementation and GPU fusion differ in operation schedule.
+# Model-level scales: backout_negative=-1, logit_div15=1/15, logit_mul15=15.
+# scale_const values, norm epsilons and RoPE pairing/theta are source-derived display formulas: upstream has no numeric attributes for them.
+match:
+  model_id:
+  - custom:nextt-elu_qknorm-f38262b1a612d8cf
+  model_type:
+  - nexttransformer_elu_qknorm
+dims:
+  d_model: config.hidden_size
+  n_heads: config.num_attention_heads
+  n_kv_heads: config.num_attention_heads
+  d_head: d_model // n_heads
+  d_ffn: config.intermediate_size
+  n_vocab: config.vocab_size
+  n_layers: config.num_hidden_layers
+  s_max: config.max_position_embeddings
+  s_conv_kernel: config.conv_size
+  d_gate_lowrank: config.gate_rank
+model_inputs:
+  input_ids:
+    kind: tokens
+blocks:
+  nextt_elu_qknorm_ve:
+    role: attention
+    description: NextTransformer elu_qknorm exact forward decomposition.
+    inputs:
+    - x
+    - ve
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      ve_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: linear
+        in: ve_channels
+        dims:
+          in: '12'
+          out: n_heads
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      ve_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      ve_scale:
+        op: scale_const
+        formula: y = 3*x
+        in: ve_sigmoid
+        dims:
+          in: n_heads
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      ve_mul:
+        op: headwise_gate
+        in:
+        - ve_heads
+        - ve_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      value_embedding_add:
+        op: add
+        in:
+        - v_heads
+        - ve_mul
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_heads
+        dims:
+          dim: d_head
+      q_temperature:
+        op: scale_const
+        formula: y = 8*x
+        in: q_norm
+        dims:
+          in: d_head
+      q_feature:
+        op: nextt_elu_feature
+        in: q_temperature
+        dims:
+          H: n_heads
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_heads
+        dims:
+          dim: d_head
+      k_temperature:
+        op: scale_const
+        formula: y = 8*x
+        in: k_norm
+        dims:
+          in: d_head
+      k_feature:
+        op: nextt_elu_feature
+        in: k_temperature
+        dims:
+          H: n_heads
+      scan:
+        op: nextt_elu_scan
+        in:
+        - q_feature
+        - k_feature
+        - value_embedding_add
+        dims:
+          H: n_heads
+      output_norm:
+        op: rmsnorm_unscaled
+        in: scan
+        dims:
+          dim: d_head
+      output_gain:
+        op: parameter_vector
+        dims:
+          dim: d_head
+        weight_axes:
+        - replicated: true
+      output_gain_mul:
+        op: mul
+        in:
+        - output_norm
+        - output_gain
+        dims:
+          dim: d_head
+      merge_heads:
+        op: head_merge
+        in: output_gain_mul
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+    outputs:
+    - c_proj
+    cache:
+      family: GLA-Linear
+      entries:
+      - state: recurrent_state
+        kind: recurrent_state
+        carrier: scan
+        shape:
+        - n_heads
+        - d_head
+        - d_head
+        dtype: F32
+  nextt_elu_qknorm_ve_decoder:
+    role: block
+    description: Native parameter-free pre-RMSNorm residual block.
+    inputs: &id001
+    - x
+    - ve
+    graph:
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      attn:
+        op: nextt_elu_qknorm_ve
+        in:
+        - norm_attn
+        - ve
+      attn_residual:
+        op: add
+        in:
+        - x
+        - attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_residual
+        dims:
+          dim: d_model
+      mlp:
+        op: nemotron_h_relu2_mlp
+        inner_modules:
+          up_proj: c_fc
+          down_proj: c_proj
+        in: norm_mlp
+      out:
+        op: add
+        in:
+        - attn_residual
+        - mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  nextt_elu_qknorm:
+    role: attention
+    description: NextTransformer elu_qknorm exact forward decomposition.
+    inputs:
+    - x
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_heads
+        dims:
+          dim: d_head
+      q_temperature:
+        op: scale_const
+        formula: y = 8*x
+        in: q_norm
+        dims:
+          in: d_head
+      q_feature:
+        op: nextt_elu_feature
+        in: q_temperature
+        dims:
+          H: n_heads
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_heads
+        dims:
+          dim: d_head
+      k_temperature:
+        op: scale_const
+        formula: y = 8*x
+        in: k_norm
+        dims:
+          in: d_head
+      k_feature:
+        op: nextt_elu_feature
+        in: k_temperature
+        dims:
+          H: n_heads
+      scan:
+        op: nextt_elu_scan
+        in:
+        - q_feature
+        - k_feature
+        - v_heads
+        dims:
+          H: n_heads
+      output_norm:
+        op: rmsnorm_unscaled
+        in: scan
+        dims:
+          dim: d_head
+      output_gain:
+        op: parameter_vector
+        dims:
+          dim: d_head
+        weight_axes:
+        - replicated: true
+      output_gain_mul:
+        op: mul
+        in:
+        - output_norm
+        - output_gain
+        dims:
+          dim: d_head
+      merge_heads:
+        op: head_merge
+        in: output_gain_mul
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+    outputs:
+    - c_proj
+    cache:
+      family: GLA-Linear
+      entries:
+      - state: recurrent_state
+        kind: recurrent_state
+        carrier: scan
+        shape:
+        - n_heads
+        - d_head
+        - d_head
+        dtype: F32
+  nextt_elu_qknorm_decoder:
+    role: block
+    description: Native parameter-free pre-RMSNorm residual block.
+    inputs: &id002
+    - x
+    graph:
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      attn:
+        op: nextt_elu_qknorm
+        in: norm_attn
+      attn_residual:
+        op: add
+        in:
+        - x
+        - attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_residual
+        dims:
+          dim: d_model
+      mlp:
+        op: nemotron_h_relu2_mlp
+        inner_modules:
+          up_proj: c_fc
+          down_proj: c_proj
+        in: norm_mlp
+      out:
+        op: add
+        in:
+        - attn_residual
+        - mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  physical_decoder_0:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.0
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_1:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.1
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_2:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.2
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_3:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.3
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_4:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.4
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_5:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.5
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_6:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.6
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_7:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.7
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_8:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.8
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_9:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.9
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_10:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.10
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_11:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.11
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_12:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.12
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_13:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.13
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_14:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.14
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_15:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.15
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_16:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.16
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_17:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.17
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_18:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.18
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_19:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.19
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_20:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.20
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_21:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.21
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_22:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.22
+        in: *id001
+    outputs:
+    - body
+  physical_decoder_23:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id002
+    graph:
+      body:
+        op: nextt_elu_qknorm_decoder
+        module: transformer.h.23
+        in: *id002
+    outputs:
+    - body
+  physical_decoder_24:
+    role: block
+    description: Physical module namespace wrapper; computation remains in the shared
+      decoder.
+    inputs: *id001
+    graph:
+      body:
+        op: nextt_elu_qknorm_ve_decoder
+        module: transformer.h.24
+        in: *id001
+    outputs:
+    - body
+custom_ops:
+  nextt_elu_feature:
+    formula: phi(x)=where(x>0,x+1,exp(min(x,0))); accumulation FP32
+    description: Atomic forward operation; projections and learned parameters remain
+      separate graph nodes.
+    flops: 4*B*s_ctx*H*d_head
+    params: '0'
+    signature:
+      x:
+      - B
+      - H
+      - s_ctx
+      - d_head
+    shape_kind: preserve
+    couples_on: []
+  nextt_elu_scan:
+    formula: S_t=S_(t-1)+k_t outer v_t; o_t=q_t S_t
+    description: Atomic forward operation; projections and learned parameters remain
+      separate graph nodes.
+    flops: B*s_ctx*H*(4*d_head*d_head-d_head)
+    params: '0'
+    signature:
+      q:
+      - B
+      - H
+      - s_ctx
+      - d_head
+      k:
+      - B
+      - H
+      - s_ctx
+      - d_head
+      v:
+      - B
+      - H
+      - s_ctx
+      - d_head
+    shape_kind: preserve
+    couples_on:
+    - s_ctx
+    - d_head
+    axis_use:
+      s_ctx:
+        category: recurrent
+        param: d_head
+      d_head:
+        category: recurrent
+        param: state
+    carries_recurrent_state: true
+model:
+- name: resid_lambdas
+  op: parameter_vector
+  dims:
+    dim: n_layers
+  weight_axes:
+  - replicated: true
+- name: x0_lambdas
+  op: parameter_vector
+  dims:
+    dim: n_layers
+  weight_axes:
+  - replicated: true
+- name: smear_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - replicated: true
+- name: backout_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - replicated: true
+- name: transformer.wte
+  op: embedding
+  boundary_role: input_embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: embedding_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.wte
+- name: smear_current
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx-1
+    start: '1'
+  inputs:
+  - embedding_norm
+- name: smear_previous
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx-1
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: smear_channels
+  op: slice
+  dims:
+    in: d_model
+    out: '24'
+    start: '0'
+  inputs:
+  - smear_current
+- name: smear_gate
+  op: linear
+  dims:
+    in: '24'
+    out: '1'
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - smear_channels
+- name: smear_sigmoid
+  op: sigmoid
+  dims:
+    dim: '1'
+  inputs:
+  - smear_gate
+- name: smear_scaled
+  op: mul
+  dims:
+    dim: '1'
+  inputs:
+  - smear_sigmoid
+  - smear_lambda
+- name: smear_contribution
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - smear_previous
+  - smear_scaled
+- name: smear_sum
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - smear_current
+  - smear_contribution
+- name: first_token
+  op: slice
+  axis: 1
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: initial_hidden
+  op: concat
+  axis: 1
+  dims:
+    out: s_ctx
+  inputs:
+  - first_token
+  - smear_sum
+- name: resid_0
+  op: slice
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - resid_lambdas
+- name: x0_0
+  op: slice
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - resid_0
+- name: scaled_initial_0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_0
+- name: mixed_0
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_0
+  - scaled_initial_0
+- name: value_embeds.0
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.0
+  template: physical_decoder_0
+  inputs:
+  - mixed_0
+  - value_embeds.0
+- name: resid_1
+  op: slice
+  dims:
+    out: '1'
+    start: '1'
+  inputs:
+  - resid_lambdas
+- name: x0_1
+  op: slice
+  dims:
+    out: '1'
+    start: '1'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_1
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.0
+  - resid_1
+- name: scaled_initial_1
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_1
+- name: mixed_1
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_1
+  - scaled_initial_1
+- name: transformer.h.1
+  template: physical_decoder_1
+  inputs:
+  - mixed_1
+- name: resid_2
+  op: slice
+  dims:
+    out: '1'
+    start: '2'
+  inputs:
+  - resid_lambdas
+- name: x0_2
+  op: slice
+  dims:
+    out: '1'
+    start: '2'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_2
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.1
+  - resid_2
+- name: scaled_initial_2
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_2
+- name: mixed_2
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_2
+  - scaled_initial_2
+- name: value_embeds.2
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.2
+  template: physical_decoder_2
+  inputs:
+  - mixed_2
+  - value_embeds.2
+- name: resid_3
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - resid_lambdas
+- name: x0_3
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_3
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.2
+  - resid_3
+- name: scaled_initial_3
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_3
+- name: mixed_3
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_3
+  - scaled_initial_3
+- name: transformer.h.3
+  template: physical_decoder_3
+  inputs:
+  - mixed_3
+- name: resid_4
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - resid_lambdas
+- name: x0_4
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_4
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.3
+  - resid_4
+- name: scaled_initial_4
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_4
+- name: mixed_4
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_4
+  - scaled_initial_4
+- name: value_embeds.4
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.4
+  template: physical_decoder_4
+  inputs:
+  - mixed_4
+  - value_embeds.4
+- name: resid_5
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - resid_lambdas
+- name: x0_5
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_5
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.4
+  - resid_5
+- name: scaled_initial_5
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_5
+- name: mixed_5
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_5
+  - scaled_initial_5
+- name: transformer.h.5
+  template: physical_decoder_5
+  inputs:
+  - mixed_5
+- name: resid_6
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - resid_lambdas
+- name: x0_6
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_6
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.5
+  - resid_6
+- name: scaled_initial_6
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_6
+- name: mixed_6
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_6
+  - scaled_initial_6
+- name: value_embeds.6
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.6
+  template: physical_decoder_6
+  inputs:
+  - mixed_6
+  - value_embeds.6
+- name: resid_7
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - resid_lambdas
+- name: x0_7
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_7
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.6
+  - resid_7
+- name: scaled_initial_7
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_7
+- name: mixed_7
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_7
+  - scaled_initial_7
+- name: transformer.h.7
+  template: physical_decoder_7
+  inputs:
+  - mixed_7
+- name: resid_8
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - resid_lambdas
+- name: x0_8
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_8
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.7
+  - resid_8
+- name: scaled_initial_8
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_8
+- name: mixed_8
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_8
+  - scaled_initial_8
+- name: value_embeds.8
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.8
+  template: physical_decoder_8
+  inputs:
+  - mixed_8
+  - value_embeds.8
+- name: resid_9
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - resid_lambdas
+- name: x0_9
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_9
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.8
+  - resid_9
+- name: scaled_initial_9
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_9
+- name: mixed_9
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_9
+  - scaled_initial_9
+- name: transformer.h.9
+  template: physical_decoder_9
+  inputs:
+  - mixed_9
+- name: resid_10
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - resid_lambdas
+- name: x0_10
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_10
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.9
+  - resid_10
+- name: scaled_initial_10
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_10
+- name: mixed_10
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_10
+  - scaled_initial_10
+- name: value_embeds.10
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.10
+  template: physical_decoder_10
+  inputs:
+  - mixed_10
+  - value_embeds.10
+- name: resid_11
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - resid_lambdas
+- name: x0_11
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_11
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.10
+  - resid_11
+- name: scaled_initial_11
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_11
+- name: mixed_11
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_11
+  - scaled_initial_11
+- name: transformer.h.11
+  template: physical_decoder_11
+  inputs:
+  - mixed_11
+- name: resid_12
+  op: slice
+  dims:
+    out: '1'
+    start: '12'
+  inputs:
+  - resid_lambdas
+- name: x0_12
+  op: slice
+  dims:
+    out: '1'
+    start: '12'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_12
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.11
+  - resid_12
+- name: scaled_initial_12
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_12
+- name: mixed_12
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_12
+  - scaled_initial_12
+- name: value_embeds.12
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.12
+  template: physical_decoder_12
+  inputs:
+  - mixed_12
+  - value_embeds.12
+- name: resid_13
+  op: slice
+  dims:
+    out: '1'
+    start: '13'
+  inputs:
+  - resid_lambdas
+- name: x0_13
+  op: slice
+  dims:
+    out: '1'
+    start: '13'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_13
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.12
+  - resid_13
+- name: scaled_initial_13
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_13
+- name: mixed_13
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_13
+  - scaled_initial_13
+- name: transformer.h.13
+  template: physical_decoder_13
+  inputs:
+  - mixed_13
+- name: resid_14
+  op: slice
+  dims:
+    out: '1'
+    start: '14'
+  inputs:
+  - resid_lambdas
+- name: x0_14
+  op: slice
+  dims:
+    out: '1'
+    start: '14'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_14
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.13
+  - resid_14
+- name: scaled_initial_14
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_14
+- name: mixed_14
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_14
+  - scaled_initial_14
+- name: value_embeds.14
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.14
+  template: physical_decoder_14
+  inputs:
+  - mixed_14
+  - value_embeds.14
+- name: resid_15
+  op: slice
+  dims:
+    out: '1'
+    start: '15'
+  inputs:
+  - resid_lambdas
+- name: x0_15
+  op: slice
+  dims:
+    out: '1'
+    start: '15'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_15
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.14
+  - resid_15
+- name: scaled_initial_15
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_15
+- name: mixed_15
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_15
+  - scaled_initial_15
+- name: transformer.h.15
+  template: physical_decoder_15
+  inputs:
+  - mixed_15
+- name: resid_16
+  op: slice
+  dims:
+    out: '1'
+    start: '16'
+  inputs:
+  - resid_lambdas
+- name: x0_16
+  op: slice
+  dims:
+    out: '1'
+    start: '16'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_16
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.15
+  - resid_16
+- name: scaled_initial_16
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_16
+- name: mixed_16
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_16
+  - scaled_initial_16
+- name: value_embeds.16
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.16
+  template: physical_decoder_16
+  inputs:
+  - mixed_16
+  - value_embeds.16
+- name: resid_17
+  op: slice
+  dims:
+    out: '1'
+    start: '17'
+  inputs:
+  - resid_lambdas
+- name: x0_17
+  op: slice
+  dims:
+    out: '1'
+    start: '17'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_17
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.16
+  - resid_17
+- name: scaled_initial_17
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_17
+- name: mixed_17
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_17
+  - scaled_initial_17
+- name: transformer.h.17
+  template: physical_decoder_17
+  inputs:
+  - mixed_17
+- name: resid_18
+  op: slice
+  dims:
+    out: '1'
+    start: '18'
+  inputs:
+  - resid_lambdas
+- name: x0_18
+  op: slice
+  dims:
+    out: '1'
+    start: '18'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_18
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.17
+  - resid_18
+- name: scaled_initial_18
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_18
+- name: mixed_18
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_18
+  - scaled_initial_18
+- name: value_embeds.18
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.18
+  template: physical_decoder_18
+  inputs:
+  - mixed_18
+  - value_embeds.18
+- name: resid_19
+  op: slice
+  dims:
+    out: '1'
+    start: '19'
+  inputs:
+  - resid_lambdas
+- name: x0_19
+  op: slice
+  dims:
+    out: '1'
+    start: '19'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_19
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.18
+  - resid_19
+- name: scaled_initial_19
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_19
+- name: mixed_19
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_19
+  - scaled_initial_19
+- name: transformer.h.19
+  template: physical_decoder_19
+  inputs:
+  - mixed_19
+- name: resid_20
+  op: slice
+  dims:
+    out: '1'
+    start: '20'
+  inputs:
+  - resid_lambdas
+- name: x0_20
+  op: slice
+  dims:
+    out: '1'
+    start: '20'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_20
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.19
+  - resid_20
+- name: scaled_initial_20
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_20
+- name: mixed_20
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_20
+  - scaled_initial_20
+- name: value_embeds.20
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.20
+  template: physical_decoder_20
+  inputs:
+  - mixed_20
+  - value_embeds.20
+- name: resid_21
+  op: slice
+  dims:
+    out: '1'
+    start: '21'
+  inputs:
+  - resid_lambdas
+- name: x0_21
+  op: slice
+  dims:
+    out: '1'
+    start: '21'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_21
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.20
+  - resid_21
+- name: scaled_initial_21
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_21
+- name: mixed_21
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_21
+  - scaled_initial_21
+- name: transformer.h.21
+  template: physical_decoder_21
+  inputs:
+  - mixed_21
+- name: resid_22
+  op: slice
+  dims:
+    out: '1'
+    start: '22'
+  inputs:
+  - resid_lambdas
+- name: x0_22
+  op: slice
+  dims:
+    out: '1'
+    start: '22'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_22
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.21
+  - resid_22
+- name: scaled_initial_22
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_22
+- name: mixed_22
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_22
+  - scaled_initial_22
+- name: value_embeds.22
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.22
+  template: physical_decoder_22
+  inputs:
+  - mixed_22
+  - value_embeds.22
+- name: resid_23
+  op: slice
+  dims:
+    out: '1'
+    start: '23'
+  inputs:
+  - resid_lambdas
+- name: x0_23
+  op: slice
+  dims:
+    out: '1'
+    start: '23'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_23
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.22
+  - resid_23
+- name: scaled_initial_23
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_23
+- name: mixed_23
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_23
+  - scaled_initial_23
+- name: transformer.h.23
+  template: physical_decoder_23
+  inputs:
+  - mixed_23
+- name: resid_24
+  op: slice
+  dims:
+    out: '1'
+    start: '24'
+  inputs:
+  - resid_lambdas
+- name: x0_24
+  op: slice
+  dims:
+    out: '1'
+    start: '24'
+  inputs:
+  - x0_lambdas
+- name: scaled_hidden_24
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.23
+  - resid_24
+- name: scaled_initial_24
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - x0_24
+- name: mixed_24
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - scaled_hidden_24
+  - scaled_initial_24
+- name: value_embeds.24
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - input_ids
+- name: transformer.h.24
+  template: physical_decoder_24
+  inputs:
+  - mixed_24
+  - value_embeds.24
+- name: backout_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.12
+  - backout_lambda
+- name: backout_negative
+  op: scale_const
+  dims:
+    in: d_model
+  inputs:
+  - backout_scaled
+- name: backout_subtract
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.24
+  - backout_negative
+- name: final_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - backout_subtract
+- name: lm_head
+  op: linear
+  boundary_role: output_head
+  dims:
+    in: d_model
+    out: n_vocab
+  weight_axes:
+  - replicated: true
+  - replicated: true
+  inputs:
+  - final_norm
+- name: logit_div15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - lm_head
+- name: logit_tanh
+  op: tanh
+  dims:
+    dim: n_vocab
+  inputs:
+  - logit_div15
+- name: logit_mul15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - logit_tanh

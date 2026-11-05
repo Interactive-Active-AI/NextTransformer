@@ -64,6 +64,45 @@ model:
     assert summary["weight_bytes"] == 512  # explicit BF16 storage assumption
     assert summary["total_flops"] == 1024  # 4 positions x 2 x 8 x 16
     assert "resolved" not in result["analysis"]
+    # Both upstream cache files are called spec.yaml. Their graphs must not
+    # collide in the pinned loader's filename-keyed registry.
+    other = temporary / "other"
+    other.mkdir()
+    (other / "config.json").write_text((directory / "config.json").read_text())
+    (other / "forward.py").write_text("# Synthetic model with an additional projection.\n")
+    other_request = dict(request, name="bridge-other", directory=str(other))
+    assert worker.perform(dict(other_request, action="register"))["status"] == "registered"
+    other_spec = spec_path.read_text().replace("custom:bridge-smoke", "custom:bridge-other")
+    other_spec = other_spec.replace("  - name: lm_head", '''  - name: extra
+    op: linear
+    inputs: [embed]
+    dims: {in: d_model, out: d_model}
+    weight_axes: [{replicated: true}, {replicated: true}]
+  - name: lm_head''').replace("    inputs: [embed]\n    boundary_role: output_head", "    inputs: [extra]\n    boundary_role: output_head")
+    (custom_id.model_path("bridge-other") / "spec.yaml").write_text(other_spec)
+    assert worker.perform(other_request)["analysis"]["summary"]["total_params"] == 320
+    assert worker.perform(request)["analysis"]["summary"]["total_params"] == 256
+    assert worker.perform(other_request)["analysis"]["summary"]["total_params"] == 320
+    bundled = temporary / "bundled"
+    bundled.mkdir()
+    for filename in ("config.json", "forward.py"):
+        (bundled / filename).write_text((directory / filename).read_text())
+    bundled_spec = spec_path.read_text().replace("custom:bridge-smoke", "custom:bridge-bundled")
+    (bundled / "spec.yaml").write_text(bundled_spec)
+    bundled_request = dict(request, name="bridge-bundled", directory=str(bundled))
+    assert worker.perform(dict(bundled_request, action="register"))["spec_source"] == "bundle"
+    assert worker.perform(bundled_request)["analysis"]["summary"]["total_params"] == 256
+    (bundled / "spec-review.json").write_text(json.dumps({"supported_settings": {"min_seq_len": 2, "max_seq_len": 16}}))
+    assert worker.perform(dict(bundled_request, seq_len=1))["status"] == "unsupported_settings"
+    assert worker.perform(dict(bundled_request, seq_len=17))["status"] == "unsupported_settings"
+    (bundled / "spec.yaml").write_text("# conflicting spec")
+    try:
+        worker.perform(dict(bundled_request, action="register"))
+    except ValueError as exc:
+        assert "existing spec differs" in str(exc)
+    else:
+        raise AssertionError("Bundled specs must not overwrite a different cached spec")
+    assert (custom_id.model_path("bridge-bundled") / "spec.yaml").read_text() == bundled_spec
     # Reusing a serving spec must not need an agent binary or provider credentials.
     from backend import custom_model
     original_generate = custom_model.run_spec_generation

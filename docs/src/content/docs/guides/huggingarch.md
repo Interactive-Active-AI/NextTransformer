@@ -30,6 +30,27 @@ The analyzer does not accept an arbitrary `torch.nn.Module` or infer its exact c
 Source registration prepares the material for a spec; it is not a replacement for that spec. Once a spec exists,
 the installed Python dependency computes the analysis without a web server or a spec-generation agent.
 
+## Fixed specs authored with the upstream prompts
+
+`tools/huggingarch/specs/catalog.json` records the authored specs and the outcome for every exported
+configuration. GPT-6.1 Sol agents read HuggingArch's registered per-model `prompt.md`, its shared schema
+and review instructions, and the actual forward source. Each entry records the prompt hash, configuration/
+source identity, spec hash, checks and limitations. Authoring helpers are not runtime dependencies.
+
+Export automatically includes a checked-in spec only when its complete configuration/source identity
+matches the catalog. Registration installs that YAML into HuggingArch's cache; a different existing spec
+is never overwritten. The usual register/analyze path therefore needs no agent for these fixed artifacts.
+Changed architectures get new identities and need new spec authoring. An unsupported entry has no YAML;
+its catalog entry explains what remains unrepresented.
+
+These checks establish loadability, graph geometry and parameter agreement with the corresponding meta
+model. They do not establish numerical equivalence, measured performance, or checkpoint validation.
+The scope is full-sequence prefill: cache layouts are architectural estimates where the source has no
+decode implementation. Read each entry's limitations, including upstream attribution fields that may
+report zero for work already included in total FLOPs. The report links the spec and its review record.
+Authored specs require sequence lengths from 2 through the exported context length; the bridge rejects
+requests outside that range. The source's single-token smear bypass is not represented by these graphs.
+
 ## 1. Export configurations and source
 
 Run from the NextTransformer checkout:
@@ -48,6 +69,7 @@ first be moved into the repository. Each output directory must be empty; registr
 Open `.agent-work/huggingarch/index.html` directly in a browser. At this point the rows say `exported`:
 **exporting source does not generate a HuggingArch spec or an analysis**. Existing training evidence is
 visible immediately; unavailable inference values are shown as dashes.
+Matching authored specs are copied into the bundle at export time but are analyzed only when requested.
 
 The bundle contains:
 
@@ -60,6 +82,7 @@ index.html / report.json          # per-model report
 <method>/register.json            # written by register
 <method>/generate.json / generate.log # upstream generation outcome and diagnostics
 <method>/spec.yaml                # copy of the published spec, written by generate
+<method>/spec-review.json         # identity, prompt provenance and limitations for a bundled spec
 <method>/analyze.json             # written by analyze, including failures and analysis inputs
 ```
 
@@ -91,6 +114,10 @@ The tool project is separate because the dependency constraints conflict: NextTr
 `huggingface-hub==1.26.0`, while HuggingArch's `transformers>=5.20.0` requires `huggingface-hub>=1.31.0`.
 HuggingArch also requires Python 3.13+, while training supports Python 3.10–3.13. The tool uses CPU PyTorch;
 installing it does not upgrade the training environment or download CUDA runtimes.
+
+The pinned upstream loader keys custom files by their common filename `spec.yaml`. The bridge scopes
+each worker's custom-model scan to the requested model, preventing one model's graph from being used
+for another when several custom specs are installed.
 
 If HuggingArch is already installed in a compatible Python environment, simply run
 `python -m nexttransformer.integrations.huggingarch register --bundle .agent-work/huggingarch` there.
@@ -168,6 +195,8 @@ Rerunning analysis replaces that model's prior result, including replacing old s
 | `not_registered` | Register in the same HuggingArch environment/user account. |
 | `needs_spec` | Generate and review the missing spec, then rerun analysis. |
 | `analyzed` | A spec-derived result is available; this does **not** mean checkpoint validation passed. |
+| `unsupported_settings` | Requested context is outside the authored spec's reviewed range. |
+| `unsupported_architecture` | The catalog records a source/engine gap; read the per-model review for evidence. |
 | `error` | Timeout, invalid spec, incompatible upstream API or another failure; inspect the error and retry. |
 
 To add Inspector links, pass `--base-url "$HUGGINGARCH_URL"` to register, generate, analyze or report, where

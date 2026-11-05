@@ -1,0 +1,8743 @@
+match:
+  model_type:
+  - nexttransformer_hc
+  model_id:
+  - custom:nextt-hc-f5bded2891986013
+dims:
+  d_model: config.hidden_size
+  n_heads: config.num_attention_heads
+  n_kv_heads: config.num_attention_heads
+  d_head: d_model // n_heads
+  d_ffn: config.intermediate_size
+  n_vocab: config.vocab_size
+  n_layers: config.num_hidden_layers
+  s_max: config.max_position_embeddings
+  n_hidden_copies: config.residual_streams
+  d_hc_mix: n_hidden_copies*n_hidden_copies+2*n_hidden_copies
+model_inputs:
+  input_ids:
+    kind: tokens
+blocks:
+  nextt_attention:
+    role: attention
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_heads
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id001
+        - &id038
+          replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_heads
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_ffn:
+    role: ffn_dense
+    graph:
+      c_fc:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_ffn
+        weight_axes: *id001
+      relu:
+        op: relu
+        in: c_fc
+        dims:
+          dim: d_ffn
+      square:
+        op: mul
+        in:
+        - relu
+        - relu
+        dims:
+          dim: d_ffn
+      c_proj:
+        op: linear
+        in: square
+        dims:
+          in: d_ffn
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_attention_ve:
+    role: attention
+    inputs: &id003
+    - x
+    - ve
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_mixed
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id002
+        - replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      gate_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: linear
+        in: gate_channels
+        dims:
+          in: '12'
+          out: n_heads
+        weight_axes: *id001
+      gate_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      gate3:
+        op: scale_const
+        formula: 3 * x
+        in: gate_sigmoid
+        dims:
+          in: n_heads
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      gated_ve:
+        op: headwise_gate
+        in:
+        - ve_heads
+        - gate3
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      v_mixed:
+        op: add
+        in:
+        - v_heads
+        - gated_ve
+        dims:
+          dim: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_mixed
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+    outputs:
+    - c_proj
+  module_transformer_h_0_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.0.attn
+    outputs:
+    - call
+  module_transformer_h_0_mlp:
+    inputs: &id004
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id004
+        module: transformer.h.0.mlp
+    outputs:
+    - call
+  module_transformer_h_1_attn:
+    inputs: &id005
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id005
+        module: transformer.h.1.attn
+    outputs:
+    - call
+  module_transformer_h_1_mlp:
+    inputs: &id006
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id006
+        module: transformer.h.1.mlp
+    outputs:
+    - call
+  module_transformer_h_2_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.2.attn
+    outputs:
+    - call
+  module_transformer_h_2_mlp:
+    inputs: &id007
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id007
+        module: transformer.h.2.mlp
+    outputs:
+    - call
+  module_transformer_h_3_attn:
+    inputs: &id008
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id008
+        module: transformer.h.3.attn
+    outputs:
+    - call
+  module_transformer_h_3_mlp:
+    inputs: &id009
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id009
+        module: transformer.h.3.mlp
+    outputs:
+    - call
+  module_transformer_h_4_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.4.attn
+    outputs:
+    - call
+  module_transformer_h_4_mlp:
+    inputs: &id010
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id010
+        module: transformer.h.4.mlp
+    outputs:
+    - call
+  module_transformer_h_5_attn:
+    inputs: &id011
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id011
+        module: transformer.h.5.attn
+    outputs:
+    - call
+  module_transformer_h_5_mlp:
+    inputs: &id012
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id012
+        module: transformer.h.5.mlp
+    outputs:
+    - call
+  module_transformer_h_6_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.6.attn
+    outputs:
+    - call
+  module_transformer_h_6_mlp:
+    inputs: &id013
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id013
+        module: transformer.h.6.mlp
+    outputs:
+    - call
+  module_transformer_h_7_attn:
+    inputs: &id014
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id014
+        module: transformer.h.7.attn
+    outputs:
+    - call
+  module_transformer_h_7_mlp:
+    inputs: &id015
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id015
+        module: transformer.h.7.mlp
+    outputs:
+    - call
+  module_transformer_h_8_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.8.attn
+    outputs:
+    - call
+  module_transformer_h_8_mlp:
+    inputs: &id016
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id016
+        module: transformer.h.8.mlp
+    outputs:
+    - call
+  module_transformer_h_9_attn:
+    inputs: &id017
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id017
+        module: transformer.h.9.attn
+    outputs:
+    - call
+  module_transformer_h_9_mlp:
+    inputs: &id018
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id018
+        module: transformer.h.9.mlp
+    outputs:
+    - call
+  module_transformer_h_10_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.10.attn
+    outputs:
+    - call
+  module_transformer_h_10_mlp:
+    inputs: &id019
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id019
+        module: transformer.h.10.mlp
+    outputs:
+    - call
+  module_transformer_h_11_attn:
+    inputs: &id020
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id020
+        module: transformer.h.11.attn
+    outputs:
+    - call
+  module_transformer_h_11_mlp:
+    inputs: &id021
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id021
+        module: transformer.h.11.mlp
+    outputs:
+    - call
+  module_transformer_h_12_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.12.attn
+    outputs:
+    - call
+  module_transformer_h_12_mlp:
+    inputs: &id022
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id022
+        module: transformer.h.12.mlp
+    outputs:
+    - call
+  module_transformer_h_13_attn:
+    inputs: &id023
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id023
+        module: transformer.h.13.attn
+    outputs:
+    - call
+  module_transformer_h_13_mlp:
+    inputs: &id024
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id024
+        module: transformer.h.13.mlp
+    outputs:
+    - call
+  module_transformer_h_14_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.14.attn
+    outputs:
+    - call
+  module_transformer_h_14_mlp:
+    inputs: &id025
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id025
+        module: transformer.h.14.mlp
+    outputs:
+    - call
+  module_transformer_h_15_attn:
+    inputs: &id026
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id026
+        module: transformer.h.15.attn
+    outputs:
+    - call
+  module_transformer_h_15_mlp:
+    inputs: &id027
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id027
+        module: transformer.h.15.mlp
+    outputs:
+    - call
+  module_transformer_h_16_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.16.attn
+    outputs:
+    - call
+  module_transformer_h_16_mlp:
+    inputs: &id028
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id028
+        module: transformer.h.16.mlp
+    outputs:
+    - call
+  module_transformer_h_17_attn:
+    inputs: &id029
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id029
+        module: transformer.h.17.attn
+    outputs:
+    - call
+  module_transformer_h_17_mlp:
+    inputs: &id030
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id030
+        module: transformer.h.17.mlp
+    outputs:
+    - call
+  module_transformer_h_18_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.18.attn
+    outputs:
+    - call
+  module_transformer_h_18_mlp:
+    inputs: &id031
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id031
+        module: transformer.h.18.mlp
+    outputs:
+    - call
+  module_transformer_h_19_attn:
+    inputs: &id032
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id032
+        module: transformer.h.19.attn
+    outputs:
+    - call
+  module_transformer_h_19_mlp:
+    inputs: &id033
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id033
+        module: transformer.h.19.mlp
+    outputs:
+    - call
+  module_transformer_h_20_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.20.attn
+    outputs:
+    - call
+  module_transformer_h_20_mlp:
+    inputs: &id034
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id034
+        module: transformer.h.20.mlp
+    outputs:
+    - call
+  module_transformer_h_21_attn:
+    inputs: &id035
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id035
+        module: transformer.h.21.attn
+    outputs:
+    - call
+  module_transformer_h_21_mlp:
+    inputs: &id036
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id036
+        module: transformer.h.21.mlp
+    outputs:
+    - call
+  module_transformer_h_22_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.22.attn
+    outputs:
+    - call
+  module_transformer_h_22_mlp:
+    inputs: &id037
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id037
+        module: transformer.h.22.mlp
+    outputs:
+    - call
+  nextt_residual_model:
+    inputs:
+    - x
+    - input_ids
+    - p0
+    - p1
+    - p2
+    - p3
+    - p4
+    - p5
+    - p6
+    - p7
+    - p8
+    - p9
+    - p10
+    - p11
+    - p12
+    - p13
+    - p14
+    - p15
+    - p16
+    - p17
+    - p18
+    - p19
+    - p20
+    - p21
+    - p22
+    - p23
+    - p24
+    - p25
+    - p26
+    - p27
+    - p28
+    - p29
+    - p30
+    - p31
+    - p32
+    - p33
+    - p34
+    - p35
+    - p36
+    - p37
+    - p38
+    - p39
+    - p40
+    - p41
+    - p42
+    - p43
+    - p44
+    - p45
+    - p46
+    - p47
+    - p48
+    - p49
+    - p50
+    - p51
+    - p52
+    - p53
+    - p54
+    - p55
+    - p56
+    - p57
+    - p58
+    - p59
+    - p60
+    - p61
+    - p62
+    - p63
+    - p64
+    - p65
+    - p66
+    - p67
+    - p68
+    - p69
+    - p70
+    - p71
+    - p72
+    - p73
+    - p74
+    - p75
+    - p76
+    - p77
+    - p78
+    - p79
+    - p80
+    - p81
+    - p82
+    - p83
+    - p84
+    - p85
+    - p86
+    - p87
+    - p88
+    - p89
+    - p90
+    - p91
+    - p92
+    - p93
+    - p94
+    - p95
+    - p96
+    - p97
+    - p98
+    - p99
+    - p100
+    - p101
+    - p102
+    - p103
+    - p104
+    - p105
+    - p106
+    - p107
+    - p108
+    - p109
+    - p110
+    - p111
+    - p112
+    - p113
+    - p114
+    - p115
+    - p116
+    - p117
+    - p118
+    - p119
+    - p120
+    - p121
+    - p122
+    - p123
+    - p124
+    - p125
+    - p126
+    - p127
+    - p128
+    - p129
+    - p130
+    - p131
+    - p132
+    - p133
+    - p134
+    - p135
+    - p136
+    - p137
+    - p138
+    - p139
+    - p140
+    - p141
+    - p142
+    - p143
+    - p144
+    - p145
+    - p146
+    - p147
+    - p148
+    - p149
+    - p150
+    - p151
+    - p152
+    - p153
+    - p154
+    - p155
+    - p156
+    - p157
+    - p158
+    - p159
+    - p160
+    - p161
+    - p162
+    - p163
+    - p164
+    - p165
+    - p166
+    - p167
+    - p168
+    - p169
+    - p170
+    - p171
+    - p172
+    - p173
+    - p174
+    - p175
+    - p176
+    - p177
+    - p178
+    - p179
+    - p180
+    - p181
+    - p182
+    - p183
+    - p184
+    - p185
+    - p186
+    - p187
+    - p188
+    - p189
+    - p190
+    - p191
+    - p192
+    - p193
+    - p194
+    - p195
+    - p196
+    - p197
+    - p198
+    - p199
+    - p200
+    - p201
+    - p202
+    - p203
+    - p204
+    - p205
+    - p206
+    - p207
+    - p208
+    - p209
+    - p210
+    - p211
+    - p212
+    - p213
+    - p214
+    - p215
+    - p216
+    - p217
+    - p218
+    - p219
+    - p220
+    - p221
+    - p222
+    - p223
+    - p224
+    - p225
+    - p226
+    - p227
+    - p228
+    - p229
+    - p230
+    - p231
+    - p232
+    - p233
+    - p234
+    - p235
+    - p236
+    - p237
+    - p238
+    - p239
+    - p240
+    - p241
+    - p242
+    - p243
+    - p244
+    - p245
+    - p246
+    - p247
+    - p248
+    - p249
+    - p250
+    - p251
+    - p252
+    - p253
+    - p254
+    - p255
+    - p256
+    - p257
+    - p258
+    - p259
+    - p260
+    - p261
+    - p262
+    - p263
+    - p264
+    - p265
+    - p266
+    - p267
+    - p268
+    - p269
+    - p270
+    - p271
+    - p272
+    - p273
+    - p274
+    - p275
+    graph:
+      initial_streams:
+        op: broadcast
+        axis: 2
+        dims:
+          width: n_hidden_copies
+        in: x
+      hc_norm_0:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: initial_streams
+      hc_alpha_0:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_0
+        - p2
+      hc_beta_0:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_0
+        - p3
+      hc_alpha_tanh_0:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_0.value
+      hc_beta_tanh_0:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_0.value
+      hc_alpha_scaled_0:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_0
+        - p4
+      hc_beta_scaled_0:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_0
+        - p5
+      hc_alpha_static_0:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_0
+        - p0
+      hc_beta_squeeze_0:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_0
+      hc_beta_static_0:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_0
+        - p1
+      hc_mixed_0:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_0
+        - initial_streams
+      hc_first_0:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_0.value
+      hc_read_0:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_0
+      hc_residual_0:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_0.value
+      branch_norm_0:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_0
+      value_embeds.0:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.0
+      transformer.h.0.attn:
+        in:
+        - branch_norm_0
+        - value_embeds.0
+        op: nextt_attention_ve
+        module: transformer.h.0.attn
+      hc_write_0:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_0
+        - transformer.h.0.attn
+        - hc_beta_static_0
+      hc_norm_1:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_0.value
+      hc_alpha_1:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_1
+        - p8
+      hc_beta_1:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_1
+        - p9
+      hc_alpha_tanh_1:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_1.value
+      hc_beta_tanh_1:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_1.value
+      hc_alpha_scaled_1:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_1
+        - p10
+      hc_beta_scaled_1:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_1
+        - p11
+      hc_alpha_static_1:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_1
+        - p6
+      hc_beta_squeeze_1:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_1
+      hc_beta_static_1:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_1
+        - p7
+      hc_mixed_1:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_1
+        - hc_write_0.value
+      hc_first_1:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_1.value
+      hc_read_1:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_1
+      hc_residual_1:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_1.value
+      branch_norm_1:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_1
+      transformer.h.0.mlp:
+        in: branch_norm_1
+        op: nextt_ffn
+        module: transformer.h.0.mlp
+      hc_write_1:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_1
+        - transformer.h.0.mlp
+        - hc_beta_static_1
+      hc_norm_2:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_1.value
+      hc_alpha_2:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_2
+        - p14
+      hc_beta_2:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_2
+        - p15
+      hc_alpha_tanh_2:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_2.value
+      hc_beta_tanh_2:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_2.value
+      hc_alpha_scaled_2:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_2
+        - p16
+      hc_beta_scaled_2:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_2
+        - p17
+      hc_alpha_static_2:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_2
+        - p12
+      hc_beta_squeeze_2:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_2
+      hc_beta_static_2:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_2
+        - p13
+      hc_mixed_2:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_2
+        - hc_write_1.value
+      hc_first_2:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_2.value
+      hc_read_2:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_2
+      hc_residual_2:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_2.value
+      branch_norm_2:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_2
+      transformer.h.1.attn:
+        in: branch_norm_2
+        op: nextt_attention
+        module: transformer.h.1.attn
+      hc_write_2:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_2
+        - transformer.h.1.attn
+        - hc_beta_static_2
+      hc_norm_3:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_2.value
+      hc_alpha_3:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_3
+        - p20
+      hc_beta_3:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_3
+        - p21
+      hc_alpha_tanh_3:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_3.value
+      hc_beta_tanh_3:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_3.value
+      hc_alpha_scaled_3:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_3
+        - p22
+      hc_beta_scaled_3:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_3
+        - p23
+      hc_alpha_static_3:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_3
+        - p18
+      hc_beta_squeeze_3:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_3
+      hc_beta_static_3:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_3
+        - p19
+      hc_mixed_3:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_3
+        - hc_write_2.value
+      hc_first_3:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_3.value
+      hc_read_3:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_3
+      hc_residual_3:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_3.value
+      branch_norm_3:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_3
+      transformer.h.1.mlp:
+        in: branch_norm_3
+        op: nextt_ffn
+        module: transformer.h.1.mlp
+      hc_write_3:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_3
+        - transformer.h.1.mlp
+        - hc_beta_static_3
+      hc_norm_4:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_3.value
+      hc_alpha_4:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_4
+        - p26
+      hc_beta_4:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_4
+        - p27
+      hc_alpha_tanh_4:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_4.value
+      hc_beta_tanh_4:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_4.value
+      hc_alpha_scaled_4:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_4
+        - p28
+      hc_beta_scaled_4:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_4
+        - p29
+      hc_alpha_static_4:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_4
+        - p24
+      hc_beta_squeeze_4:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_4
+      hc_beta_static_4:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_4
+        - p25
+      hc_mixed_4:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_4
+        - hc_write_3.value
+      hc_first_4:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_4.value
+      hc_read_4:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_4
+      hc_residual_4:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_4.value
+      branch_norm_4:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_4
+      value_embeds.2:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.2
+      transformer.h.2.attn:
+        in:
+        - branch_norm_4
+        - value_embeds.2
+        op: nextt_attention_ve
+        module: transformer.h.2.attn
+      hc_write_4:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_4
+        - transformer.h.2.attn
+        - hc_beta_static_4
+      hc_norm_5:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_4.value
+      hc_alpha_5:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_5
+        - p32
+      hc_beta_5:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_5
+        - p33
+      hc_alpha_tanh_5:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_5.value
+      hc_beta_tanh_5:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_5.value
+      hc_alpha_scaled_5:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_5
+        - p34
+      hc_beta_scaled_5:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_5
+        - p35
+      hc_alpha_static_5:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_5
+        - p30
+      hc_beta_squeeze_5:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_5
+      hc_beta_static_5:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_5
+        - p31
+      hc_mixed_5:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_5
+        - hc_write_4.value
+      hc_first_5:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_5.value
+      hc_read_5:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_5
+      hc_residual_5:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_5.value
+      branch_norm_5:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_5
+      transformer.h.2.mlp:
+        in: branch_norm_5
+        op: nextt_ffn
+        module: transformer.h.2.mlp
+      hc_write_5:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_5
+        - transformer.h.2.mlp
+        - hc_beta_static_5
+      hc_norm_6:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_5.value
+      hc_alpha_6:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_6
+        - p38
+      hc_beta_6:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_6
+        - p39
+      hc_alpha_tanh_6:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_6.value
+      hc_beta_tanh_6:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_6.value
+      hc_alpha_scaled_6:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_6
+        - p40
+      hc_beta_scaled_6:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_6
+        - p41
+      hc_alpha_static_6:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_6
+        - p36
+      hc_beta_squeeze_6:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_6
+      hc_beta_static_6:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_6
+        - p37
+      hc_mixed_6:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_6
+        - hc_write_5.value
+      hc_first_6:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_6.value
+      hc_read_6:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_6
+      hc_residual_6:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_6.value
+      branch_norm_6:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_6
+      transformer.h.3.attn:
+        in: branch_norm_6
+        op: nextt_attention
+        module: transformer.h.3.attn
+      hc_write_6:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_6
+        - transformer.h.3.attn
+        - hc_beta_static_6
+      hc_norm_7:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_6.value
+      hc_alpha_7:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_7
+        - p44
+      hc_beta_7:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_7
+        - p45
+      hc_alpha_tanh_7:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_7.value
+      hc_beta_tanh_7:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_7.value
+      hc_alpha_scaled_7:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_7
+        - p46
+      hc_beta_scaled_7:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_7
+        - p47
+      hc_alpha_static_7:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_7
+        - p42
+      hc_beta_squeeze_7:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_7
+      hc_beta_static_7:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_7
+        - p43
+      hc_mixed_7:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_7
+        - hc_write_6.value
+      hc_first_7:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_7.value
+      hc_read_7:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_7
+      hc_residual_7:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_7.value
+      branch_norm_7:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_7
+      transformer.h.3.mlp:
+        in: branch_norm_7
+        op: nextt_ffn
+        module: transformer.h.3.mlp
+      hc_write_7:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_7
+        - transformer.h.3.mlp
+        - hc_beta_static_7
+      hc_norm_8:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_7.value
+      hc_alpha_8:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_8
+        - p50
+      hc_beta_8:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_8
+        - p51
+      hc_alpha_tanh_8:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_8.value
+      hc_beta_tanh_8:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_8.value
+      hc_alpha_scaled_8:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_8
+        - p52
+      hc_beta_scaled_8:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_8
+        - p53
+      hc_alpha_static_8:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_8
+        - p48
+      hc_beta_squeeze_8:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_8
+      hc_beta_static_8:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_8
+        - p49
+      hc_mixed_8:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_8
+        - hc_write_7.value
+      hc_first_8:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_8.value
+      hc_read_8:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_8
+      hc_residual_8:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_8.value
+      branch_norm_8:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_8
+      value_embeds.4:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.4
+      transformer.h.4.attn:
+        in:
+        - branch_norm_8
+        - value_embeds.4
+        op: nextt_attention_ve
+        module: transformer.h.4.attn
+      hc_write_8:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_8
+        - transformer.h.4.attn
+        - hc_beta_static_8
+      hc_norm_9:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_8.value
+      hc_alpha_9:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_9
+        - p56
+      hc_beta_9:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_9
+        - p57
+      hc_alpha_tanh_9:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_9.value
+      hc_beta_tanh_9:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_9.value
+      hc_alpha_scaled_9:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_9
+        - p58
+      hc_beta_scaled_9:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_9
+        - p59
+      hc_alpha_static_9:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_9
+        - p54
+      hc_beta_squeeze_9:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_9
+      hc_beta_static_9:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_9
+        - p55
+      hc_mixed_9:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_9
+        - hc_write_8.value
+      hc_first_9:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_9.value
+      hc_read_9:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_9
+      hc_residual_9:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_9.value
+      branch_norm_9:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_9
+      transformer.h.4.mlp:
+        in: branch_norm_9
+        op: nextt_ffn
+        module: transformer.h.4.mlp
+      hc_write_9:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_9
+        - transformer.h.4.mlp
+        - hc_beta_static_9
+      hc_norm_10:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_9.value
+      hc_alpha_10:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_10
+        - p62
+      hc_beta_10:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_10
+        - p63
+      hc_alpha_tanh_10:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_10.value
+      hc_beta_tanh_10:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_10.value
+      hc_alpha_scaled_10:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_10
+        - p64
+      hc_beta_scaled_10:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_10
+        - p65
+      hc_alpha_static_10:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_10
+        - p60
+      hc_beta_squeeze_10:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_10
+      hc_beta_static_10:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_10
+        - p61
+      hc_mixed_10:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_10
+        - hc_write_9.value
+      hc_first_10:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_10.value
+      hc_read_10:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_10
+      hc_residual_10:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_10.value
+      branch_norm_10:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_10
+      transformer.h.5.attn:
+        in: branch_norm_10
+        op: nextt_attention
+        module: transformer.h.5.attn
+      hc_write_10:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_10
+        - transformer.h.5.attn
+        - hc_beta_static_10
+      hc_norm_11:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_10.value
+      hc_alpha_11:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_11
+        - p68
+      hc_beta_11:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_11
+        - p69
+      hc_alpha_tanh_11:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_11.value
+      hc_beta_tanh_11:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_11.value
+      hc_alpha_scaled_11:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_11
+        - p70
+      hc_beta_scaled_11:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_11
+        - p71
+      hc_alpha_static_11:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_11
+        - p66
+      hc_beta_squeeze_11:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_11
+      hc_beta_static_11:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_11
+        - p67
+      hc_mixed_11:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_11
+        - hc_write_10.value
+      hc_first_11:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_11.value
+      hc_read_11:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_11
+      hc_residual_11:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_11.value
+      branch_norm_11:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_11
+      transformer.h.5.mlp:
+        in: branch_norm_11
+        op: nextt_ffn
+        module: transformer.h.5.mlp
+      hc_write_11:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_11
+        - transformer.h.5.mlp
+        - hc_beta_static_11
+      hc_norm_12:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_11.value
+      hc_alpha_12:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_12
+        - p74
+      hc_beta_12:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_12
+        - p75
+      hc_alpha_tanh_12:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_12.value
+      hc_beta_tanh_12:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_12.value
+      hc_alpha_scaled_12:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_12
+        - p76
+      hc_beta_scaled_12:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_12
+        - p77
+      hc_alpha_static_12:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_12
+        - p72
+      hc_beta_squeeze_12:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_12
+      hc_beta_static_12:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_12
+        - p73
+      hc_mixed_12:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_12
+        - hc_write_11.value
+      hc_first_12:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_12.value
+      hc_read_12:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_12
+      hc_residual_12:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_12.value
+      branch_norm_12:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_12
+      value_embeds.6:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.6
+      transformer.h.6.attn:
+        in:
+        - branch_norm_12
+        - value_embeds.6
+        op: nextt_attention_ve
+        module: transformer.h.6.attn
+      hc_write_12:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_12
+        - transformer.h.6.attn
+        - hc_beta_static_12
+      hc_norm_13:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_12.value
+      hc_alpha_13:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_13
+        - p80
+      hc_beta_13:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_13
+        - p81
+      hc_alpha_tanh_13:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_13.value
+      hc_beta_tanh_13:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_13.value
+      hc_alpha_scaled_13:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_13
+        - p82
+      hc_beta_scaled_13:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_13
+        - p83
+      hc_alpha_static_13:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_13
+        - p78
+      hc_beta_squeeze_13:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_13
+      hc_beta_static_13:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_13
+        - p79
+      hc_mixed_13:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_13
+        - hc_write_12.value
+      hc_first_13:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_13.value
+      hc_read_13:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_13
+      hc_residual_13:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_13.value
+      branch_norm_13:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_13
+      transformer.h.6.mlp:
+        in: branch_norm_13
+        op: nextt_ffn
+        module: transformer.h.6.mlp
+      hc_write_13:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_13
+        - transformer.h.6.mlp
+        - hc_beta_static_13
+      hc_norm_14:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_13.value
+      hc_alpha_14:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_14
+        - p86
+      hc_beta_14:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_14
+        - p87
+      hc_alpha_tanh_14:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_14.value
+      hc_beta_tanh_14:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_14.value
+      hc_alpha_scaled_14:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_14
+        - p88
+      hc_beta_scaled_14:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_14
+        - p89
+      hc_alpha_static_14:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_14
+        - p84
+      hc_beta_squeeze_14:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_14
+      hc_beta_static_14:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_14
+        - p85
+      hc_mixed_14:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_14
+        - hc_write_13.value
+      hc_first_14:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_14.value
+      hc_read_14:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_14
+      hc_residual_14:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_14.value
+      branch_norm_14:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_14
+      transformer.h.7.attn:
+        in: branch_norm_14
+        op: nextt_attention
+        module: transformer.h.7.attn
+      hc_write_14:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_14
+        - transformer.h.7.attn
+        - hc_beta_static_14
+      hc_norm_15:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_14.value
+      hc_alpha_15:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_15
+        - p92
+      hc_beta_15:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_15
+        - p93
+      hc_alpha_tanh_15:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_15.value
+      hc_beta_tanh_15:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_15.value
+      hc_alpha_scaled_15:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_15
+        - p94
+      hc_beta_scaled_15:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_15
+        - p95
+      hc_alpha_static_15:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_15
+        - p90
+      hc_beta_squeeze_15:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_15
+      hc_beta_static_15:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_15
+        - p91
+      hc_mixed_15:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_15
+        - hc_write_14.value
+      hc_first_15:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_15.value
+      hc_read_15:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_15
+      hc_residual_15:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_15.value
+      branch_norm_15:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_15
+      transformer.h.7.mlp:
+        in: branch_norm_15
+        op: nextt_ffn
+        module: transformer.h.7.mlp
+      hc_write_15:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_15
+        - transformer.h.7.mlp
+        - hc_beta_static_15
+      hc_norm_16:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_15.value
+      hc_alpha_16:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_16
+        - p98
+      hc_beta_16:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_16
+        - p99
+      hc_alpha_tanh_16:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_16.value
+      hc_beta_tanh_16:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_16.value
+      hc_alpha_scaled_16:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_16
+        - p100
+      hc_beta_scaled_16:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_16
+        - p101
+      hc_alpha_static_16:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_16
+        - p96
+      hc_beta_squeeze_16:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_16
+      hc_beta_static_16:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_16
+        - p97
+      hc_mixed_16:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_16
+        - hc_write_15.value
+      hc_first_16:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_16.value
+      hc_read_16:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_16
+      hc_residual_16:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_16.value
+      branch_norm_16:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_16
+      value_embeds.8:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.8
+      transformer.h.8.attn:
+        in:
+        - branch_norm_16
+        - value_embeds.8
+        op: nextt_attention_ve
+        module: transformer.h.8.attn
+      hc_write_16:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_16
+        - transformer.h.8.attn
+        - hc_beta_static_16
+      hc_norm_17:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_16.value
+      hc_alpha_17:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_17
+        - p104
+      hc_beta_17:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_17
+        - p105
+      hc_alpha_tanh_17:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_17.value
+      hc_beta_tanh_17:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_17.value
+      hc_alpha_scaled_17:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_17
+        - p106
+      hc_beta_scaled_17:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_17
+        - p107
+      hc_alpha_static_17:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_17
+        - p102
+      hc_beta_squeeze_17:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_17
+      hc_beta_static_17:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_17
+        - p103
+      hc_mixed_17:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_17
+        - hc_write_16.value
+      hc_first_17:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_17.value
+      hc_read_17:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_17
+      hc_residual_17:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_17.value
+      branch_norm_17:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_17
+      transformer.h.8.mlp:
+        in: branch_norm_17
+        op: nextt_ffn
+        module: transformer.h.8.mlp
+      hc_write_17:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_17
+        - transformer.h.8.mlp
+        - hc_beta_static_17
+      hc_norm_18:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_17.value
+      hc_alpha_18:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_18
+        - p110
+      hc_beta_18:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_18
+        - p111
+      hc_alpha_tanh_18:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_18.value
+      hc_beta_tanh_18:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_18.value
+      hc_alpha_scaled_18:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_18
+        - p112
+      hc_beta_scaled_18:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_18
+        - p113
+      hc_alpha_static_18:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_18
+        - p108
+      hc_beta_squeeze_18:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_18
+      hc_beta_static_18:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_18
+        - p109
+      hc_mixed_18:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_18
+        - hc_write_17.value
+      hc_first_18:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_18.value
+      hc_read_18:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_18
+      hc_residual_18:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_18.value
+      branch_norm_18:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_18
+      transformer.h.9.attn:
+        in: branch_norm_18
+        op: nextt_attention
+        module: transformer.h.9.attn
+      hc_write_18:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_18
+        - transformer.h.9.attn
+        - hc_beta_static_18
+      hc_norm_19:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_18.value
+      hc_alpha_19:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_19
+        - p116
+      hc_beta_19:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_19
+        - p117
+      hc_alpha_tanh_19:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_19.value
+      hc_beta_tanh_19:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_19.value
+      hc_alpha_scaled_19:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_19
+        - p118
+      hc_beta_scaled_19:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_19
+        - p119
+      hc_alpha_static_19:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_19
+        - p114
+      hc_beta_squeeze_19:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_19
+      hc_beta_static_19:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_19
+        - p115
+      hc_mixed_19:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_19
+        - hc_write_18.value
+      hc_first_19:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_19.value
+      hc_read_19:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_19
+      hc_residual_19:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_19.value
+      branch_norm_19:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_19
+      transformer.h.9.mlp:
+        in: branch_norm_19
+        op: nextt_ffn
+        module: transformer.h.9.mlp
+      hc_write_19:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_19
+        - transformer.h.9.mlp
+        - hc_beta_static_19
+      hc_norm_20:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_19.value
+      hc_alpha_20:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_20
+        - p122
+      hc_beta_20:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_20
+        - p123
+      hc_alpha_tanh_20:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_20.value
+      hc_beta_tanh_20:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_20.value
+      hc_alpha_scaled_20:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_20
+        - p124
+      hc_beta_scaled_20:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_20
+        - p125
+      hc_alpha_static_20:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_20
+        - p120
+      hc_beta_squeeze_20:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_20
+      hc_beta_static_20:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_20
+        - p121
+      hc_mixed_20:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_20
+        - hc_write_19.value
+      hc_first_20:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_20.value
+      hc_read_20:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_20
+      hc_residual_20:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_20.value
+      branch_norm_20:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_20
+      value_embeds.10:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.10
+      transformer.h.10.attn:
+        in:
+        - branch_norm_20
+        - value_embeds.10
+        op: nextt_attention_ve
+        module: transformer.h.10.attn
+      hc_write_20:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_20
+        - transformer.h.10.attn
+        - hc_beta_static_20
+      hc_norm_21:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_20.value
+      hc_alpha_21:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_21
+        - p128
+      hc_beta_21:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_21
+        - p129
+      hc_alpha_tanh_21:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_21.value
+      hc_beta_tanh_21:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_21.value
+      hc_alpha_scaled_21:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_21
+        - p130
+      hc_beta_scaled_21:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_21
+        - p131
+      hc_alpha_static_21:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_21
+        - p126
+      hc_beta_squeeze_21:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_21
+      hc_beta_static_21:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_21
+        - p127
+      hc_mixed_21:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_21
+        - hc_write_20.value
+      hc_first_21:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_21.value
+      hc_read_21:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_21
+      hc_residual_21:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_21.value
+      branch_norm_21:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_21
+      transformer.h.10.mlp:
+        in: branch_norm_21
+        op: nextt_ffn
+        module: transformer.h.10.mlp
+      hc_write_21:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_21
+        - transformer.h.10.mlp
+        - hc_beta_static_21
+      hc_norm_22:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_21.value
+      hc_alpha_22:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_22
+        - p134
+      hc_beta_22:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_22
+        - p135
+      hc_alpha_tanh_22:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_22.value
+      hc_beta_tanh_22:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_22.value
+      hc_alpha_scaled_22:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_22
+        - p136
+      hc_beta_scaled_22:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_22
+        - p137
+      hc_alpha_static_22:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_22
+        - p132
+      hc_beta_squeeze_22:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_22
+      hc_beta_static_22:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_22
+        - p133
+      hc_mixed_22:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_22
+        - hc_write_21.value
+      hc_first_22:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_22.value
+      hc_read_22:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_22
+      hc_residual_22:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_22.value
+      branch_norm_22:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_22
+      transformer.h.11.attn:
+        in: branch_norm_22
+        op: nextt_attention
+        module: transformer.h.11.attn
+      hc_write_22:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_22
+        - transformer.h.11.attn
+        - hc_beta_static_22
+      hc_norm_23:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_22.value
+      hc_alpha_23:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_23
+        - p140
+      hc_beta_23:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_23
+        - p141
+      hc_alpha_tanh_23:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_23.value
+      hc_beta_tanh_23:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_23.value
+      hc_alpha_scaled_23:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_23
+        - p142
+      hc_beta_scaled_23:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_23
+        - p143
+      hc_alpha_static_23:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_23
+        - p138
+      hc_beta_squeeze_23:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_23
+      hc_beta_static_23:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_23
+        - p139
+      hc_mixed_23:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_23
+        - hc_write_22.value
+      hc_first_23:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_23.value
+      hc_read_23:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_23
+      hc_residual_23:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_23.value
+      branch_norm_23:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_23
+      transformer.h.11.mlp:
+        in: branch_norm_23
+        op: nextt_ffn
+        module: transformer.h.11.mlp
+      hc_write_23:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_23
+        - transformer.h.11.mlp
+        - hc_beta_static_23
+      hc_norm_24:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_23.value
+      hc_alpha_24:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_24
+        - p146
+      hc_beta_24:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_24
+        - p147
+      hc_alpha_tanh_24:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_24.value
+      hc_beta_tanh_24:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_24.value
+      hc_alpha_scaled_24:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_24
+        - p148
+      hc_beta_scaled_24:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_24
+        - p149
+      hc_alpha_static_24:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_24
+        - p144
+      hc_beta_squeeze_24:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_24
+      hc_beta_static_24:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_24
+        - p145
+      hc_mixed_24:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_24
+        - hc_write_23.value
+      hc_first_24:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_24.value
+      hc_read_24:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_24
+      hc_residual_24:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_24.value
+      branch_norm_24:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_24
+      value_embeds.12:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.12
+      transformer.h.12.attn:
+        in:
+        - branch_norm_24
+        - value_embeds.12
+        op: nextt_attention_ve
+        module: transformer.h.12.attn
+      hc_write_24:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_24
+        - transformer.h.12.attn
+        - hc_beta_static_24
+      hc_norm_25:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_24.value
+      hc_alpha_25:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_25
+        - p152
+      hc_beta_25:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_25
+        - p153
+      hc_alpha_tanh_25:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_25.value
+      hc_beta_tanh_25:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_25.value
+      hc_alpha_scaled_25:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_25
+        - p154
+      hc_beta_scaled_25:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_25
+        - p155
+      hc_alpha_static_25:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_25
+        - p150
+      hc_beta_squeeze_25:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_25
+      hc_beta_static_25:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_25
+        - p151
+      hc_mixed_25:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_25
+        - hc_write_24.value
+      hc_first_25:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_25.value
+      hc_read_25:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_25
+      hc_residual_25:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_25.value
+      branch_norm_25:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_25
+      transformer.h.12.mlp:
+        in: branch_norm_25
+        op: nextt_ffn
+        module: transformer.h.12.mlp
+      hc_write_25:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_25
+        - transformer.h.12.mlp
+        - hc_beta_static_25
+      hc_norm_26:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_25.value
+      hc_alpha_26:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_26
+        - p158
+      hc_beta_26:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_26
+        - p159
+      hc_alpha_tanh_26:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_26.value
+      hc_beta_tanh_26:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_26.value
+      hc_alpha_scaled_26:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_26
+        - p160
+      hc_beta_scaled_26:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_26
+        - p161
+      hc_alpha_static_26:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_26
+        - p156
+      hc_beta_squeeze_26:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_26
+      hc_beta_static_26:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_26
+        - p157
+      hc_mixed_26:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_26
+        - hc_write_25.value
+      hc_first_26:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_26.value
+      hc_read_26:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_26
+      hc_residual_26:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_26.value
+      branch_norm_26:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_26
+      transformer.h.13.attn:
+        in: branch_norm_26
+        op: nextt_attention
+        module: transformer.h.13.attn
+      hc_write_26:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_26
+        - transformer.h.13.attn
+        - hc_beta_static_26
+      hc_norm_27:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_26.value
+      hc_alpha_27:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_27
+        - p164
+      hc_beta_27:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_27
+        - p165
+      hc_alpha_tanh_27:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_27.value
+      hc_beta_tanh_27:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_27.value
+      hc_alpha_scaled_27:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_27
+        - p166
+      hc_beta_scaled_27:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_27
+        - p167
+      hc_alpha_static_27:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_27
+        - p162
+      hc_beta_squeeze_27:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_27
+      hc_beta_static_27:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_27
+        - p163
+      hc_mixed_27:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_27
+        - hc_write_26.value
+      hc_first_27:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_27.value
+      hc_read_27:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_27
+      hc_residual_27:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_27.value
+      branch_norm_27:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_27
+      transformer.h.13.mlp:
+        in: branch_norm_27
+        op: nextt_ffn
+        module: transformer.h.13.mlp
+      hc_write_27:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_27
+        - transformer.h.13.mlp
+        - hc_beta_static_27
+      hc_norm_28:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_27.value
+      hc_alpha_28:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_28
+        - p170
+      hc_beta_28:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_28
+        - p171
+      hc_alpha_tanh_28:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_28.value
+      hc_beta_tanh_28:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_28.value
+      hc_alpha_scaled_28:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_28
+        - p172
+      hc_beta_scaled_28:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_28
+        - p173
+      hc_alpha_static_28:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_28
+        - p168
+      hc_beta_squeeze_28:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_28
+      hc_beta_static_28:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_28
+        - p169
+      hc_mixed_28:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_28
+        - hc_write_27.value
+      hc_first_28:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_28.value
+      hc_read_28:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_28
+      hc_residual_28:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_28.value
+      branch_norm_28:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_28
+      value_embeds.14:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.14
+      transformer.h.14.attn:
+        in:
+        - branch_norm_28
+        - value_embeds.14
+        op: nextt_attention_ve
+        module: transformer.h.14.attn
+      hc_write_28:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_28
+        - transformer.h.14.attn
+        - hc_beta_static_28
+      hc_norm_29:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_28.value
+      hc_alpha_29:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_29
+        - p176
+      hc_beta_29:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_29
+        - p177
+      hc_alpha_tanh_29:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_29.value
+      hc_beta_tanh_29:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_29.value
+      hc_alpha_scaled_29:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_29
+        - p178
+      hc_beta_scaled_29:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_29
+        - p179
+      hc_alpha_static_29:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_29
+        - p174
+      hc_beta_squeeze_29:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_29
+      hc_beta_static_29:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_29
+        - p175
+      hc_mixed_29:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_29
+        - hc_write_28.value
+      hc_first_29:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_29.value
+      hc_read_29:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_29
+      hc_residual_29:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_29.value
+      branch_norm_29:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_29
+      transformer.h.14.mlp:
+        in: branch_norm_29
+        op: nextt_ffn
+        module: transformer.h.14.mlp
+      hc_write_29:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_29
+        - transformer.h.14.mlp
+        - hc_beta_static_29
+      hc_norm_30:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_29.value
+      hc_alpha_30:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_30
+        - p182
+      hc_beta_30:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_30
+        - p183
+      hc_alpha_tanh_30:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_30.value
+      hc_beta_tanh_30:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_30.value
+      hc_alpha_scaled_30:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_30
+        - p184
+      hc_beta_scaled_30:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_30
+        - p185
+      hc_alpha_static_30:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_30
+        - p180
+      hc_beta_squeeze_30:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_30
+      hc_beta_static_30:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_30
+        - p181
+      hc_mixed_30:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_30
+        - hc_write_29.value
+      hc_first_30:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_30.value
+      hc_read_30:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_30
+      hc_residual_30:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_30.value
+      branch_norm_30:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_30
+      transformer.h.15.attn:
+        in: branch_norm_30
+        op: nextt_attention
+        module: transformer.h.15.attn
+      hc_write_30:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_30
+        - transformer.h.15.attn
+        - hc_beta_static_30
+      hc_norm_31:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_30.value
+      hc_alpha_31:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_31
+        - p188
+      hc_beta_31:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_31
+        - p189
+      hc_alpha_tanh_31:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_31.value
+      hc_beta_tanh_31:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_31.value
+      hc_alpha_scaled_31:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_31
+        - p190
+      hc_beta_scaled_31:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_31
+        - p191
+      hc_alpha_static_31:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_31
+        - p186
+      hc_beta_squeeze_31:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_31
+      hc_beta_static_31:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_31
+        - p187
+      hc_mixed_31:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_31
+        - hc_write_30.value
+      hc_first_31:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_31.value
+      hc_read_31:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_31
+      hc_residual_31:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_31.value
+      branch_norm_31:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_31
+      transformer.h.15.mlp:
+        in: branch_norm_31
+        op: nextt_ffn
+        module: transformer.h.15.mlp
+      hc_write_31:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_31
+        - transformer.h.15.mlp
+        - hc_beta_static_31
+      hc_norm_32:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_31.value
+      hc_alpha_32:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_32
+        - p194
+      hc_beta_32:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_32
+        - p195
+      hc_alpha_tanh_32:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_32.value
+      hc_beta_tanh_32:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_32.value
+      hc_alpha_scaled_32:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_32
+        - p196
+      hc_beta_scaled_32:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_32
+        - p197
+      hc_alpha_static_32:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_32
+        - p192
+      hc_beta_squeeze_32:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_32
+      hc_beta_static_32:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_32
+        - p193
+      hc_mixed_32:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_32
+        - hc_write_31.value
+      hc_first_32:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_32.value
+      hc_read_32:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_32
+      hc_residual_32:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_32.value
+      branch_norm_32:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_32
+      value_embeds.16:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.16
+      transformer.h.16.attn:
+        in:
+        - branch_norm_32
+        - value_embeds.16
+        op: nextt_attention_ve
+        module: transformer.h.16.attn
+      hc_write_32:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_32
+        - transformer.h.16.attn
+        - hc_beta_static_32
+      hc_norm_33:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_32.value
+      hc_alpha_33:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_33
+        - p200
+      hc_beta_33:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_33
+        - p201
+      hc_alpha_tanh_33:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_33.value
+      hc_beta_tanh_33:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_33.value
+      hc_alpha_scaled_33:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_33
+        - p202
+      hc_beta_scaled_33:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_33
+        - p203
+      hc_alpha_static_33:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_33
+        - p198
+      hc_beta_squeeze_33:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_33
+      hc_beta_static_33:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_33
+        - p199
+      hc_mixed_33:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_33
+        - hc_write_32.value
+      hc_first_33:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_33.value
+      hc_read_33:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_33
+      hc_residual_33:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_33.value
+      branch_norm_33:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_33
+      transformer.h.16.mlp:
+        in: branch_norm_33
+        op: nextt_ffn
+        module: transformer.h.16.mlp
+      hc_write_33:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_33
+        - transformer.h.16.mlp
+        - hc_beta_static_33
+      hc_norm_34:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_33.value
+      hc_alpha_34:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_34
+        - p206
+      hc_beta_34:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_34
+        - p207
+      hc_alpha_tanh_34:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_34.value
+      hc_beta_tanh_34:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_34.value
+      hc_alpha_scaled_34:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_34
+        - p208
+      hc_beta_scaled_34:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_34
+        - p209
+      hc_alpha_static_34:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_34
+        - p204
+      hc_beta_squeeze_34:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_34
+      hc_beta_static_34:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_34
+        - p205
+      hc_mixed_34:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_34
+        - hc_write_33.value
+      hc_first_34:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_34.value
+      hc_read_34:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_34
+      hc_residual_34:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_34.value
+      branch_norm_34:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_34
+      transformer.h.17.attn:
+        in: branch_norm_34
+        op: nextt_attention
+        module: transformer.h.17.attn
+      hc_write_34:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_34
+        - transformer.h.17.attn
+        - hc_beta_static_34
+      hc_norm_35:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_34.value
+      hc_alpha_35:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_35
+        - p212
+      hc_beta_35:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_35
+        - p213
+      hc_alpha_tanh_35:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_35.value
+      hc_beta_tanh_35:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_35.value
+      hc_alpha_scaled_35:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_35
+        - p214
+      hc_beta_scaled_35:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_35
+        - p215
+      hc_alpha_static_35:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_35
+        - p210
+      hc_beta_squeeze_35:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_35
+      hc_beta_static_35:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_35
+        - p211
+      hc_mixed_35:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_35
+        - hc_write_34.value
+      hc_first_35:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_35.value
+      hc_read_35:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_35
+      hc_residual_35:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_35.value
+      branch_norm_35:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_35
+      transformer.h.17.mlp:
+        in: branch_norm_35
+        op: nextt_ffn
+        module: transformer.h.17.mlp
+      hc_write_35:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_35
+        - transformer.h.17.mlp
+        - hc_beta_static_35
+      hc_norm_36:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_35.value
+      hc_alpha_36:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_36
+        - p218
+      hc_beta_36:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_36
+        - p219
+      hc_alpha_tanh_36:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_36.value
+      hc_beta_tanh_36:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_36.value
+      hc_alpha_scaled_36:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_36
+        - p220
+      hc_beta_scaled_36:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_36
+        - p221
+      hc_alpha_static_36:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_36
+        - p216
+      hc_beta_squeeze_36:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_36
+      hc_beta_static_36:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_36
+        - p217
+      hc_mixed_36:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_36
+        - hc_write_35.value
+      hc_first_36:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_36.value
+      hc_read_36:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_36
+      hc_residual_36:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_36.value
+      branch_norm_36:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_36
+      value_embeds.18:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.18
+      transformer.h.18.attn:
+        in:
+        - branch_norm_36
+        - value_embeds.18
+        op: nextt_attention_ve
+        module: transformer.h.18.attn
+      hc_write_36:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_36
+        - transformer.h.18.attn
+        - hc_beta_static_36
+      hc_norm_37:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_36.value
+      hc_alpha_37:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_37
+        - p224
+      hc_beta_37:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_37
+        - p225
+      hc_alpha_tanh_37:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_37.value
+      hc_beta_tanh_37:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_37.value
+      hc_alpha_scaled_37:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_37
+        - p226
+      hc_beta_scaled_37:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_37
+        - p227
+      hc_alpha_static_37:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_37
+        - p222
+      hc_beta_squeeze_37:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_37
+      hc_beta_static_37:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_37
+        - p223
+      hc_mixed_37:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_37
+        - hc_write_36.value
+      hc_first_37:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_37.value
+      hc_read_37:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_37
+      hc_residual_37:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_37.value
+      branch_norm_37:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_37
+      transformer.h.18.mlp:
+        in: branch_norm_37
+        op: nextt_ffn
+        module: transformer.h.18.mlp
+      hc_write_37:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_37
+        - transformer.h.18.mlp
+        - hc_beta_static_37
+      hc_norm_38:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_37.value
+      hc_alpha_38:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_38
+        - p230
+      hc_beta_38:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_38
+        - p231
+      hc_alpha_tanh_38:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_38.value
+      hc_beta_tanh_38:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_38.value
+      hc_alpha_scaled_38:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_38
+        - p232
+      hc_beta_scaled_38:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_38
+        - p233
+      hc_alpha_static_38:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_38
+        - p228
+      hc_beta_squeeze_38:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_38
+      hc_beta_static_38:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_38
+        - p229
+      hc_mixed_38:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_38
+        - hc_write_37.value
+      hc_first_38:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_38.value
+      hc_read_38:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_38
+      hc_residual_38:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_38.value
+      branch_norm_38:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_38
+      transformer.h.19.attn:
+        in: branch_norm_38
+        op: nextt_attention
+        module: transformer.h.19.attn
+      hc_write_38:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_38
+        - transformer.h.19.attn
+        - hc_beta_static_38
+      hc_norm_39:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_38.value
+      hc_alpha_39:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_39
+        - p236
+      hc_beta_39:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_39
+        - p237
+      hc_alpha_tanh_39:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_39.value
+      hc_beta_tanh_39:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_39.value
+      hc_alpha_scaled_39:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_39
+        - p238
+      hc_beta_scaled_39:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_39
+        - p239
+      hc_alpha_static_39:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_39
+        - p234
+      hc_beta_squeeze_39:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_39
+      hc_beta_static_39:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_39
+        - p235
+      hc_mixed_39:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_39
+        - hc_write_38.value
+      hc_first_39:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_39.value
+      hc_read_39:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_39
+      hc_residual_39:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_39.value
+      branch_norm_39:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_39
+      transformer.h.19.mlp:
+        in: branch_norm_39
+        op: nextt_ffn
+        module: transformer.h.19.mlp
+      hc_write_39:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_39
+        - transformer.h.19.mlp
+        - hc_beta_static_39
+      hc_norm_40:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_39.value
+      hc_alpha_40:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_40
+        - p242
+      hc_beta_40:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_40
+        - p243
+      hc_alpha_tanh_40:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_40.value
+      hc_beta_tanh_40:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_40.value
+      hc_alpha_scaled_40:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_40
+        - p244
+      hc_beta_scaled_40:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_40
+        - p245
+      hc_alpha_static_40:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_40
+        - p240
+      hc_beta_squeeze_40:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_40
+      hc_beta_static_40:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_40
+        - p241
+      hc_mixed_40:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_40
+        - hc_write_39.value
+      hc_first_40:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_40.value
+      hc_read_40:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_40
+      hc_residual_40:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_40.value
+      branch_norm_40:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_40
+      value_embeds.20:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.20
+      transformer.h.20.attn:
+        in:
+        - branch_norm_40
+        - value_embeds.20
+        op: nextt_attention_ve
+        module: transformer.h.20.attn
+      hc_write_40:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_40
+        - transformer.h.20.attn
+        - hc_beta_static_40
+      hc_norm_41:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_40.value
+      hc_alpha_41:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_41
+        - p248
+      hc_beta_41:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_41
+        - p249
+      hc_alpha_tanh_41:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_41.value
+      hc_beta_tanh_41:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_41.value
+      hc_alpha_scaled_41:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_41
+        - p250
+      hc_beta_scaled_41:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_41
+        - p251
+      hc_alpha_static_41:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_41
+        - p246
+      hc_beta_squeeze_41:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_41
+      hc_beta_static_41:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_41
+        - p247
+      hc_mixed_41:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_41
+        - hc_write_40.value
+      hc_first_41:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_41.value
+      hc_read_41:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_41
+      hc_residual_41:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_41.value
+      branch_norm_41:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_41
+      transformer.h.20.mlp:
+        in: branch_norm_41
+        op: nextt_ffn
+        module: transformer.h.20.mlp
+      hc_write_41:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_41
+        - transformer.h.20.mlp
+        - hc_beta_static_41
+      hc_norm_42:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_41.value
+      hc_alpha_42:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_42
+        - p254
+      hc_beta_42:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_42
+        - p255
+      hc_alpha_tanh_42:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_42.value
+      hc_beta_tanh_42:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_42.value
+      hc_alpha_scaled_42:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_42
+        - p256
+      hc_beta_scaled_42:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_42
+        - p257
+      hc_alpha_static_42:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_42
+        - p252
+      hc_beta_squeeze_42:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_42
+      hc_beta_static_42:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_42
+        - p253
+      hc_mixed_42:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_42
+        - hc_write_41.value
+      hc_first_42:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_42.value
+      hc_read_42:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_42
+      hc_residual_42:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_42.value
+      branch_norm_42:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_42
+      transformer.h.21.attn:
+        in: branch_norm_42
+        op: nextt_attention
+        module: transformer.h.21.attn
+      hc_write_42:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_42
+        - transformer.h.21.attn
+        - hc_beta_static_42
+      hc_norm_43:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_42.value
+      hc_alpha_43:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_43
+        - p260
+      hc_beta_43:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_43
+        - p261
+      hc_alpha_tanh_43:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_43.value
+      hc_beta_tanh_43:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_43.value
+      hc_alpha_scaled_43:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_43
+        - p262
+      hc_beta_scaled_43:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_43
+        - p263
+      hc_alpha_static_43:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_43
+        - p258
+      hc_beta_squeeze_43:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_43
+      hc_beta_static_43:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_43
+        - p259
+      hc_mixed_43:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_43
+        - hc_write_42.value
+      hc_first_43:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_43.value
+      hc_read_43:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_43
+      hc_residual_43:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_43.value
+      branch_norm_43:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_43
+      transformer.h.21.mlp:
+        in: branch_norm_43
+        op: nextt_ffn
+        module: transformer.h.21.mlp
+      hc_write_43:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_43
+        - transformer.h.21.mlp
+        - hc_beta_static_43
+      hc_norm_44:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_43.value
+      hc_alpha_44:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_44
+        - p266
+      hc_beta_44:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_44
+        - p267
+      hc_alpha_tanh_44:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_44.value
+      hc_beta_tanh_44:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_44.value
+      hc_alpha_scaled_44:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_44
+        - p268
+      hc_beta_scaled_44:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_44
+        - p269
+      hc_alpha_static_44:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_44
+        - p264
+      hc_beta_squeeze_44:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_44
+      hc_beta_static_44:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_44
+        - p265
+      hc_mixed_44:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_44
+        - hc_write_43.value
+      hc_first_44:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_44.value
+      hc_read_44:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_44
+      hc_residual_44:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_44.value
+      branch_norm_44:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_44
+      value_embeds.22:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.22
+      transformer.h.22.attn:
+        in:
+        - branch_norm_44
+        - value_embeds.22
+        op: nextt_attention_ve
+        module: transformer.h.22.attn
+      hc_write_44:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_44
+        - transformer.h.22.attn
+        - hc_beta_static_44
+      hc_norm_45:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_write_44.value
+      hc_alpha_45:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_norm_45
+        - p272
+      hc_beta_45:
+        op: nt_hc_alpha
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: '1'
+        in:
+        - hc_norm_45
+        - p273
+      hc_alpha_tanh_45:
+        op: tanh
+        dims:
+          dim: n_hidden_copies+1
+        in: hc_alpha_45.value
+      hc_beta_tanh_45:
+        op: tanh
+        dims:
+          dim: '1'
+        in: hc_beta_45.value
+      hc_alpha_scaled_45:
+        op: mul
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_tanh_45
+        - p274
+      hc_beta_scaled_45:
+        op: mul
+        dims:
+          dim: '1'
+        in:
+        - hc_beta_tanh_45
+        - p275
+      hc_alpha_static_45:
+        op: add
+        dims:
+          dim: n_hidden_copies+1
+        in:
+        - hc_alpha_scaled_45
+        - p270
+      hc_beta_squeeze_45:
+        op: sum_reduce
+        axis: 3
+        dims:
+          in: '1'
+        in: hc_beta_scaled_45
+      hc_beta_static_45:
+        op: add
+        dims:
+          dim: n_hidden_copies
+        in:
+        - hc_beta_squeeze_45
+        - p271
+      hc_mixed_45:
+        op: nt_hc_mix
+        dims:
+          N: n_hidden_copies
+          D: d_model
+          A: n_hidden_copies+1
+        in:
+        - hc_alpha_static_45
+        - hc_write_44.value
+      hc_first_45:
+        op: slice
+        axis: 2
+        dims:
+          out: '1'
+          start: '0'
+        in: hc_mixed_45.value
+      hc_read_45:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: '1'
+        in: hc_first_45
+      hc_residual_45:
+        op: slice
+        axis: 2
+        dims:
+          out: n_hidden_copies
+          start: '1'
+        in: hc_mixed_45.value
+      branch_norm_45:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: hc_read_45
+      transformer.h.22.mlp:
+        in: branch_norm_45
+        op: nextt_ffn
+        module: transformer.h.22.mlp
+      hc_write_45:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_residual_45
+        - transformer.h.22.mlp
+        - hc_beta_static_45
+      sum_final_streams:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: n_hidden_copies
+        in: hc_write_45.value
+      out:
+        op: identity
+        in: sum_final_streams
+    outputs:
+    - out
+model:
+- name: resid_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id038
+- name: x0_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id038
+- name: smear_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: backout_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: transformer.wte
+  op: embedding
+  boundary_role: input_embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: embedding_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.wte
+- name: smear_current
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '1'
+  inputs:
+  - embedding_norm
+- name: smear_previous
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: smear_channels
+  op: slice
+  dims:
+    in: d_model
+    out: '24'
+    start: '0'
+  inputs:
+  - smear_current
+- name: smear_gate
+  op: linear
+  dims:
+    in: '24'
+    out: '1'
+  weight_axes: *id001
+  inputs:
+  - smear_channels
+- name: smear_sigmoid
+  op: sigmoid
+  dims:
+    dim: '1'
+  inputs:
+  - smear_gate
+- name: smear_scaled
+  op: mul
+  dims:
+    dim: '1'
+  inputs:
+  - smear_sigmoid
+  - smear_lambda
+- name: smear_contribution
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - smear_previous
+  - smear_scaled
+- name: smear_sum
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - smear_current
+  - smear_contribution
+- name: first_token
+  op: slice
+  axis: 1
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: initial_hidden
+  op: concat
+  axis: 1
+  dims:
+    out: s_ctx
+  inputs:
+  - first_token
+  - smear_sum
+- name: residual_maps.0.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.0.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.0.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.0.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.0.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.0.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.1.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.1.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.1.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.1.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.1.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.1.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.2.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.2.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.2.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.2.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.2.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.2.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.3.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.3.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.3.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.3.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.3.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.3.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.4.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.4.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.4.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.4.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.4.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.4.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.5.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.5.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.5.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.5.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.5.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.5.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.6.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.6.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.6.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.6.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.6.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.6.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.7.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.7.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.7.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.7.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.7.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.7.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.8.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.8.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.8.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.8.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.8.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.8.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.9.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.9.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.9.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.9.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.9.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.9.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.10.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.10.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.10.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.10.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.10.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.10.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.11.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.11.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.11.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.11.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.11.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.11.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.12.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.12.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.12.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.12.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.12.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.12.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.13.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.13.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.13.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.13.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.13.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.13.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.14.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.14.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.14.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.14.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.14.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.14.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.15.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.15.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.15.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.15.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.15.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.15.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.16.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.16.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.16.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.16.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.16.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.16.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.17.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.17.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.17.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.17.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.17.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.17.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.18.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.18.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.18.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.18.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.18.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.18.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.19.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.19.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.19.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.19.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.19.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.19.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.20.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.20.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.20.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.20.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.20.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.20.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.21.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.21.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.21.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.21.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.21.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.21.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.22.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.22.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.22.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.22.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.22.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.22.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.23.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.23.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.23.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.23.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.23.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.23.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.24.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.24.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.24.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.24.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.24.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.24.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.25.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.25.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.25.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.25.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.25.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.25.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.26.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.26.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.26.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.26.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.26.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.26.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.27.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.27.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.27.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.27.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.27.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.27.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.28.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.28.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.28.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.28.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.28.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.28.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.29.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.29.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.29.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.29.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.29.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.29.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.30.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.30.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.30.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.30.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.30.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.30.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.31.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.31.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.31.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.31.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.31.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.31.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.32.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.32.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.32.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.32.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.32.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.32.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.33.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.33.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.33.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.33.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.33.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.33.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.34.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.34.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.34.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.34.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.34.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.34.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.35.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.35.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.35.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.35.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.35.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.35.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.36.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.36.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.36.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.36.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.36.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.36.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.37.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.37.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.37.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.37.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.37.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.37.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.38.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.38.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.38.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.38.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.38.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.38.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.39.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.39.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.39.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.39.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.39.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.39.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.40.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.40.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.40.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.40.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.40.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.40.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.41.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.41.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.41.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.41.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.41.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.41.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.42.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.42.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.42.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.42.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.42.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.42.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.43.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.43.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.43.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.43.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.43.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.43.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.44.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.44.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.44.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.44.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.44.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.44.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.45.static_alpha
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.45.static_beta
+  op: parameter_vector
+  dims:
+    dim: n_hidden_copies
+  weight_axes:
+  - *id038
+- name: residual_maps.45.dynamic_alpha
+  op: parameter_tensor
+  shape:
+  - d_model
+  - n_hidden_copies+1
+  weight_axes: *id001
+- name: residual_maps.45.dynamic_beta
+  op: parameter_tensor
+  shape:
+  - d_model
+  - '1'
+  weight_axes: *id001
+- name: residual_maps.45.alpha_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: residual_maps.45.beta_scale
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: trunk
+  template: nextt_residual_model
+  inputs:
+  - initial_hidden
+  - input_ids
+  - residual_maps.0.static_alpha
+  - residual_maps.0.static_beta
+  - residual_maps.0.dynamic_alpha
+  - residual_maps.0.dynamic_beta
+  - residual_maps.0.alpha_scale
+  - residual_maps.0.beta_scale
+  - residual_maps.1.static_alpha
+  - residual_maps.1.static_beta
+  - residual_maps.1.dynamic_alpha
+  - residual_maps.1.dynamic_beta
+  - residual_maps.1.alpha_scale
+  - residual_maps.1.beta_scale
+  - residual_maps.2.static_alpha
+  - residual_maps.2.static_beta
+  - residual_maps.2.dynamic_alpha
+  - residual_maps.2.dynamic_beta
+  - residual_maps.2.alpha_scale
+  - residual_maps.2.beta_scale
+  - residual_maps.3.static_alpha
+  - residual_maps.3.static_beta
+  - residual_maps.3.dynamic_alpha
+  - residual_maps.3.dynamic_beta
+  - residual_maps.3.alpha_scale
+  - residual_maps.3.beta_scale
+  - residual_maps.4.static_alpha
+  - residual_maps.4.static_beta
+  - residual_maps.4.dynamic_alpha
+  - residual_maps.4.dynamic_beta
+  - residual_maps.4.alpha_scale
+  - residual_maps.4.beta_scale
+  - residual_maps.5.static_alpha
+  - residual_maps.5.static_beta
+  - residual_maps.5.dynamic_alpha
+  - residual_maps.5.dynamic_beta
+  - residual_maps.5.alpha_scale
+  - residual_maps.5.beta_scale
+  - residual_maps.6.static_alpha
+  - residual_maps.6.static_beta
+  - residual_maps.6.dynamic_alpha
+  - residual_maps.6.dynamic_beta
+  - residual_maps.6.alpha_scale
+  - residual_maps.6.beta_scale
+  - residual_maps.7.static_alpha
+  - residual_maps.7.static_beta
+  - residual_maps.7.dynamic_alpha
+  - residual_maps.7.dynamic_beta
+  - residual_maps.7.alpha_scale
+  - residual_maps.7.beta_scale
+  - residual_maps.8.static_alpha
+  - residual_maps.8.static_beta
+  - residual_maps.8.dynamic_alpha
+  - residual_maps.8.dynamic_beta
+  - residual_maps.8.alpha_scale
+  - residual_maps.8.beta_scale
+  - residual_maps.9.static_alpha
+  - residual_maps.9.static_beta
+  - residual_maps.9.dynamic_alpha
+  - residual_maps.9.dynamic_beta
+  - residual_maps.9.alpha_scale
+  - residual_maps.9.beta_scale
+  - residual_maps.10.static_alpha
+  - residual_maps.10.static_beta
+  - residual_maps.10.dynamic_alpha
+  - residual_maps.10.dynamic_beta
+  - residual_maps.10.alpha_scale
+  - residual_maps.10.beta_scale
+  - residual_maps.11.static_alpha
+  - residual_maps.11.static_beta
+  - residual_maps.11.dynamic_alpha
+  - residual_maps.11.dynamic_beta
+  - residual_maps.11.alpha_scale
+  - residual_maps.11.beta_scale
+  - residual_maps.12.static_alpha
+  - residual_maps.12.static_beta
+  - residual_maps.12.dynamic_alpha
+  - residual_maps.12.dynamic_beta
+  - residual_maps.12.alpha_scale
+  - residual_maps.12.beta_scale
+  - residual_maps.13.static_alpha
+  - residual_maps.13.static_beta
+  - residual_maps.13.dynamic_alpha
+  - residual_maps.13.dynamic_beta
+  - residual_maps.13.alpha_scale
+  - residual_maps.13.beta_scale
+  - residual_maps.14.static_alpha
+  - residual_maps.14.static_beta
+  - residual_maps.14.dynamic_alpha
+  - residual_maps.14.dynamic_beta
+  - residual_maps.14.alpha_scale
+  - residual_maps.14.beta_scale
+  - residual_maps.15.static_alpha
+  - residual_maps.15.static_beta
+  - residual_maps.15.dynamic_alpha
+  - residual_maps.15.dynamic_beta
+  - residual_maps.15.alpha_scale
+  - residual_maps.15.beta_scale
+  - residual_maps.16.static_alpha
+  - residual_maps.16.static_beta
+  - residual_maps.16.dynamic_alpha
+  - residual_maps.16.dynamic_beta
+  - residual_maps.16.alpha_scale
+  - residual_maps.16.beta_scale
+  - residual_maps.17.static_alpha
+  - residual_maps.17.static_beta
+  - residual_maps.17.dynamic_alpha
+  - residual_maps.17.dynamic_beta
+  - residual_maps.17.alpha_scale
+  - residual_maps.17.beta_scale
+  - residual_maps.18.static_alpha
+  - residual_maps.18.static_beta
+  - residual_maps.18.dynamic_alpha
+  - residual_maps.18.dynamic_beta
+  - residual_maps.18.alpha_scale
+  - residual_maps.18.beta_scale
+  - residual_maps.19.static_alpha
+  - residual_maps.19.static_beta
+  - residual_maps.19.dynamic_alpha
+  - residual_maps.19.dynamic_beta
+  - residual_maps.19.alpha_scale
+  - residual_maps.19.beta_scale
+  - residual_maps.20.static_alpha
+  - residual_maps.20.static_beta
+  - residual_maps.20.dynamic_alpha
+  - residual_maps.20.dynamic_beta
+  - residual_maps.20.alpha_scale
+  - residual_maps.20.beta_scale
+  - residual_maps.21.static_alpha
+  - residual_maps.21.static_beta
+  - residual_maps.21.dynamic_alpha
+  - residual_maps.21.dynamic_beta
+  - residual_maps.21.alpha_scale
+  - residual_maps.21.beta_scale
+  - residual_maps.22.static_alpha
+  - residual_maps.22.static_beta
+  - residual_maps.22.dynamic_alpha
+  - residual_maps.22.dynamic_beta
+  - residual_maps.22.alpha_scale
+  - residual_maps.22.beta_scale
+  - residual_maps.23.static_alpha
+  - residual_maps.23.static_beta
+  - residual_maps.23.dynamic_alpha
+  - residual_maps.23.dynamic_beta
+  - residual_maps.23.alpha_scale
+  - residual_maps.23.beta_scale
+  - residual_maps.24.static_alpha
+  - residual_maps.24.static_beta
+  - residual_maps.24.dynamic_alpha
+  - residual_maps.24.dynamic_beta
+  - residual_maps.24.alpha_scale
+  - residual_maps.24.beta_scale
+  - residual_maps.25.static_alpha
+  - residual_maps.25.static_beta
+  - residual_maps.25.dynamic_alpha
+  - residual_maps.25.dynamic_beta
+  - residual_maps.25.alpha_scale
+  - residual_maps.25.beta_scale
+  - residual_maps.26.static_alpha
+  - residual_maps.26.static_beta
+  - residual_maps.26.dynamic_alpha
+  - residual_maps.26.dynamic_beta
+  - residual_maps.26.alpha_scale
+  - residual_maps.26.beta_scale
+  - residual_maps.27.static_alpha
+  - residual_maps.27.static_beta
+  - residual_maps.27.dynamic_alpha
+  - residual_maps.27.dynamic_beta
+  - residual_maps.27.alpha_scale
+  - residual_maps.27.beta_scale
+  - residual_maps.28.static_alpha
+  - residual_maps.28.static_beta
+  - residual_maps.28.dynamic_alpha
+  - residual_maps.28.dynamic_beta
+  - residual_maps.28.alpha_scale
+  - residual_maps.28.beta_scale
+  - residual_maps.29.static_alpha
+  - residual_maps.29.static_beta
+  - residual_maps.29.dynamic_alpha
+  - residual_maps.29.dynamic_beta
+  - residual_maps.29.alpha_scale
+  - residual_maps.29.beta_scale
+  - residual_maps.30.static_alpha
+  - residual_maps.30.static_beta
+  - residual_maps.30.dynamic_alpha
+  - residual_maps.30.dynamic_beta
+  - residual_maps.30.alpha_scale
+  - residual_maps.30.beta_scale
+  - residual_maps.31.static_alpha
+  - residual_maps.31.static_beta
+  - residual_maps.31.dynamic_alpha
+  - residual_maps.31.dynamic_beta
+  - residual_maps.31.alpha_scale
+  - residual_maps.31.beta_scale
+  - residual_maps.32.static_alpha
+  - residual_maps.32.static_beta
+  - residual_maps.32.dynamic_alpha
+  - residual_maps.32.dynamic_beta
+  - residual_maps.32.alpha_scale
+  - residual_maps.32.beta_scale
+  - residual_maps.33.static_alpha
+  - residual_maps.33.static_beta
+  - residual_maps.33.dynamic_alpha
+  - residual_maps.33.dynamic_beta
+  - residual_maps.33.alpha_scale
+  - residual_maps.33.beta_scale
+  - residual_maps.34.static_alpha
+  - residual_maps.34.static_beta
+  - residual_maps.34.dynamic_alpha
+  - residual_maps.34.dynamic_beta
+  - residual_maps.34.alpha_scale
+  - residual_maps.34.beta_scale
+  - residual_maps.35.static_alpha
+  - residual_maps.35.static_beta
+  - residual_maps.35.dynamic_alpha
+  - residual_maps.35.dynamic_beta
+  - residual_maps.35.alpha_scale
+  - residual_maps.35.beta_scale
+  - residual_maps.36.static_alpha
+  - residual_maps.36.static_beta
+  - residual_maps.36.dynamic_alpha
+  - residual_maps.36.dynamic_beta
+  - residual_maps.36.alpha_scale
+  - residual_maps.36.beta_scale
+  - residual_maps.37.static_alpha
+  - residual_maps.37.static_beta
+  - residual_maps.37.dynamic_alpha
+  - residual_maps.37.dynamic_beta
+  - residual_maps.37.alpha_scale
+  - residual_maps.37.beta_scale
+  - residual_maps.38.static_alpha
+  - residual_maps.38.static_beta
+  - residual_maps.38.dynamic_alpha
+  - residual_maps.38.dynamic_beta
+  - residual_maps.38.alpha_scale
+  - residual_maps.38.beta_scale
+  - residual_maps.39.static_alpha
+  - residual_maps.39.static_beta
+  - residual_maps.39.dynamic_alpha
+  - residual_maps.39.dynamic_beta
+  - residual_maps.39.alpha_scale
+  - residual_maps.39.beta_scale
+  - residual_maps.40.static_alpha
+  - residual_maps.40.static_beta
+  - residual_maps.40.dynamic_alpha
+  - residual_maps.40.dynamic_beta
+  - residual_maps.40.alpha_scale
+  - residual_maps.40.beta_scale
+  - residual_maps.41.static_alpha
+  - residual_maps.41.static_beta
+  - residual_maps.41.dynamic_alpha
+  - residual_maps.41.dynamic_beta
+  - residual_maps.41.alpha_scale
+  - residual_maps.41.beta_scale
+  - residual_maps.42.static_alpha
+  - residual_maps.42.static_beta
+  - residual_maps.42.dynamic_alpha
+  - residual_maps.42.dynamic_beta
+  - residual_maps.42.alpha_scale
+  - residual_maps.42.beta_scale
+  - residual_maps.43.static_alpha
+  - residual_maps.43.static_beta
+  - residual_maps.43.dynamic_alpha
+  - residual_maps.43.dynamic_beta
+  - residual_maps.43.alpha_scale
+  - residual_maps.43.beta_scale
+  - residual_maps.44.static_alpha
+  - residual_maps.44.static_beta
+  - residual_maps.44.dynamic_alpha
+  - residual_maps.44.dynamic_beta
+  - residual_maps.44.alpha_scale
+  - residual_maps.44.beta_scale
+  - residual_maps.45.static_alpha
+  - residual_maps.45.static_beta
+  - residual_maps.45.dynamic_alpha
+  - residual_maps.45.dynamic_beta
+  - residual_maps.45.alpha_scale
+  - residual_maps.45.beta_scale
+- name: final_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - trunk
+- name: lm_head
+  op: linear
+  boundary_role: output_head
+  dims:
+    in: d_model
+    out: n_vocab
+  weight_axes: *id001
+  inputs:
+  - final_norm
+- name: logit_div15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - lm_head
+- name: logit_tanh
+  op: tanh
+  dims:
+    dim: n_vocab
+  inputs:
+  - logit_div15
+- name: logit_mul15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - logit_tanh
+custom_ops:
+  nt_hc_alpha:
+    signature:
+      x:
+      - B
+      - s_ctx
+      - N
+      - D
+      weight:
+      - D
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - N
+      - A
+    flops: 2*B*s_ctx*N*D*A
+    params: '0'
+    couples_on:
+    - D
+    axis_use:
+      D:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: normalized streams @ dynamic_alpha (stored [D,N+1])
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_mix:
+    signature:
+      alpha:
+      - B
+      - s_ctx
+      - N
+      - A
+      streams:
+      - B
+      - s_ctx
+      - N
+      - D
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - A
+      - D
+    flops: 2*B*s_ctx*N*A*D
+    params: '0'
+    couples_on:
+    - N
+    axis_use:
+      N:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: einsum btjk,btjd -> btkd; alpha transpose mixes original streams
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_mhc_projection:
+    signature:
+      flat:
+      - B
+      - s_ctx
+      - ND
+      weight:
+      - ND
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - A
+    flops: 2*B*s_ctx*ND*A
+    params: '0'
+    couples_on:
+    - ND
+    axis_use:
+      ND:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: flattened streams @ projection (stored [N*D,N*N+2*N])
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_mhc_maps:
+    signature:
+      logits:
+      - B
+      - s_ctx
+      - A
+      gates:
+      - 3
+      bias:
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      pre:
+      - B
+      - s_ctx
+      - N
+      post:
+      - B
+      - s_ctx
+      - N
+      res:
+      - B
+      - s_ctx
+      - N
+      - N
+    flops: B*s_ctx*(2*A+8*N+I*(12*N*N+4*N))
+    params: '0'
+    couples_on:
+    - A
+    axis_use:
+      A:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: split; pre=sigmoid(g0*lpre+bpre); post=2sigmoid(g1*lpost+bpost); res=exp(logits
+      after I column then row log-Sinkhorn normalizations)
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_read:
+    signature:
+      streams:
+      - B
+      - s_ctx
+      - N
+      - D
+      weights:
+      - B
+      - s_ctx
+      - N
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - D
+    flops: 2*B*s_ctx*N*D
+    params: '0'
+    couples_on:
+    - N
+    axis_use:
+      N:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: einsum btj,btjd -> btd
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_write:
+    signature:
+      mixed:
+      - B
+      - s_ctx
+      - N
+      - D
+      output:
+      - B
+      - s_ctx
+      - D
+      weights:
+      - B
+      - s_ctx
+      - N
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - N
+      - D
+    flops: 2*B*s_ctx*N*D
+    params: '0'
+    couples_on: []
+    axis_use: {}
+    formula: mixed+weights[...,None]*output[:,:,None]
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.

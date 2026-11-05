@@ -66,6 +66,35 @@ def test_unknown_method_does_not_create_output(tmp_path):
     assert not output.exists()
 
 
+def test_reviewed_spec_requires_exact_identity_and_unchanged_artifact(tmp_path):
+    directory = tmp_path / "tools/huggingarch/specs"
+    directory.mkdir(parents=True)
+    text = "# reviewed artifact\n"
+    (directory / "test.yaml").write_text(text)
+    entry = dict(method="test", content_sha256="source-and-config", spec_file="test.yaml",
+                 spec_sha256=bridge.digest(text.encode()))
+    bridge.write_json(directory / "catalog.json", {"models": [entry]})
+    assert bridge.reviewed_spec(tmp_path, entry) == (text, entry)
+    assert bridge.reviewed_spec(tmp_path, dict(entry, content_sha256="changed")) is None
+    (directory / "test.yaml").write_text("# modified\n")
+    with pytest.raises(ValueError, match="spec changed"):
+        bridge.reviewed_spec(tmp_path, entry)
+
+
+def test_export_copies_reviewed_spec_and_evidence(tmp_path, monkeypatch):
+    text = "# authored spec\n"
+    def spec(root, model):
+        return text, dict(status="analysis_checked", content_sha256=model["content_sha256"],
+                          spec_sha256=bridge.digest(text.encode()))
+    monkeypatch.setattr(bridge, "reviewed_spec", spec)
+    bridge.export_bundle(tmp_path, ["mha_no_ve"])
+    assert (tmp_path / "mha_no_ve/spec.yaml").read_text() == text
+    assert bridge.read_json(tmp_path / "mha_no_ve/spec-review.json")["status"] == "analysis_checked"
+    (tmp_path / "mha_no_ve/spec.yaml").write_text("# unreviewed modification")
+    with pytest.raises(ValueError, match="review is stale"):
+        bridge.load_bundle(tmp_path)
+
+
 def test_weight_precision_is_explicit_and_changes_identity(tmp_path):
     bf16, fp32 = tmp_path / "bf16", tmp_path / "fp32"
     bridge.export_bundle(bf16, ["dense_full"])
@@ -230,6 +259,9 @@ def test_worker_real_subprocess_contract(bundle, tmp_path):
     backend = upstream / "backend"
     backend.mkdir(parents=True)
     (backend / "__init__.py").write_text("")
+    (backend / "arch").mkdir()
+    (backend / "arch/__init__.py").write_text("")
+    (backend / "arch/loader.py").write_text("from pathlib import Path\nCACHE_DIR = Path('.')\n")
     (backend / "custom_id.py").write_text("from pathlib import Path\ndef model_path(name): return Path('.')\n")
     config = {"model_type": "test"}
     bridge.write_json(bundle / "config.json", config)
