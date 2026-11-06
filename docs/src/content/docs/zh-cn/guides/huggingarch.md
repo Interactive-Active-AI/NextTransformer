@@ -41,6 +41,12 @@ uv run --project tools/huggingarch --frozen \
 
 ## 读取结果
 
+已提交 batch 1、2048 token、BF16 的完整快照：
+`tools/huggingarch/reports/b1-s2048-bf16.json`（35 个成功、2 个不支持）。
+更改 batch 时，使用同一组已注册 spec 重新运行 `analyze --bundle <目录> --batch-size 8`，
+无需调用 agent。重跑会替换所选模型的结果；需要保留多个条件时，分别保存 `report.json`。
+各模型记录中的 `result.settings` 保留其实际分析条件。
+
 导出目录包含 `manifest.json`、`report.json`，以及各模型的子目录。子目录中有 `config.json`、
 `nexttransformer-config.json`、`forward.py`、适用的 `spec.yaml` 和 `spec-review.json`，
 以及操作结果 `register.json`、`analyze.json`。

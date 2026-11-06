@@ -44,6 +44,13 @@ and removes the non-JSON resolved object before serialization.
 
 ## Read the output
 
+The complete batch-1, 2048-token, BF16 snapshot is checked in at
+`tools/huggingarch/reports/b1-s2048-bf16.json` (35 analyzed, 2 unsupported).
+To change batch size, rerun `analyze --bundle <directory> --batch-size 8` using the
+same registered specs; no agent is called. Reruns replace the selected models'
+results, so save `report.json` separately for each setting. Each record retains
+its own `result.settings`.
+
 The bundle contains `manifest.json`, `report.json`, and a directory per method with `config.json`,
 `nexttransformer-config.json`, `forward.py`, any available `spec.yaml` and `spec-review.json`, and the
 operation results (`register.json`, `analyze.json`).
