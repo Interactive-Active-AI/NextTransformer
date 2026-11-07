@@ -45,6 +45,34 @@ Blocks count physical layers; looped methods reuse them across loops, so their u
 512 dense burn-in updates before sparse training; Ouro trains its exit gate alone for the final 1,024 updates; Huginn
 samples a depth per update from a fixed seed, and its proof enumerates all 46,875 samples.
 
+## Parameter groups
+
+Value-embedding tables account for a large share of the parameter counts above. The two dense references split as
+follows, using the groups of `GPT.num_scaling_params` in `nexttransformer/models/backbone.py`. The groups are derived
+from the configurations, and their totals match the parameter counts in the cost proofs:
+
+| Group | `dense_full` (Baseline) | `dense` (SSSL anchor) |
+|---|---:|---:|
+| Transformer blocks (`transformer.h`, including value-embedding gates) | 651,167,424 | 679,478,976 |
+| Token embedding (`wte`) | 50,331,648 | 50,331,648 |
+| Output head (`lm_head`) | 50,331,648 | 50,331,648 |
+| Value embeddings (`value_embeds`, 12 tables) | 603,979,776 | 603,979,776 |
+| Scalars | 72 | 74 |
+| **Total** | **1,355,810,568** | **1,384,122,122** |
+
+Each value-embedding table is a 32,768 × 1,536 lookup on alternating layers, the last layer included.
+Together they hold 44.5% of the Baseline's parameters, yet the cost ledger charges no FLOPs for the lookup
+and 1,536 FLOPs per token per table for its backward, against about 4.67 GFLOPs per token in total. Parameter
+counts therefore do not track per-token compute: `kda_hybrid` has no value embeddings and about 0.6B fewer parameters
+than the other hybrids at the same compute. Ratios of tokens to parameters change with the groups they count.
+
+The leaderboard's Dense Baseline and the compute anchor are different models. The Baseline is `dense_full`, with full
+causal attention in all 23 layers. The anchor that every method is calibrated against is `dense`, with
+24 layers in the SSSL pattern: three short sliding-window layers (at most 513 visible tokens) to one
+full causal layer, and the last layer always full, so 6 layers see the whole context (see the
+[model shell](../../protocol/model-shell/)). The "about 1.4B parameters" quoted elsewhere in the documentation is the
+total over all groups.
+
 ## Reading a configuration
 
 A configuration holds the model fields (`model`), the protocol it is admitted under (`protocol`, with its fingerprint)
