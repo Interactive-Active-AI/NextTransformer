@@ -54,7 +54,30 @@ export function compact(v:number){
  return String(Math.round(v));
 }
 
-export const VIEWS:Record<string,View>={angled:{yaw:.55,pitch:.45},parameters:{yaw:0,pitch:0},tokens:{yaw:Math.PI/2,pitch:0},floor:{yaw:0,pitch:Math.PI/2}};
+export const VOCAB=32768,CONTEXT=4096;
+
+/** The Dense size rule at a (possibly fractional) layer count: width 64 × layers, value embeddings on half the layers. */
+export function denseShape(layers:number){
+ const d=64*layers,blocks=12*d*d*layers;
+ return {width:d,blocks,parameters:blocks+(2+layers/2)*VOCAB*d,flops:72*d*d*layers+12*CONTEXT*d*layers+6*d*VOCAB};
+}
+
+/** Training FLOPs of the Dense-rule model with this many parameters, trained on this many tokens. */
+export function denseFlops(parameters:number,tokens:number){
+ let lo=1,hi=512;
+ for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(denseShape(mid).parameters<parameters)lo=mid;else hi=mid;}
+ return denseShape((lo+hi)/2).flops*tokens;
+}
+
+/** The floor curve of one training budget under the Dense size rule: parameters and tokens of every size that spends it. */
+export function isoFlopCurve(flops:number,from=4,to=160,step=.25){
+ const points:{parameters:number;tokens:number;layers:number}[]=[];
+ for(let layers=from;layers<=to;layers+=step){const s=denseShape(layers);points.push({parameters:s.parameters,tokens:flops/s.flops,layers});}
+ return points;
+}
+
+// The default view faces the budget sheets: iso-FLOP curves run from many tokens and few parameters to the reverse.
+export const VIEWS:Record<string,View>={angled:{yaw:-.72,pitch:.42},parameters:{yaw:0,pitch:0},tokens:{yaw:Math.PI/2,pitch:0},floor:{yaw:0,pitch:Math.PI/2}};
 
 // Half-extents of the drawn box: wider than tall, so the plot fills a landscape card.
 export const BOX={x:1.35,y:1.35,z:.85};
