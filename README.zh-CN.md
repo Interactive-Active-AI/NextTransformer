@@ -11,14 +11,13 @@
 </p>
 
 <p>
-<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-8B5CF6?style=flat-square"></a>
-<a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat-square&amp;logo=huggingface&amp;logoColor=white"></a>
-<a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2A93B?style=flat-square"></a>
-<img alt="Python 3.10-3.13" src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=flat-square&logo=python&logoColor=white">
-<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?style=flat-square&logo=pytorch&logoColor=white">
-<a href="https://discord.gg/k2XPXW6Jz"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-74638C?style=flat-square&logo=discord&logoColor=white"></a>
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/WeChat-group-E5607E?style=flat-square&logo=wechat&logoColor=white"></a>
-<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/discussions-ask-7A5AF0?style=flat-square&logo=github&logoColor=white"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-526B85?style=flat"></a>
+<a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-74638C?style=flat&amp;logo=huggingface&amp;logoColor=white"></a>
+</p>
+
+<p>
+<a href="https://discord.gg/k2XPXW6Jz">Discord</a> · <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat">微信</a> · <a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions">讨论区</a> · <a href="CITATION.cff">引用</a><br>
+<sub>Python 3.10–3.13 · PyTorch 2.9.1 · <a href="LICENSE">MIT 许可证</a></sub>
 </p>
 
 <a href="README.md">English</a> · <b>简体中文</b>
