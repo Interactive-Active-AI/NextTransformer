@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
-import {FINAL_STEP,LADDER_STATUS,VIEWS,cellStatus,compact,denseFlops,denseShape,isoFlopCurve,logTicks,plannedPoints,project,scalingPoints} from '../app/lib/scaling.ts';
+import {CHINCHILLA,FINAL_STEP,LADDER_STATUS,VIEWS,cellStatus,compact,denseFlops,denseShape,fitSurface,isoFlopCurve,logTicks,plannedPoints,project,scalingPoints,scalingSurfaces,surfaceAt} from '../app/lib/scaling.ts';
 import {methods,runs} from './results.mjs';
 
 const ladder=JSON.parse(readFileSync(new URL('../../results/scaling/ladder.json',import.meta.url),'utf8'));
@@ -67,4 +67,24 @@ test('the Dense rule reproduces the reference run, and iso-FLOP curves spend the
  assert.ok(Math.abs(reference.flops*199999094784/c200-1)<1e-4);
  assert.ok(Math.abs(denseFlops(reference.parameters,199999094784)/(reference.flops*199999094784)-1)<1e-6);
  for(const p of isoFlopCurve(1e20,8,48,4))assert.ok(Math.abs(denseFlops(p.parameters,p.tokens)/1e20-1)<1e-6);
+});
+
+test('surface fits recover known coefficients and stay monotone',()=>{
+ const truth={kind:'provisional',metric:'core',intercept:70,n:8000,d:30000,...CHINCHILLA,rmse:0,runs:0};
+ const grid=[3e8,1e9,3e9].flatMap(params=>[2e10,6e10,2e11].map(tokens=>({id:params+'/'+tokens,params,tokens,core:surfaceAt(truth,params,tokens)/100,bpb:.7,stage:'reference'})));
+ const fit=fitSurface(grid,'core');
+ assert.ok(Math.abs(fit.intercept-70)<1e-6&&Math.abs(fit.n/8000-1)<1e-6&&Math.abs(fit.d/30000-1)<1e-6);
+ assert.equal(fitSurface(grid.filter(p=>p.tokens===2e10),'core'),undefined);
+ const real=scalingSurfaces(scalingPoints(runs(),methods(),[]).concat([{id:'s',name:'s',family:'baseline',stage:'scaling',params:5e9,tokens:2e11,core:.46,bpb:.575,context:4096}]),'core')[0];
+ assert.equal(real.kind,'provisional');
+ assert.ok(real.n>=0&&real.d>=0&&surfaceAt(real,5e9,2e11)>surfaceAt(real,5e8,2e10));
+});
+
+test('a family with ladder runs at two budgets gets its own fitted surface',()=>{
+ const truth={kind:'family',metric:'bpb',intercept:.4,n:90,d:200,alpha:.3,beta:.36,rmse:0,runs:0};
+ // Sampled like the ladder: five sizes on each of two iso-FLOP lines, tokens = C / 6N.
+ const own=[1e19,1e20].flatMap(flops=>[1e8,2e8,4e8,8e8,1.6e9].map(params=>{const tokens=flops/(6*params);return {id:flops+'/'+params,name:'',family:'baseline',stage:'scaling',params,tokens,core:.3,bpb:surfaceAt(truth,params,tokens),context:4096};}));
+ const [fit]=scalingSurfaces(own,'bpb');
+ assert.equal(fit.kind,'family');
+ assert.ok(Math.abs(fit.alpha-.3)<.011&&Math.abs(fit.beta-.36)<.011&&fit.rmse<1e-3);
 });

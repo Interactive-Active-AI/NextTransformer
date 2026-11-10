@@ -5,7 +5,7 @@ description: 规模扩展阶段：在三档训练预算下，同时选择架构�
 
 排行榜回答的是一个问题：固定训练预算、模型大小按预算校准、token 数也固定时，哪种架构学得最好？规模扩展阶段问的是更大的问题：**在固定的训练预算下，架构家族、参数量和训练 token 数怎样组合，能得到最低的验证 BPB 和最高的 CORE？** 只有算力是固定的，每个家族都可以在参数量和 token 数之间取舍。
 
-进展可以在观测站的 [Scaling 页面](https://interactive-active-ai.github.io/NextTransformer/#scaling)上查看：一张三维图展示所有已完成的运行（参数量、训练 token 数，以及 CORE 或验证 BPB，颜色表示家族），下方是计划中的阶梯。
+进展可以在观测站的 [Scaling 页面](https://interactive-active-ai.github.io/NextTransformer/#scaling)上查看：一张三维图展示所有已完成的运行（参数量、训练 token 数，以及 CORE 或验证 BPB，颜色表示家族）和一张拟合曲面，下方是计划中的阶梯。在阶梯有两档预算的运行之前，曲面是暂定的：用 `a ∓ (b·N^−α + c·D^−β)` 的形式拟合所有显示的运行，指数取 Chinchilla 的 α = 0.34、β = 0.28。
 
 ## 三档预算
 

@@ -9,8 +9,9 @@ which combination of architecture family, parameter count and training tokens re
 highest CORE?** Only the compute is fixed; each family may trade parameters against tokens.
 
 Follow it on the observatory's [Scaling page](https://interactive-active-ai.github.io/NextTransformer/#scaling): a 3D
-view of every finished run (parameters, training tokens and CORE or validation BPB, coloured by family) and the
-ladder of planned runs.
+view of every finished run (parameters, training tokens and CORE or validation BPB, coloured by family) over a fitted
+surface, and the ladder of planned runs. Until the ladder has runs at two budgets, the surface is provisional: the
+form `a ∓ (b·N^−α + c·D^−β)` fitted to every run shown, with Chinchilla's exponents α = 0.34 and β = 0.28.
 
 ## Three budgets
 
