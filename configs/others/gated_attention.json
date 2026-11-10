@@ -89,13 +89,13 @@
   "calibration": {
     "status": "theoretical_preflight_passed",
     "formula_version": "reference-aten-math-v2",
-    "source_hash": "f5e46218d8e8065f51107b0c4dab3d0a91468be78b6bf5a40f05140144059df7",
-    "method_source_hash": "3ec6f564f745609f29cbf0c6bf09b80cdf983d06cca637bf864ac58ac248f58e",
+    "source_hash": "8b6f899af5af45f0399a52fd9f3d32ccecf0dab38e04828a250c9c4ce9b8e4be",
+    "method_source_hash": "c82dcfd148607aa7ec29de9674f13ef3a85482a10a27d35f8cbaecbf14e7da38",
     "torch": "2.9.1+cu128",
     "dense_flops_per_token": 4672398325.44785,
     "flops_per_token": 4641913868.506252,
     "relative_error": -0.006524370316538852,
     "cumulative_run_audit": "not_run",
-    "cost_record": "../../evidence/costs/gated-attention-20261105/gated_attention.json"
+    "cost_record": "../../evidence/costs/audit-42818390581/gated_attention.json"
   }
 }
