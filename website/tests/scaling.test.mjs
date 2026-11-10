@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
-import {FINAL_STEP,LADDER_STATUS,VIEWS,cellStatus,compact,logTicks,plannedPoints,project,scalingPoints} from '../app/lib/scaling.ts';
+import {FINAL_STEP,LADDER_STATUS,VIEWS,cellStatus,compact,denseFlops,denseShape,isoFlopCurve,logTicks,plannedPoints,project,scalingPoints} from '../app/lib/scaling.ts';
 import {methods,runs} from './results.mjs';
 
 const ladder=JSON.parse(readFileSync(new URL('../../results/scaling/ladder.json',import.meta.url),'utf8'));
@@ -59,4 +59,12 @@ test('log ticks, compact labels and the projection behave at the preset views',(
  assert.ok(Math.abs(front.x-back.x)<1e-12&&Math.abs(front.y-back.y)<1e-12);
  const top=VIEWS.floor,low=project(.2,.4,-1,top),high=project(.2,.4,1,top);
  assert.ok(Math.abs(low.x-high.x)<1e-12&&Math.abs(low.y-high.y)<1e-12);
+});
+
+test('the Dense rule reproduces the reference run, and iso-FLOP curves spend their budget exactly',()=>{
+ const reference=denseShape(40),c200=ladder.tiers.find(t=>t.id==='C200').flops;
+ assert.equal(reference.parameters,4991221760);
+ assert.ok(Math.abs(reference.flops*199999094784/c200-1)<1e-4);
+ assert.ok(Math.abs(denseFlops(reference.parameters,199999094784)/(reference.flops*199999094784)-1)<1e-6);
+ for(const p of isoFlopCurve(1e20,8,48,4))assert.ok(Math.abs(denseFlops(p.parameters,p.tokens)/1e20-1)<1e-6);
 });
