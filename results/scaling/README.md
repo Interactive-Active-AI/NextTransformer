@@ -6,6 +6,7 @@ They are not leaderboard entries: each one names its own protocol version, token
 | Path | Contents |
 |---|---|
 | `runs/<id>.json` | One record per finished run, written by `python -m nexttransformer.scaling.export` from the run directory |
+| `ladder.json` | The scaling ladder: budgets, family size rules, and every planned cell with its size, token count, status and claim |
 
 A record holds the configuration and its hash, parameter counts, the training budget and measured cost, the source,
 data and software fingerprints, every scheduled validation BPB and CORE evaluation, the final BPB and per-task CORE,
