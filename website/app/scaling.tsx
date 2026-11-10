@@ -1,77 +1,79 @@
 'use client';
-import {useEffect,useMemo,useRef,useState} from 'react';
-import {ArrowUpRight,BookOpen,RotateCcw,Users} from 'lucide-react';
+import {useState} from 'react';
+import {ArrowUpRight,BookOpen,Box,Eye,RotateCcw,Users} from 'lucide-react';
 import {REPO_URL,docs} from './lib/links';
 import {TONES} from './lib/palette';
 import {scalingLadder,scalingRecords} from './lib/results';
-import {CHINCHILLA,LADDER_STATUS,VIEWS,cellStatus,compact,plannedPoints,scalingPoints,scalingSurfaces} from './lib/scaling';
+import {FINAL_STEP,LADDER_STATUS,REFERENCE_CONTEXT,VIEWS,cellStatus,compact,familyKey,plannedPoints,scalingPoints} from './lib/scaling';
 import type {ScalingMetric,View} from './lib/scaling';
-import type {LadderCell,Method,Run} from './lib/types';
+import type {LadderCell,Method,Run,ScalingRecord} from './lib/types';
 import ScalingPlot from './scaling-plot';
-import type {Budget,FamilyTone} from './scaling-plot';
+import type {FamilyTone} from './scaling-plot';
 import './scaling.css';
 
 const TONE:Record<string,FamilyTone>={...TONES,baseline:{...TONES.baseline,name:'Dense'},moe:{name:'MoE',ink:'#2F7A72',mid:'#8FBDB6',soft:'#EEF6F5'}};
 const tones=(family:string)=>TONE[family]??TONE.baseline;
 const ORDER=['baseline','moe','looped','sparse','linear','residual','hybrid','others'];
-const BUDGET_COLORS:Record<string,string>={T3:'#2F7A72',T4:'#4A6E9A',C200:'#965C66'};
-const GROUP:Record<string,string>={open:'open',claimed:'active',running:'active',submitted:'active',recorded:'done',trained:'done',gated:'waiting',forecast:'waiting'};
-const STEPS=[['Claim a cell','Pick an open cell on the ladder and open a claim issue.'],['Train and export','Use the frozen recipe at the cell\'s token count; nexttransformer.scaling.export writes the record.'],['Open a pull request','The record, the configuration and the checkpoint link. The plot updates on merge.']];
-const MORE=[['Register a forecast','register-a-forecast'],['Evaluate checkpoints','evaluate-released-checkpoints'],['Improve the fits','improve-the-fits'],['Reproduce a cell','reproduce-a-cell'],['Add a family','add-an-architecture-family']];
+const VIEW_LABELS:[string,string][]=[['angled','3D'],['parameters','Parameters'],['tokens','Tokens'],['floor','Floor plan']];
+const TIER_NOTES:Record<string,string>={T3:'Five sizes per family map the trade-off between parameters and tokens.',T4:'The budget of the 49B comparison protocol, with five sizes per family.',C200:'Set by the Dense 200B-token reference run; predicted optima are trained here.'};
+const TASKS=[['Train a ladder cell','Claim an open cell and train it under the frozen recipe.','About 10²⁰ training FLOPs at T3'],['Add an architecture family','A method with a size rule; its cells join the ladder.','Configurations and cost proofs'],['Register a forecast','Predict the C200 optimum before the test runs start.','No training compute'],['Evaluate released checkpoints','Long-context and downstream evaluations on public weights.','Inference only'],['Improve the fits','Estimators and uncertainty for the compute-optimal frontier.','A laptop is enough'],['Reproduce a cell','Retrain a recorded cell with another seed, or re-run its checks.','One cell, or none']];
+const STEPS=[['01','Claim','Open the claim issue for one cell; a maintainer marks it claimed on this board.'],['02','Prepare','Pinned ClimbMix revision, tokenizer and CORE bundle, and the frozen scaling recipe.'],['03','Configure','Write the cell configuration and check its training FLOPs against the tier budget.'],['04','Train','Train with the scaling trainer, on any hardware; resume as often as needed.'],['05','Export','nexttransformer.scaling.export checks the run and writes its record.'],['06','Pull request','The record, the checkpoint link and the W&B run. The board and the plot update on merge.']];
 const sci=(v:number)=>{const e=Math.floor(Math.log10(v));return <>{(v/10**e).toFixed(1)} × 10<sup>{e}</sup></>;};
-const describe=(c:LadderCell,status:string)=>`${c.layers?`L${c.layers}`:'Predicted optimum'}${c.parameters?` · ${compact(c.parameters)} parameters · ${compact(c.tokens!)} tokens`:''} · ${LADDER_STATUS[status]??status}`;
+
+type RecordRow={id:string;name:string;stage:string;parameters:number;tokens:number;flops?:number;bpb:number;context:number;core:number;links:[string,string][]};
+
+function Records({records,runs,methods}:{records:ScalingRecord[];runs:Run[];methods:Method[]}){
+ const run=runs.find(r=>r.methodId==='dense_full'),method=methods.find(m=>m.id==='dense_full'),baseCore=run?.core.find(p=>p.step===FINAL_STEP)?.value;
+ const rows:RecordRow[]=records.map(r=>({id:r.id,name:r.name,stage:`Scaling · ${r.protocol}`,parameters:r.parameters.total,tokens:r.training.inputTokens,flops:r.training.trainingFlopsEstimate,bpb:r.finalBpb.val,context:r.model.sequenceLength,core:r.finalCore.value,
+  links:[['Record',`${REPO_URL}/blob/main/results/scaling/runs/${r.id}.json`],...(r.links.wandb?[['W&B',r.links.wandb] as [string,string]]:[]),...(r.links.checkpoint?[['Checkpoint',r.links.checkpoint] as [string,string]]:[])]}));
+ if(run&&method&&baseCore!==undefined&&run.finalBpb!==undefined)rows.push({id:run.id,name:'Dense Baseline',stage:'Leaderboard · 49B protocol',parameters:method.params,tokens:run.trainingCompute?.inputTokens??0,flops:run.trainingCompute?.trainingFlopsEstimate,bpb:run.finalBpb,context:REFERENCE_CONTEXT,core:baseCore,links:[['Audit',run.url]]});
+ return <div className="scaling-records"><div className="scaling-board-heading"><div><h3>Recorded runs</h3><span>{records.length} scaling-stage {records.length===1?'record':'records'}, with the Dense Baseline of the 49B protocol for reference</span></div><a href={REPO_URL+'/tree/main/results/scaling/runs'} target="_blank" rel="noreferrer">All records <ArrowUpRight size={14}/></a></div>
+  <div className="records-scroll"><table className="records-table"><thead><tr><th>Run</th><th>Parameters</th><th>Training tokens</th><th>Training FLOPs</th><th>Validation BPB ↓</th><th>CORE ×100 ↑</th><th>Links</th></tr></thead>
+   <tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b><small>{r.stage}</small></td><td>{compact(r.parameters)}</td><td>{compact(r.tokens)}</td><td>{r.flops?sci(r.flops):'—'}</td><td>{r.bpb.toFixed(4)}<small>{r.context.toLocaleString('en-US')}-token context</small></td>
+    <td>{(r.core*100).toFixed(2)}{baseCore!==undefined&&r.id!=='dense_full'&&<small className="gain">{r.core>=baseCore?'+':'−'}{Math.abs((r.core-baseCore)*100).toFixed(2)} vs the Dense Baseline</small>}</td>
+    <td className="record-links">{r.links.map(([label,href])=><a key={label} href={href} target="_blank" rel="noreferrer">{label}<ArrowUpRight size={12}/></a>)}</td></tr>)}</tbody></table></div>
+  <p className="records-note">Validation BPB is measured at each run's own context, so compare it within a stage; CORE uses the same 22 tasks everywhere.</p>
+ </div>;
+}
+
+function Cell({cell,status}:{cell:LadderCell;status:string}){
+ const moe=cell.family==='moe';
+ return <li className={'ladder-cell '+status} title={LADDER_STATUS[status]}>
+  <b>{cell.layers?`L${cell.layers}`:'Optimum'}</b>
+  <span>{cell.parameters?<>{compact(moe?cell.activeBlockParameters!:cell.blockParameters!)}{moe?' active':''} · {compact(cell.tokens!)} tokens</>:'Size from the registered forecast'}</span>
+  <em>{cell.claim?<a href={cell.claim.issue} target="_blank" rel="noreferrer">{cell.claim.by}</a>:LADDER_STATUS[status]}</em>
+ </li>;
+}
 
 export default function Scaling({runs,methods}:{runs:Run[];methods:Method[]}){
  const [metric,setMetric]=useState<ScalingMetric>('core'),[view,setView]=useState<View>(VIEWS.angled),[planned,setPlanned]=useState(true),[hidden,setHidden]=useState<string[]>([]);
- const interacted=useRef(false);
- // A slow turn into the default view on arrival; any interaction stops it.
- useEffect(()=>{
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const start=performance.now(),from={yaw:VIEWS.angled.yaw-.9,pitch:.16};let id=0;
-  const tick=(now:number)=>{if(interacted.current)return;const t=Math.min(1,(now-start)/1700),e=1-(1-t)**3;
-   if(t>=1){setView(VIEWS.angled);return;}setView({yaw:from.yaw+(VIEWS.angled.yaw-from.yaw)*e,pitch:from.pitch+(VIEWS.angled.pitch-from.pitch)*e});id=requestAnimationFrame(tick);};
-  id=requestAnimationFrame(tick);
-  const settle=setTimeout(()=>{if(!interacted.current)setView(VIEWS.angled);},1900);
-  return()=>{cancelAnimationFrame(id);clearTimeout(settle);};
- },[]);
- const reset=()=>{interacted.current=true;setView(VIEWS.angled);};
- const all=useMemo(()=>scalingPoints(runs,methods,scalingRecords),[runs,methods]);
- const surfaces=useMemo(()=>scalingSurfaces(all,metric),[all,metric]);
- const rings=plannedPoints(scalingLadder,scalingRecords);
+ const all=scalingPoints(runs,methods,scalingRecords),rings=plannedPoints(scalingLadder,scalingRecords);
  const families=ORDER.filter(f=>all.some(p=>p.family===f)||rings.some(p=>p.family===f));
- const points=all.filter(p=>!hidden.includes(p.family)),floor=planned?rings.filter(p=>!hidden.includes(p.family)):[];
- const ladder=scalingLadder,cells=ladder?.cells??[],tiers=ladder?.tiers??[];
- const budgets:Budget[]=tiers.map(t=>({id:t.id,flops:t.flops,color:BUDGET_COLORS[t.id]??'#7F9DBA',label:t.id}));
- const sign=metric==='core'?'−':'+',family=surfaces[0]?.kind==='family';
+ const points=all.filter(p=>!hidden.includes(p.family)),floor=rings.filter(p=>!hidden.includes(p.family));
+ const ladder=scalingLadder,cells=ladder?.cells??[];
+ const toggle=(f:string)=>setHidden(h=>h.includes(f)?h.filter(x=>x!==f):[...h,f]);
+ const preset=Object.entries(VIEWS).find(([,v])=>v.yaw===view.yaw&&v.pitch===view.pitch)?.[0];
  return <section className="scaling" id="scaling" aria-label="Scaling">
-  <header className="scaling-head">
-   <div><p className="eyebrow">04 / SCALING</p><h2>One budget, three choices.<span>Parameters, training tokens and architecture, chosen together for the best CORE and validation BPB.</span></h2></div>
-   <div className="scaling-actions"><a className="primary" href={docs('scaling/overview/')}><BookOpen size={16}/> Protocol</a><a className="secondary" href={docs('scaling/contribute/')}><Users size={16}/> Take part</a></div>
-  </header>
-  <ol className="scaling-budgets" aria-label="Training budgets">{tiers.map(t=>{const own=cells.filter(c=>c.tier===t.id),done=own.filter(c=>cellStatus(c,scalingRecords)==='recorded').length;
-   return <li key={t.id}><i style={{background:BUDGET_COLORS[t.id]}}/><b>{t.id}</b><span>{sci(t.flops)} FLOPs</span><small>{t.role==='fit'?'Fit':'Test'} · {done} of {own.length} recorded</small></li>;})}</ol>
-  <div className="scaling-card">
-   <div className="scaling-toolbar">
-    <div className="metric-switch" role="group" aria-label="Height"><button aria-pressed={metric==='core'} onClick={()=>setMetric('core')}>CORE <span>↑</span></button><button aria-pressed={metric==='bpb'} onClick={()=>setMetric('bpb')}>Validation BPB <span>↓</span></button></div>
-    <div className="scaling-legend" role="group" aria-label="Families">{families.map(f=><button key={f} aria-pressed={!hidden.includes(f)} onClick={()=>setHidden(h=>h.includes(f)?h.filter(x=>x!==f):[...h,f])}><i style={{background:tones(f).ink}}/>{tones(f).name}</button>)}</div>
-    <div className="scaling-tools"><label className="checkbox"><input type="checkbox" checked={planned} onChange={e=>setPlanned(e.target.checked)}/>Planned</label><button className="icon" onClick={reset} aria-label="Reset view" title="Reset view"><RotateCcw size={14}/></button></div>
-   </div>
-   <ScalingPlot points={points} planned={floor} metric={metric} surfaces={surfaces} budgets={budgets} view={view} onView={setView} onReset={reset} onInteract={()=>{interacted.current=true;}} tones={tones}/>
-   <p className="scaling-note"><span>{family?<>Surfaces fitted per family to the scaling ladder: value = a {sign} (b·N<sup>−α</sup> + c·D<sup>−β</sup>).</>:<><b>Provisional surface.</b> value = a {sign} (b·N<sup>−{CHINCHILLA.alpha}</sup> + c·D<sup>−{CHINCHILLA.beta}</sup>), fitted to every run shown with Chinchilla's exponents. Fits per family replace it once the ladder has runs at two budgets.</>}</span>
-    <span className="scaling-key"><i className="dot"/>49B protocol<i className="diamond"/>Scaling stage<i className="ring"/>Planned · drag to rotate</span></p>
+  <div className="scaling-hero"><div><p className="eyebrow">04 / SCALING</p><h2>One budget, spent three ways.<span>Parameters, training tokens and architecture, chosen together for the best CORE and validation BPB.</span></h2>
+   <p className="scaling-lede">The leaderboard fixes the compute and the model size. The scaling stage fixes only the compute: at each budget, every architecture family may trade parameters against training tokens. Two small budgets locate each family's optimum; the largest tests a forecast registered before its runs start.</p>
+   <div className="scaling-actions"><a className="primary" href={docs('scaling/overview/')}><BookOpen size={16}/> Scaling protocol</a><a className="secondary" href={docs('scaling/contribute/')}><Users size={16}/> Take part</a><a className="scaling-text-link" href={REPO_URL+'/tree/main/results/scaling'} target="_blank" rel="noreferrer">Records <ArrowUpRight size={14}/></a></div></div>
+   <div className="scaling-tiers">{(ladder?.tiers??[]).map(t=>{const own=cells.filter(c=>c.tier===t.id),done=own.filter(c=>cellStatus(c,scalingRecords)==='recorded').length;return <div key={t.id} className={t.role}><span>{t.id} · {t.role==='fit'?'FIT':'TEST'}</span><b>{sci(t.flops)} FLOPs</b><p>{TIER_NOTES[t.id]}</p><small>{own.length} cells · {done} recorded</small></div>;})}</div>
   </div>
+  <div className="scaling-surface">
+   <div className="results-toolbar scaling-toolbar"><div className="metric-switch" role="group" aria-label="Height"><button aria-pressed={metric==='core'} onClick={()=>setMetric('core')}>CORE <span>↑</span></button><button aria-pressed={metric==='bpb'} onClick={()=>setMetric('bpb')}>Validation BPB <span>↓</span></button></div>
+    <div className="chart-mode" role="group" aria-label="Viewpoint">{VIEW_LABELS.map(([id,label])=><button key={id} className={preset===id?'active':''} aria-pressed={preset===id} onClick={()=>setView(VIEWS[id])}>{id==='angled'?<Box size={13}/>:<Eye size={13}/>}{label}</button>)}<button onClick={()=>setView(VIEWS.angled)} aria-label="Reset view"><RotateCcw size={13}/></button></div></div>
+   <div className="scaling-legend">{families.map(f=><button key={f} aria-pressed={!hidden.includes(f)} onClick={()=>toggle(f)}><i style={{background:tones(f).ink}}/>{tones(f).name}</button>)}<span className="scaling-shapes"><i className="dot"/>49B protocol<i className="diamond"/>Scaling stage<label className="checkbox"><input type="checkbox" checked={planned} onChange={e=>setPlanned(e.target.checked)}/>Planned runs</label></span></div>
+   <ScalingPlot points={points} planned={floor} metric={metric} view={view} onView={setView} onReset={()=>setView(VIEWS.angled)} showPlanned={planned} tones={tones}/>
+   <div className="scaling-caption"><span>Each point is a finished run: total parameters with embeddings, training tokens, and final {metric==='core'?'CORE':'validation BPB'} as height; colour is the architecture family. Circles follow the 49B protocol at a 2,048-token context and diamonds the scaling stage at 4,096, so compare BPB within one shape. Hollow rings on the floor are planned cells.</span><span>Drag or use the arrow keys to rotate · double-click to reset</span></div>
+  </div>
+  <Records records={scalingRecords} runs={runs} methods={methods}/>
+  {ladder&&<div className="scaling-board"><div className="scaling-board-heading"><div><h3>The ladder</h3><span>{cells.length} cells · {ladder.protocol} · token counts from the theoretical training FLOPs of each size</span></div><a href={docs('scaling/contribute/')}>How to claim a cell <ArrowUpRight size={14}/></a></div>
+   <div className="ladder-grid" style={{'--tiers':ladder.tiers.length} as any}><span/>{ladder.tiers.map(t=><span key={t.id} className="ladder-tier">{t.id}<small>{sci(t.flops)} FLOPs</small></span>)}
+    {ladder.families.map(f=><div key={f.id} className="ladder-row" style={{'--family':tones(familyKey(f.id)).ink} as any}><div className="ladder-family"><b><i/>{f.name}</b><p>{f.rule}</p>{f.gate&&<small>{f.gate}</small>}</div>{ladder.tiers.map(t=><ul key={t.id} aria-label={`${f.name} at ${t.id}`}>{cells.filter(c=>c.family===f.id&&c.tier===t.id).map(c=><Cell key={c.id} cell={c} status={cellStatus(c,scalingRecords)}/>)}</ul>)}</div>)}
+   </div></div>}
   <div className="scaling-lower">
-   <section className="scaling-panel" aria-label="The ladder"><header><h3>The ladder</h3><a href={REPO_URL+'/blob/main/results/scaling/ladder.json'} target="_blank" rel="noreferrer">All cells <ArrowUpRight size={14}/></a></header>
-    <table className="ladder"><thead><tr><th/>{tiers.map(t=><th key={t.id} style={{color:BUDGET_COLORS[t.id]}}>{t.id}</th>)}</tr></thead>
-     <tbody>{(ladder?.families??[]).map(f=><tr key={f.id}><th><i style={{background:tones(f.id==='dense'?'baseline':f.id).ink}}/>{f.name}{f.status==='gated'&&<small>Recipe gate</small>}</th>
-      {tiers.map(t=>{const own=cells.filter(c=>c.family===f.id&&c.tier===t.id),done=own.filter(c=>cellStatus(c,scalingRecords)==='recorded').length;
-       return <td key={t.id}><span className="ladder-dots">{own.map(c=>{const status=cellStatus(c,scalingRecords);return <i key={c.id} className={GROUP[status]} title={describe(c,status)}/>;})}</span><small>{done}/{own.length}</small></td>;})}</tr>)}</tbody></table>
-    <p className="ladder-key"><span><i className="open"/>Open</span><span><i className="active"/>Claimed or training</span><span><i className="done"/>Trained</span><span><i className="waiting"/>Waiting</span></p>
-   </section>
-   <section className="scaling-panel" aria-label="Take part"><header><h3>Take part</h3><a href={docs('scaling/contribute/')}>Guide <ArrowUpRight size={14}/></a></header>
-    <ol className="scaling-steps">{STEPS.map(([title,text],i)=><li key={title}><span>{i+1}</span><div><b>{i===0?<a href={REPO_URL+'/issues/new?template=scaling_cell.yml'} target="_blank" rel="noreferrer">{title}</a>:title}</b><p>{text}</p></div></li>)}</ol>
-    <p className="scaling-more">{MORE.map(([label,anchor])=><a key={anchor} href={docs('scaling/contribute/')+'#'+anchor}>{label}</a>)}</p>
-   </section>
+   <div className="scaling-panel"><h3>What the community can build</h3><p>Every contribution is a file in the repository, reviewed and merged like any result.</p><ul className="scaling-tasks">{TASKS.map(([title,text,cost])=><li key={title}><b>{title}</b><span>{text}</span><small>{cost}</small></li>)}</ul></div>
+   <div className="scaling-panel"><h3>How to take part</h3><p>Training a cell, step by step. The <a href={docs('scaling/contribute/')}>contribution guide</a> has the commands and the other paths.</p><ol className="scaling-steps">{STEPS.map(([n,title,text])=><li key={n}><span>{n}</span><div><b>{title}</b><p>{text}</p></div></li>)}</ol></div>
   </div>
  </section>;
 }

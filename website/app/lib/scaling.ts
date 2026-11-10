@@ -54,76 +54,7 @@ export function compact(v:number){
  return String(Math.round(v));
 }
 
-// Exponents of the provisional surface, from Chinchilla's parametric fit (Hoffmann et al. 2022, approach 3).
-export const CHINCHILLA={alpha:.34,beta:.28};
-export type Surface={kind:'provisional'|'family';family?:string;metric:ScalingMetric;intercept:number;n:number;d:number;alpha:number;beta:number;rmse:number;runs:number};
-const metricValue=(p:ScalingPoint,metric:ScalingMetric)=>metric==='core'?p.core*100:p.bpb;
-export const surfaceAt=(s:Surface,params:number,tokens:number)=>s.intercept+(s.metric==='core'?-1:1)*(s.n*params**-s.alpha+s.d*tokens**-s.beta);
-
-function leastSquares(rows:number[][],y:number[]){
- const k=rows[0].length,a=Array.from({length:k},(_,i)=>[...Array.from({length:k},(_,j)=>rows.reduce((s,r)=>s+r[i]*r[j],0)),rows.reduce((s,r,n)=>s+r[i]*y[n],0)]);
- for(let i=0;i<k;i++){
-  const p=a.slice(i).reduce((best,row,j)=>Math.abs(row[i])>Math.abs(a[best][i])?i+j:best,i);[a[i],a[p]]=[a[p],a[i]];
-  if(Math.abs(a[i][i])<1e-300)return undefined;
-  for(let j=0;j<k;j++)if(j!==i){const f=a[j][i]/a[i][i];for(let m=i;m<=k;m++)a[j][m]-=f*a[i][m];}
- }
- return a.map((row,i)=>row[k]/row[i]);
-}
-
-/** value = intercept ∓ (n·N^−α + d·D^−β) with n, d ≥ 0 and fixed exponents: CORE rises, BPB falls, with parameters and tokens. */
-export function fitSurface(points:ScalingPoint[],metric:ScalingMetric,{alpha,beta}=CHINCHILLA,kind:Surface['kind']='provisional',family?:string):Surface|undefined{
- if(points.length<3||new Set(points.map(p=>p.tokens)).size<2)return undefined;
- const sign=metric==='core'?-1:1,y=points.map(p=>metricValue(p,metric));
- const feature=[(p:ScalingPoint)=>sign*p.params**-alpha,(p:ScalingPoint)=>sign*p.tokens**-beta];
- let best:Surface|undefined;
- for(const free of [[0,1],[0],[1],[]]){
-  const coef=leastSquares(points.map(p=>[1,...free.map(i=>feature[i](p))]),y);
-  if(!coef||coef.slice(1).some(c=>c<0))continue;
-  const s:Surface={kind,family,metric,intercept:coef[0],n:free.includes(0)?coef[1+free.indexOf(0)]:0,d:free.includes(1)?coef[1+free.indexOf(1)]:0,alpha,beta,rmse:0,runs:points.length};
-  s.rmse=Math.sqrt(points.reduce((e,p,i)=>e+(surfaceAt(s,p.params,p.tokens)-y[i])**2,0)/points.length);
-  if(!best||s.rmse<best.rmse)best=s;
- }
- return best;
-}
-
-/** One fitted surface per scaling family with six runs at two or more token counts; until then, one provisional surface over every run. */
-export function scalingSurfaces(points:ScalingPoint[],metric:ScalingMetric):Surface[]{
- const families=[...new Set(points.filter(p=>p.stage==='scaling').map(p=>p.family))].flatMap(family=>{
-  const own=points.filter(p=>p.stage==='scaling'&&p.family===family);
-  if(own.length<6||new Set(own.map(p=>p.tokens)).size<2)return [];
-  let best:Surface|undefined;
-  for(let alpha=.1;alpha<=.7001;alpha+=.02)for(let beta=.1;beta<=.7001;beta+=.02){const s=fitSurface(own,metric,{alpha,beta},'family',family);if(s&&(!best||s.rmse<best.rmse))best=s;}
-  return best?[best]:[];
- });
- if(families.length)return families;
- const provisional=fitSurface(points,metric);
- return provisional?[provisional]:[];
-}
-
-export const VOCAB=32768,CONTEXT=4096;
-
-/** The Dense size rule at a (possibly fractional) layer count: width 64 × layers, value embeddings on half the layers. */
-export function denseShape(layers:number){
- const d=64*layers,blocks=12*d*d*layers;
- return {width:d,blocks,parameters:blocks+(2+layers/2)*VOCAB*d,flops:72*d*d*layers+12*CONTEXT*d*layers+6*d*VOCAB};
-}
-
-/** Training FLOPs of the Dense-rule model with this many parameters, trained on this many tokens. */
-export function denseFlops(parameters:number,tokens:number){
- let lo=1,hi=512;
- for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(denseShape(mid).parameters<parameters)lo=mid;else hi=mid;}
- return denseShape((lo+hi)/2).flops*tokens;
-}
-
-/** The floor curve of one training budget under the Dense size rule: parameters and tokens of every size that spends it. */
-export function isoFlopCurve(flops:number,from=4,to=160,step=.25){
- const points:{parameters:number;tokens:number;layers:number}[]=[];
- for(let layers=from;layers<=to;layers+=step){const s=denseShape(layers);points.push({parameters:s.parameters,tokens:flops/s.flops,layers});}
- return points;
-}
-
-// The default view faces the budget sheets: iso-FLOP curves run from many tokens and few parameters to the reverse.
-export const VIEWS:Record<string,View>={angled:{yaw:-.72,pitch:.42},parameters:{yaw:0,pitch:0},tokens:{yaw:Math.PI/2,pitch:0},floor:{yaw:0,pitch:Math.PI/2}};
+export const VIEWS:Record<string,View>={angled:{yaw:.55,pitch:.45},parameters:{yaw:0,pitch:0},tokens:{yaw:Math.PI/2,pitch:0},floor:{yaw:0,pitch:Math.PI/2}};
 
 // Half-extents of the drawn box: wider than tall, so the plot fills a landscape card.
 export const BOX={x:1.35,y:1.35,z:.85};
