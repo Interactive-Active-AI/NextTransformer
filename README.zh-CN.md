@@ -12,6 +12,7 @@
 
 <p>
 <a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-8B5CF6?style=flat-square"></a>
+<a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat-square&amp;logo=huggingface&amp;logoColor=white"></a>
 <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2A93B?style=flat-square"></a>
 <img alt="Python 3.10-3.13" src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=flat-square&logo=python&logoColor=white">
 <img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?style=flat-square&logo=pytorch&logoColor=white">
@@ -105,6 +106,8 @@ accelerate launch --config_file launch/accelerate.yaml \
 评测会在训练过程中按计划自动运行。[快速开始指南](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/getting-started/quick-start/)介绍了冒烟测试、评测、审计和导出结果。
 
 ## 模型库
+
+模型权重的发布入口是 [NextTransformer 的 Hugging Face 主页](https://huggingface.co/NextTransformer)。在 **Models** 栏可以查看当前可下载的权重。[排行榜](https://interactive-active-ai.github.io/NextTransformer/#leaderboard) 收录的是已完成评测的模型，其中也包括尚未发布权重的模型。
 
 <details open>
 <summary><b>按模型族浏览架构</b></summary>
