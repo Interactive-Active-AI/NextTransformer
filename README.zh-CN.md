@@ -109,6 +109,8 @@ accelerate launch --config_file launch/accelerate.yaml \
 
 模型权重的发布入口是 [NextTransformer 的 Hugging Face 主页](https://huggingface.co/NextTransformer)。在 **Models** 栏可以查看当前可下载的权重。[排行榜](https://interactive-active-ai.github.io/NextTransformer/#leaderboard) 收录的是已完成评测的模型，其中也包括尚未发布权重的模型。
 
+贡献者已发布的权重：[AttnRes-Canon（49B 对比实验）](https://huggingface.co/GY2233/nextt-arena-attnres-full-canon-abcd) · [Dense（200B tokens 扩展实验）](https://huggingface.co/Enderfga/nextt-scaling-dense-200b-4k)。
+
 <details open>
 <summary><b>按模型族浏览架构</b></summary>
 
