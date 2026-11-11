@@ -13,14 +13,21 @@
 <p>
 <a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-526B85?style=flat"></a>
 <a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-74638C?style=flat&amp;logo=huggingface&amp;logoColor=white"></a>
+<br>
+<a href="https://discord.gg/k2XPXW6Jz"><img alt="加入 Discord" src="https://img.shields.io/badge/Discord-74638C?style=flat&amp;logo=discord&amp;logoColor=white"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/%E5%BE%AE%E4%BF%A1-74638C?style=flat&amp;logo=wechat&amp;logoColor=white"></a>
+<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub 讨论区" src="https://img.shields.io/badge/%E8%AE%A8%E8%AE%BA%E5%8C%BA-74638C?style=flat&amp;logo=github&amp;logoColor=white"></a>
+<a href="CITATION.cff"><img alt="引用 NextTransformer" src="https://img.shields.io/badge/%E5%BC%95%E7%94%A8-526B85?style=flat"></a>
+<br>
+<img alt="Python 3.10–3.13" src="https://img.shields.io/badge/Python-3.10%E2%80%933.13-616B78?style=flat&amp;logo=python&amp;logoColor=white">
+<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-616B78?style=flat&amp;logo=pytorch&amp;logoColor=white">
+<a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/MIT-616B78?style=flat"></a>
 </p>
 
 <p>
-<a href="https://discord.gg/k2XPXW6Jz">Discord</a> · <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat">微信</a> · <a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions">讨论区</a> · <a href="CITATION.cff">引用</a><br>
-<sub>Python 3.10–3.13 · PyTorch 2.9.1 · <a href="LICENSE">MIT 许可证</a></sub>
+<a href="README.md"><img alt="English" src="https://img.shields.io/badge/English-E1E8EF?style=flat"></a>
+<img alt="简体中文（当前语言）" src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-526B85?style=flat">
 </p>
-
-<a href="README.md">English</a> · <b>简体中文</b>
 
 </div>
 
