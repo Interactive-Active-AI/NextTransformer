@@ -30,6 +30,7 @@ export default defineConfig({
       },
       sidebar: [
         { label: 'Observatory ↗', translations: { 'zh-CN': '观测站 ↗' }, link: observatory, attrs: { target: '_self' } },
+        { label: 'Research blog ↗', translations: { 'zh-CN': '研究博客 ↗' }, link: 'https://interactive-active-ai.github.io/NextT-Blogs/' },
         group('Start here', '开始', [
           'getting-started/installation', 'getting-started/quick-start', 'getting-started/data',
           'getting-started/models', 'getting-started/repository',

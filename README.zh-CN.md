@@ -12,6 +12,7 @@
 
 <p>
 <a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-96C1F1?style=flat&amp;labelColor=D1E5FF" height="19"></a>&thinsp;
+<a href="https://interactive-active-ai.github.io/NextT-Blogs/"><img alt="NextTransformer 研究博客" src="https://img.shields.io/badge/%E5%8D%9A%E5%AE%A2-F6D7AB?style=flat" height="19"></a>&thinsp;
 <a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-F5CE70?style=flat&amp;logo=huggingface&amp;logoColor=79501F&amp;labelColor=FFF0BB" height="19"></a>&thinsp;
 <a href="https://discord.gg/k2XPXW6Jz"><img alt="加入 Discord" src="https://img.shields.io/badge/Discord-D3C2F3?style=flat&amp;logo=discord&amp;logoColor=574589" height="19"></a>&thinsp;
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/%E5%BE%AE%E4%BF%A1-F5CED9?style=flat&amp;logo=wechat&amp;logoColor=8B4161" height="19"></a>&thinsp;
@@ -34,6 +35,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 ## 新闻
 
+- <img src="https://img.shields.io/badge/BLOG-F6D7AB?style=flat-square" alt="博客" height="18"> **2026-11-11** · 研究博客上线。首篇文章记录了 [Opus 如何找到 AttnRes-Canon](https://interactive-active-ai.github.io/NextT-Blogs/attnres-canon/)。[博客仓库](https://github.com/Interactive-Active-AI/NextT-Blogs)
 - <img src="https://img.shields.io/badge/RFC-8B5CF6?style=flat-square" alt="RFC" height="18"> **2026-11-05** · **[Scaling 提案](https://github.com/Interactive-Active-AI/NextTransformer/discussions/22)**：在 ClimbMix 上以 **4K 序列**训练 **200B／400B tokens 的 Dense 和 MoE 模型**，征集数据、模型配置和评测建议。
 - <img src="https://img.shields.io/badge/COMMUNITY-2A78D6?style=flat-square" alt="Community" height="18"> **2026-11-04** · 社区项目 **[NextTransformer-V](https://github.com/Enderfga/NextTransformer-V)**（作者 [@Enderfga](https://github.com/Enderfga)）：多模态版本，在同一套算力对齐的约定下，用图文交错的 token 训练 NextTransformer 的每种方法。第一项研究经过预注册，探讨混合架构从哪里得到图像的二维布局。
 - <img src="https://img.shields.io/badge/NEW-E5607E?style=flat-square" alt="New" height="18"> **2026-10-31** · NextTransformer 正式开源：31 个完成的运行、36 张模型卡片、完整的协议、文档和观测站。
