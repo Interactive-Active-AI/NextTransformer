@@ -11,22 +11,22 @@
 </p>
 
 <p>
-<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="Leaderboard" src="https://img.shields.io/badge/leaderboard-live-526B85?style=flat"></a>
-<a href="https://huggingface.co/NextTransformer"><img alt="Model weights on Hugging Face" src="https://img.shields.io/badge/Hugging%20Face-models-74638C?style=flat&amp;logo=huggingface&amp;logoColor=white"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="Leaderboard" src="https://img.shields.io/badge/leaderboard-live-526B85?style=flat" height="18"></a>
+<a href="https://huggingface.co/NextTransformer"><img alt="Model weights on Hugging Face" src="https://img.shields.io/badge/Hugging%20Face-models-74638C?style=flat&amp;logo=huggingface&amp;logoColor=white" height="18"></a>
 <br>
-<a href="https://discord.gg/k2XPXW6Jz"><img alt="Join Discord" src="https://img.shields.io/badge/Discord-74638C?style=flat&amp;logo=discord&amp;logoColor=white"></a>
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/community/#wechat"><img alt="WeChat group" src="https://img.shields.io/badge/WeChat-74638C?style=flat&amp;logo=wechat&amp;logoColor=white"></a>
-<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/Discussions-74638C?style=flat&amp;logo=github&amp;logoColor=white"></a>
-<a href="CITATION.cff"><img alt="Cite NextTransformer" src="https://img.shields.io/badge/Cite-526B85?style=flat"></a>
+<a href="https://discord.gg/k2XPXW6Jz"><img alt="Join Discord" src="https://img.shields.io/badge/Discord-74638C?style=flat&amp;logo=discord&amp;logoColor=white" height="18"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/community/#wechat"><img alt="WeChat group" src="https://img.shields.io/badge/WeChat-74638C?style=flat&amp;logo=wechat&amp;logoColor=white" height="18"></a>
+<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/Discussions-74638C?style=flat&amp;logo=github&amp;logoColor=white" height="18"></a>
+<a href="CITATION.cff"><img alt="Cite NextTransformer" src="https://img.shields.io/badge/Cite-526B85?style=flat" height="18"></a>
 <br>
-<img alt="Python 3.10–3.13" src="https://img.shields.io/badge/Python-3.10%E2%80%933.13-616B78?style=flat&amp;logo=python&amp;logoColor=white">
-<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-616B78?style=flat&amp;logo=pytorch&amp;logoColor=white">
-<a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/MIT-616B78?style=flat"></a>
+<img alt="Python 3.10–3.13" src="https://img.shields.io/badge/Python-3.10--3.13-616B78?style=flat&amp;logo=python&amp;logoColor=white" height="18">
+<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-616B78?style=flat&amp;logo=pytorch&amp;logoColor=white" height="18">
+<a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/MIT-616B78?style=flat" height="18"></a>
 </p>
 
 <p>
-<img alt="English (current language)" src="https://img.shields.io/badge/English-526B85?style=flat">
-<a href="README.zh-CN.md"><img alt="简体中文" src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-E1E8EF?style=flat"></a>
+<img alt="English (current language)" src="https://img.shields.io/badge/English-526B85?style=flat" height="18">
+<a href="README.zh-CN.md"><img alt="简体中文" src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-E1E8EF?style=flat" height="18"></a>
 </p>
 
 </div>
