@@ -1,0 +1,3816 @@
+match:
+  model_type:
+  - nexttransformer_native_loopformer
+  model_id:
+  - custom:nextt-native-loopformer
+dims:
+  d_model: config.hidden_size
+  n_heads: config.num_attention_heads
+  n_kv_heads: config.num_attention_heads
+  d_head: d_model // n_heads
+  d_ffn: config.intermediate_size
+  n_vocab: config.vocab_size
+  n_layers: config.num_hidden_layers
+  s_max: config.max_position_embeddings
+model_inputs:
+  input_ids:
+    kind: tokens
+blocks:
+  nextt_attention:
+    role: attention
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_heads
+        kind: kv
+    graph:
+      c_q:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_q
+        dims:
+          I: d_model
+          O: d_model
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_k
+        dims:
+          I: d_model
+          O: d_model
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_v
+        dims:
+          I: d_model
+          O: d_model
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_heads
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: nt_shared_linear
+        in:
+        - merge_heads
+        - w_c_proj
+        dims:
+          I: d_model
+          O: d_model
+    outputs:
+    - c_proj
+    inputs:
+    - x
+    - w_c_q
+    - w_c_k
+    - w_c_v
+    - w_c_proj
+  nextt_ffn:
+    role: ffn_dense
+    graph:
+      c_fc:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_fc
+        dims:
+          I: d_model
+          O: d_ffn
+      relu:
+        op: relu
+        in: c_fc
+        dims:
+          dim: d_ffn
+      square:
+        op: mul
+        in:
+        - relu
+        - relu
+        dims:
+          dim: d_ffn
+      c_proj:
+        op: nt_shared_linear
+        in:
+        - square
+        - w_c_proj
+        dims:
+          I: d_ffn
+          O: d_model
+    outputs:
+    - c_proj
+    inputs:
+    - x
+    - w_c_fc
+    - w_c_proj
+  nextt_attention_ve:
+    role: attention
+    inputs:
+    - x
+    - ve
+    - w_c_q
+    - w_c_k
+    - w_c_v
+    - w_ve_gate
+    - w_c_proj
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_mixed
+        kind: kv
+    graph:
+      c_q:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_q
+        dims:
+          I: d_model
+          O: d_model
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_k
+        dims:
+          I: d_model
+          O: d_model
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_v
+        dims:
+          I: d_model
+          O: d_model
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      gate_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: nt_shared_linear
+        in:
+        - gate_channels
+        - w_ve_gate
+        dims:
+          I: '12'
+          O: n_heads
+      gate_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      gate3:
+        op: scale_const
+        formula: 3 * x
+        in: gate_sigmoid
+        dims:
+          in: n_heads
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      gated_ve:
+        op: headwise_gate
+        in:
+        - ve_heads
+        - gate3
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      v_mixed:
+        op: add
+        in:
+        - v_heads
+        - gated_ve
+        dims:
+          dim: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_mixed
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: nt_shared_linear
+        in:
+        - merge_heads
+        - w_c_proj
+        dims:
+          I: d_model
+          O: d_model
+    outputs:
+    - c_proj
+  shared_value_lookup:
+    inputs:
+    - ids
+    - table
+    graph:
+      lookup:
+        op: nt_shared_embedding
+        in:
+        - ids
+        - table
+        dims:
+          V: n_vocab
+          D: d_model
+      out:
+        op: identity
+        in: lookup.value
+    outputs:
+    - out
+  nextt_attention_short:
+    role: attention
+    cache:
+      family: SWA
+      entries:
+      - node: window_k
+        kind: kv
+      - node: window_v
+        kind: kv
+    graph:
+      c_q:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_q
+        dims:
+          I: d_model
+          O: d_model
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_k
+        dims:
+          I: d_model
+          O: d_model
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_v
+        dims:
+          I: d_model
+          O: d_model
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      window_k:
+        op: sliding_window_kv
+        in: k_scale
+        dims:
+          s_window: '513'
+      window_v:
+        op: sliding_window_kv
+        in: v_heads
+        dims:
+          s_window: '513'
+      scores:
+        op: swa_attention_score
+        in:
+        - q_scale
+        - window_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+          s_window: '513'
+      probabilities:
+        op: swa_softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+          s_window: '513'
+      weighted_values:
+        op: swa_attention_apply
+        in:
+        - probabilities
+        - window_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+          s_window: '513'
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: nt_shared_linear
+        in:
+        - merge_heads
+        - w_c_proj
+        dims:
+          I: d_model
+          O: d_model
+    outputs:
+    - c_proj
+    inputs:
+    - x
+    - w_c_q
+    - w_c_k
+    - w_c_v
+    - w_c_proj
+  nextt_attention_ve_short:
+    role: attention
+    inputs:
+    - x
+    - ve
+    - w_c_q
+    - w_c_k
+    - w_c_v
+    - w_ve_gate
+    - w_c_proj
+    cache:
+      family: SWA
+      entries:
+      - node: window_k
+        kind: kv
+      - node: window_v
+        kind: kv
+    graph:
+      c_q:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_q
+        dims:
+          I: d_model
+          O: d_model
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_k
+        dims:
+          I: d_model
+          O: d_model
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: nt_shared_linear
+        in:
+        - x
+        - w_c_v
+        dims:
+          I: d_model
+          O: d_model
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      gate_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: nt_shared_linear
+        in:
+        - gate_channels
+        - w_ve_gate
+        dims:
+          I: '12'
+          O: n_heads
+      gate_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      gate3:
+        op: scale_const
+        formula: 3 * x
+        in: gate_sigmoid
+        dims:
+          in: n_heads
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      gated_ve:
+        op: headwise_gate
+        in:
+        - ve_heads
+        - gate3
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      v_mixed:
+        op: add
+        in:
+        - v_heads
+        - gated_ve
+        dims:
+          dim: d_head
+      window_k:
+        op: sliding_window_kv
+        in: k_scale
+        dims:
+          s_window: '513'
+      window_v:
+        op: sliding_window_kv
+        in: v_mixed
+        dims:
+          s_window: '513'
+      scores:
+        op: swa_attention_score
+        in:
+        - q_scale
+        - window_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+          s_window: '513'
+      probabilities:
+        op: swa_softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+          s_window: '513'
+      weighted_values:
+        op: swa_attention_apply
+        in:
+        - probabilities
+        - window_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+          s_window: '513'
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: nt_shared_linear
+        in:
+        - merge_heads
+        - w_c_proj
+        dims:
+          I: d_model
+          O: d_model
+    outputs:
+    - c_proj
+  condition_0:
+    inputs:
+    - reference
+    - cp0
+    - cp1
+    - cp2
+    - cp3
+    - cp4
+    - cp5
+    - cp6
+    - cp7
+    graph:
+      time_fourier:
+        op: nt_fourier_time_0
+        in: reference
+        dims:
+          D: d_model
+      time_fc0:
+        op: nt_rank2_linear
+        in:
+        - time_fourier.features
+        - cp0
+        dims:
+          I: '256'
+          O: d_model
+      time_bias0:
+        op: nt_rank2_bias
+        in:
+        - time_fc0
+        - cp1
+        dims:
+          D: d_model
+      time_silu:
+        op: nt_rank2_silu
+        in: time_bias0
+        dims:
+          D: d_model
+      time_fc2:
+        op: nt_rank2_linear
+        in:
+        - time_silu
+        - cp2
+        dims:
+          I: d_model
+          O: d_model
+      time_bias2:
+        op: nt_rank2_bias
+        in:
+        - time_fc2
+        - cp3
+        dims:
+          D: d_model
+      delta_fourier:
+        op: nt_fourier_delta_0
+        in: reference
+        dims:
+          D: d_model
+      delta_fc0:
+        op: nt_rank2_linear
+        in:
+        - delta_fourier.features
+        - cp4
+        dims:
+          I: '256'
+          O: d_model
+      delta_bias0:
+        op: nt_rank2_bias
+        in:
+        - delta_fc0
+        - cp5
+        dims:
+          D: d_model
+      delta_silu:
+        op: nt_rank2_silu
+        in: delta_bias0
+        dims:
+          D: d_model
+      delta_fc2:
+        op: nt_rank2_linear
+        in:
+        - delta_silu
+        - cp6
+        dims:
+          I: d_model
+          O: d_model
+      delta_bias2:
+        op: nt_rank2_bias
+        in:
+        - delta_fc2
+        - cp7
+        dims:
+          D: d_model
+      sum:
+        op: nt_rank2_add
+        in:
+        - time_bias2
+        - delta_bias2
+        dims:
+          D: d_model
+      norm:
+        op: nt_rank2_norm
+        in: sum
+        dims:
+          D: d_model
+    outputs:
+    - norm
+  condition_1:
+    inputs:
+    - reference
+    - cp0
+    - cp1
+    - cp2
+    - cp3
+    - cp4
+    - cp5
+    - cp6
+    - cp7
+    graph:
+      time_fourier:
+        op: nt_fourier_time_1
+        in: reference
+        dims:
+          D: d_model
+      time_fc0:
+        op: nt_rank2_linear
+        in:
+        - time_fourier.features
+        - cp0
+        dims:
+          I: '256'
+          O: d_model
+      time_bias0:
+        op: nt_rank2_bias
+        in:
+        - time_fc0
+        - cp1
+        dims:
+          D: d_model
+      time_silu:
+        op: nt_rank2_silu
+        in: time_bias0
+        dims:
+          D: d_model
+      time_fc2:
+        op: nt_rank2_linear
+        in:
+        - time_silu
+        - cp2
+        dims:
+          I: d_model
+          O: d_model
+      time_bias2:
+        op: nt_rank2_bias
+        in:
+        - time_fc2
+        - cp3
+        dims:
+          D: d_model
+      delta_fourier:
+        op: nt_fourier_delta_1
+        in: reference
+        dims:
+          D: d_model
+      delta_fc0:
+        op: nt_rank2_linear
+        in:
+        - delta_fourier.features
+        - cp4
+        dims:
+          I: '256'
+          O: d_model
+      delta_bias0:
+        op: nt_rank2_bias
+        in:
+        - delta_fc0
+        - cp5
+        dims:
+          D: d_model
+      delta_silu:
+        op: nt_rank2_silu
+        in: delta_bias0
+        dims:
+          D: d_model
+      delta_fc2:
+        op: nt_rank2_linear
+        in:
+        - delta_silu
+        - cp6
+        dims:
+          I: d_model
+          O: d_model
+      delta_bias2:
+        op: nt_rank2_bias
+        in:
+        - delta_fc2
+        - cp7
+        dims:
+          D: d_model
+      sum:
+        op: nt_rank2_add
+        in:
+        - time_bias2
+        - delta_bias2
+        dims:
+          D: d_model
+      norm:
+        op: nt_rank2_norm
+        in: sum
+        dims:
+          D: d_model
+    outputs:
+    - norm
+  loop_modulation:
+    inputs:
+    - condition
+    - weight
+    graph:
+      silu:
+        op: nt_rank2_silu
+        in: condition
+        dims:
+          D: d_model
+      projection:
+        op: nt_rank2_linear
+        in:
+        - silu
+        - weight
+        dims:
+          I: d_model
+          O: 4*d_model
+      bounded:
+        op: nt_rank2_bounded_tanh
+        in: projection
+        dims:
+          D: 4*d_model
+    outputs:
+    - bounded
+  conditioned_nextt_attention:
+    inputs:
+    - x
+    - modulation
+    - attn_w_c_q
+    - attn_w_c_k
+    - attn_w_c_v
+    - attn_w_c_proj
+    - mlp_w_c_fc
+    - mlp_w_c_proj
+    graph:
+      ga:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 0*d_model
+      gm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 1*d_model
+      sa:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 2*d_model
+      sm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 3*d_model
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      scaled_attn_input:
+        op: nt_offset_modulate
+        in:
+        - norm_attn
+        - sa
+        dims:
+          D: d_model
+      attn:
+        op: nextt_attention
+        in:
+        - scaled_attn_input
+        - attn_w_c_q
+        - attn_w_c_k
+        - attn_w_c_v
+        - attn_w_c_proj
+      gated_attn:
+        op: nt_offset_modulate
+        in:
+        - attn
+        - ga
+        dims:
+          D: d_model
+      attn_add:
+        op: add
+        in:
+        - x
+        - gated_attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_add
+        dims:
+          dim: d_model
+      scaled_mlp_input:
+        op: nt_offset_modulate
+        in:
+        - norm_mlp
+        - sm
+        dims:
+          D: d_model
+      mlp:
+        op: nextt_ffn
+        in:
+        - scaled_mlp_input
+        - mlp_w_c_fc
+        - mlp_w_c_proj
+      gated_mlp:
+        op: nt_offset_modulate
+        in:
+        - mlp
+        - gm
+        dims:
+          D: d_model
+      out:
+        op: add
+        in:
+        - attn_add
+        - gated_mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  conditioned_nextt_attention_ve:
+    inputs:
+    - x
+    - ve
+    - modulation
+    - attn_w_c_q
+    - attn_w_c_k
+    - attn_w_c_v
+    - attn_w_ve_gate
+    - attn_w_c_proj
+    - mlp_w_c_fc
+    - mlp_w_c_proj
+    graph:
+      ga:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 0*d_model
+      gm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 1*d_model
+      sa:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 2*d_model
+      sm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 3*d_model
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      scaled_attn_input:
+        op: nt_offset_modulate
+        in:
+        - norm_attn
+        - sa
+        dims:
+          D: d_model
+      attn:
+        op: nextt_attention_ve
+        in:
+        - scaled_attn_input
+        - ve
+        - attn_w_c_q
+        - attn_w_c_k
+        - attn_w_c_v
+        - attn_w_ve_gate
+        - attn_w_c_proj
+      gated_attn:
+        op: nt_offset_modulate
+        in:
+        - attn
+        - ga
+        dims:
+          D: d_model
+      attn_add:
+        op: add
+        in:
+        - x
+        - gated_attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_add
+        dims:
+          dim: d_model
+      scaled_mlp_input:
+        op: nt_offset_modulate
+        in:
+        - norm_mlp
+        - sm
+        dims:
+          D: d_model
+      mlp:
+        op: nextt_ffn
+        in:
+        - scaled_mlp_input
+        - mlp_w_c_fc
+        - mlp_w_c_proj
+      gated_mlp:
+        op: nt_offset_modulate
+        in:
+        - mlp
+        - gm
+        dims:
+          D: d_model
+      out:
+        op: add
+        in:
+        - attn_add
+        - gated_mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  conditioned_nextt_attention_short:
+    inputs:
+    - x
+    - modulation
+    - attn_w_c_q
+    - attn_w_c_k
+    - attn_w_c_v
+    - attn_w_c_proj
+    - mlp_w_c_fc
+    - mlp_w_c_proj
+    graph:
+      ga:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 0*d_model
+      gm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 1*d_model
+      sa:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 2*d_model
+      sm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 3*d_model
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      scaled_attn_input:
+        op: nt_offset_modulate
+        in:
+        - norm_attn
+        - sa
+        dims:
+          D: d_model
+      attn:
+        op: nextt_attention_short
+        in:
+        - scaled_attn_input
+        - attn_w_c_q
+        - attn_w_c_k
+        - attn_w_c_v
+        - attn_w_c_proj
+      gated_attn:
+        op: nt_offset_modulate
+        in:
+        - attn
+        - ga
+        dims:
+          D: d_model
+      attn_add:
+        op: add
+        in:
+        - x
+        - gated_attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_add
+        dims:
+          dim: d_model
+      scaled_mlp_input:
+        op: nt_offset_modulate
+        in:
+        - norm_mlp
+        - sm
+        dims:
+          D: d_model
+      mlp:
+        op: nextt_ffn
+        in:
+        - scaled_mlp_input
+        - mlp_w_c_fc
+        - mlp_w_c_proj
+      gated_mlp:
+        op: nt_offset_modulate
+        in:
+        - mlp
+        - gm
+        dims:
+          D: d_model
+      out:
+        op: add
+        in:
+        - attn_add
+        - gated_mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  conditioned_nextt_attention_ve_short:
+    inputs:
+    - x
+    - ve
+    - modulation
+    - attn_w_c_q
+    - attn_w_c_k
+    - attn_w_c_v
+    - attn_w_ve_gate
+    - attn_w_c_proj
+    - mlp_w_c_fc
+    - mlp_w_c_proj
+    graph:
+      ga:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 0*d_model
+      gm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 1*d_model
+      sa:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 2*d_model
+      sm:
+        op: slice
+        in: modulation
+        dims:
+          out: d_model
+          start: 3*d_model
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      scaled_attn_input:
+        op: nt_offset_modulate
+        in:
+        - norm_attn
+        - sa
+        dims:
+          D: d_model
+      attn:
+        op: nextt_attention_ve_short
+        in:
+        - scaled_attn_input
+        - ve
+        - attn_w_c_q
+        - attn_w_c_k
+        - attn_w_c_v
+        - attn_w_ve_gate
+        - attn_w_c_proj
+      gated_attn:
+        op: nt_offset_modulate
+        in:
+        - attn
+        - ga
+        dims:
+          D: d_model
+      attn_add:
+        op: add
+        in:
+        - x
+        - gated_attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_add
+        dims:
+          dim: d_model
+      scaled_mlp_input:
+        op: nt_offset_modulate
+        in:
+        - norm_mlp
+        - sm
+        dims:
+          D: d_model
+      mlp:
+        op: nextt_ffn
+        in:
+        - scaled_mlp_input
+        - mlp_w_c_fc
+        - mlp_w_c_proj
+      gated_mlp:
+        op: nt_offset_modulate
+        in:
+        - mlp
+        - gm
+        dims:
+          D: d_model
+      out:
+        op: add
+        in:
+        - attn_add
+        - gated_mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+model:
+- name: resid_lambdas
+  op: parameter_vector
+  dims:
+    dim: '15'
+  weight_axes:
+  - &id001
+    replicated: true
+- name: x0_lambdas
+  op: parameter_vector
+  dims:
+    dim: '15'
+  weight_axes:
+  - *id001
+- name: smear_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id001
+- name: backout_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id001
+- name: transformer.wte
+  op: embedding
+  boundary_role: input_embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: &id002
+  - *id001
+  - replicated: true
+  inputs:
+  - input_ids
+- name: embedding_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.wte
+- name: smear_current
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '1'
+  inputs:
+  - embedding_norm
+- name: smear_previous
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: smear_channels
+  op: slice
+  dims:
+    in: d_model
+    out: '24'
+    start: '0'
+  inputs:
+  - smear_current
+- name: smear_gate
+  op: linear
+  dims:
+    in: '24'
+    out: '1'
+  weight_axes: *id002
+  inputs:
+  - smear_channels
+- name: smear_sigmoid
+  op: sigmoid
+  dims:
+    dim: '1'
+  inputs:
+  - smear_gate
+- name: smear_scaled
+  op: mul
+  dims:
+    dim: '1'
+  inputs:
+  - smear_sigmoid
+  - smear_lambda
+- name: smear_contribution
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - smear_previous
+  - smear_scaled
+- name: smear_sum
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - smear_current
+  - smear_contribution
+- name: first_token
+  op: slice
+  axis: 1
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: initial_hidden
+  op: concat
+  axis: 1
+  dims:
+    out: s_ctx
+  inputs:
+  - first_token
+  - smear_sum
+- name: value_embeds.0.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: &id003
+  - &id015
+    replicated: true
+  - replicated: true
+- name: transformer.h.0.attn.c_q.weight
+  op: parameter_tensor
+  shape: &id006
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.0.attn.c_k.weight
+  op: parameter_tensor
+  shape: &id007
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.0.attn.c_v.weight
+  op: parameter_tensor
+  shape: &id008
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.0.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: &id009
+  - n_heads
+  - '12'
+  weight_axes: *id003
+- name: transformer.h.0.attn.c_proj.weight
+  op: parameter_tensor
+  shape: &id010
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.0.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: &id004
+  - d_ffn
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.0.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: &id005
+  - d_model
+  - d_ffn
+  weight_axes: *id003
+- name: transformer.h.1.attn.c_q.weight
+  op: parameter_tensor
+  shape: &id011
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.1.attn.c_k.weight
+  op: parameter_tensor
+  shape: &id012
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.1.attn.c_v.weight
+  op: parameter_tensor
+  shape: &id013
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.1.attn.c_proj.weight
+  op: parameter_tensor
+  shape: &id014
+  - d_model
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.1.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.1.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.2.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.2.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.2.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.2.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.2.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.2.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.2.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.2.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.3.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.3.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.3.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.3.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.3.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.3.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.4.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.4.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.4.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.4.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.4.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.4.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.4.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.4.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.5.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.5.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.5.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.5.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.5.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.5.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.6.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.6.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.6.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.6.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.6.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.6.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.6.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.6.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.7.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.7.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.7.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.7.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.7.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.7.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.8.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.8.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.8.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.8.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.8.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.8.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.8.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.8.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.9.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.9.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.9.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.9.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.9.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.9.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.10.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.10.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.10.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.10.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.10.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.10.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.10.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.10.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.11.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.11.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.11.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.11.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.11.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.11.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.12.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.12.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.12.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.12.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.12.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.12.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.12.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.12.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: transformer.h.13.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id011
+  weight_axes: *id003
+- name: transformer.h.13.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id012
+  weight_axes: *id003
+- name: transformer.h.13.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id013
+  weight_axes: *id003
+- name: transformer.h.13.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id014
+  weight_axes: *id003
+- name: transformer.h.13.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.13.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: value_embeds.14.weight
+  op: parameter_tensor
+  shape:
+  - n_vocab
+  - d_model
+  weight_axes: *id003
+- name: transformer.h.14.attn.c_q.weight
+  op: parameter_tensor
+  shape: *id006
+  weight_axes: *id003
+- name: transformer.h.14.attn.c_k.weight
+  op: parameter_tensor
+  shape: *id007
+  weight_axes: *id003
+- name: transformer.h.14.attn.c_v.weight
+  op: parameter_tensor
+  shape: *id008
+  weight_axes: *id003
+- name: transformer.h.14.attn.ve_gate.weight
+  op: parameter_tensor
+  shape: *id009
+  weight_axes: *id003
+- name: transformer.h.14.attn.c_proj.weight
+  op: parameter_tensor
+  shape: *id010
+  weight_axes: *id003
+- name: transformer.h.14.mlp.c_fc.weight
+  op: parameter_tensor
+  shape: *id004
+  weight_axes: *id003
+- name: transformer.h.14.mlp.c_proj.weight
+  op: parameter_tensor
+  shape: *id005
+  weight_axes: *id003
+- name: conditioner.time.mlp.0.weight
+  op: parameter_tensor
+  shape:
+  - '1536'
+  - '256'
+  weight_axes: *id003
+- name: conditioner.time.mlp.0.bias
+  op: parameter_vector
+  dims:
+    dim: '1536'
+  weight_axes:
+  - *id015
+- name: conditioner.time.mlp.2.weight
+  op: parameter_tensor
+  shape:
+  - '1536'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.time.mlp.2.bias
+  op: parameter_vector
+  dims:
+    dim: '1536'
+  weight_axes:
+  - *id015
+- name: conditioner.delta.mlp.0.weight
+  op: parameter_tensor
+  shape:
+  - '1536'
+  - '256'
+  weight_axes: *id003
+- name: conditioner.delta.mlp.0.bias
+  op: parameter_vector
+  dims:
+    dim: '1536'
+  weight_axes:
+  - *id015
+- name: conditioner.delta.mlp.2.weight
+  op: parameter_tensor
+  shape:
+  - '1536'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.delta.mlp.2.bias
+  op: parameter_vector
+  dims:
+    dim: '1536'
+  weight_axes:
+  - *id015
+- name: conditioner.modulation.0.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.1.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.2.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.3.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.4.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.5.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.6.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.7.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: conditioner.modulation.8.1.weight
+  op: parameter_tensor
+  shape:
+  - '6144'
+  - '1536'
+  weight_axes: *id003
+- name: v0_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - resid_lambdas
+- name: v0_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - x0_lambdas
+- name: v0_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v0_resid
+- name: v0_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v0_x0
+- name: v0_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v0_scaled
+  - v0_scaled0
+- name: v0_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.0.weight
+- name: v0_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v0_mixed
+- name: v0_attn
+  template: nextt_attention_ve_short
+  inputs:
+  - v0_norm_attn
+  - v0_value_embedding
+  - transformer.h.0.attn.c_q.weight
+  - transformer.h.0.attn.c_k.weight
+  - transformer.h.0.attn.c_v.weight
+  - transformer.h.0.attn.ve_gate.weight
+  - transformer.h.0.attn.c_proj.weight
+- name: v0_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v0_mixed
+  - v0_attn
+- name: v0_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v0_attn_add
+- name: v0_mlp
+  template: nextt_ffn
+  inputs:
+  - v0_norm_mlp
+  - transformer.h.0.mlp.c_fc.weight
+  - transformer.h.0.mlp.c_proj.weight
+- name: v0_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v0_attn_add
+  - v0_mlp
+- name: v1_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '1'
+  inputs:
+  - resid_lambdas
+- name: v1_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '1'
+  inputs:
+  - x0_lambdas
+- name: v1_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v0_out
+  - v1_resid
+- name: v1_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v1_x0
+- name: v1_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v1_scaled
+  - v1_scaled0
+- name: v1_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v1_mixed
+- name: v1_attn
+  template: nextt_attention_short
+  inputs:
+  - v1_norm_attn
+  - transformer.h.1.attn.c_q.weight
+  - transformer.h.1.attn.c_k.weight
+  - transformer.h.1.attn.c_v.weight
+  - transformer.h.1.attn.c_proj.weight
+- name: v1_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v1_mixed
+  - v1_attn
+- name: v1_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v1_attn_add
+- name: v1_mlp
+  template: nextt_ffn
+  inputs:
+  - v1_norm_mlp
+  - transformer.h.1.mlp.c_fc.weight
+  - transformer.h.1.mlp.c_proj.weight
+- name: v1_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v1_attn_add
+  - v1_mlp
+- name: v2_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '2'
+  inputs:
+  - resid_lambdas
+- name: v2_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '2'
+  inputs:
+  - x0_lambdas
+- name: v2_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v1_out
+  - v2_resid
+- name: v2_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v2_x0
+- name: v2_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v2_scaled
+  - v2_scaled0
+- name: v2_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.2.weight
+- name: v2_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v2_mixed
+- name: v2_attn
+  template: nextt_attention_ve_short
+  inputs:
+  - v2_norm_attn
+  - v2_value_embedding
+  - transformer.h.2.attn.c_q.weight
+  - transformer.h.2.attn.c_k.weight
+  - transformer.h.2.attn.c_v.weight
+  - transformer.h.2.attn.ve_gate.weight
+  - transformer.h.2.attn.c_proj.weight
+- name: v2_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v2_mixed
+  - v2_attn
+- name: v2_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v2_attn_add
+- name: v2_mlp
+  template: nextt_ffn
+  inputs:
+  - v2_norm_mlp
+  - transformer.h.2.mlp.c_fc.weight
+  - transformer.h.2.mlp.c_proj.weight
+- name: v2_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v2_attn_add
+  - v2_mlp
+- name: v3_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - resid_lambdas
+- name: v3_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - x0_lambdas
+- name: v3_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v2_out
+  - v3_resid
+- name: v3_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v3_x0
+- name: v3_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v3_scaled
+  - v3_scaled0
+- name: condition_r0
+  template: condition_0
+  inputs:
+  - v2_out
+  - conditioner.time.mlp.0.weight
+  - conditioner.time.mlp.0.bias
+  - conditioner.time.mlp.2.weight
+  - conditioner.time.mlp.2.bias
+  - conditioner.delta.mlp.0.weight
+  - conditioner.delta.mlp.0.bias
+  - conditioner.delta.mlp.2.weight
+  - conditioner.delta.mlp.2.bias
+- name: modulation_r0_p3
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.0.1.weight
+- name: v3_conditioned
+  template: conditioned_nextt_attention
+  inputs:
+  - v3_mixed
+  - modulation_r0_p3
+  - transformer.h.3.attn.c_q.weight
+  - transformer.h.3.attn.c_k.weight
+  - transformer.h.3.attn.c_v.weight
+  - transformer.h.3.attn.c_proj.weight
+  - transformer.h.3.mlp.c_fc.weight
+  - transformer.h.3.mlp.c_proj.weight
+- name: v4_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - resid_lambdas
+- name: v4_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - x0_lambdas
+- name: v4_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v3_conditioned
+  - v4_resid
+- name: v4_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v4_x0
+- name: v4_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v4_scaled
+  - v4_scaled0
+- name: v4_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.4.weight
+- name: modulation_r0_p4
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.1.1.weight
+- name: v4_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v4_mixed
+  - v4_value_embedding
+  - modulation_r0_p4
+  - transformer.h.4.attn.c_q.weight
+  - transformer.h.4.attn.c_k.weight
+  - transformer.h.4.attn.c_v.weight
+  - transformer.h.4.attn.ve_gate.weight
+  - transformer.h.4.attn.c_proj.weight
+  - transformer.h.4.mlp.c_fc.weight
+  - transformer.h.4.mlp.c_proj.weight
+- name: v5_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - resid_lambdas
+- name: v5_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - x0_lambdas
+- name: v5_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v4_conditioned
+  - v5_resid
+- name: v5_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v5_x0
+- name: v5_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v5_scaled
+  - v5_scaled0
+- name: modulation_r0_p5
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.2.1.weight
+- name: v5_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v5_mixed
+  - modulation_r0_p5
+  - transformer.h.5.attn.c_q.weight
+  - transformer.h.5.attn.c_k.weight
+  - transformer.h.5.attn.c_v.weight
+  - transformer.h.5.attn.c_proj.weight
+  - transformer.h.5.mlp.c_fc.weight
+  - transformer.h.5.mlp.c_proj.weight
+- name: v6_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - resid_lambdas
+- name: v6_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - x0_lambdas
+- name: v6_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v5_conditioned
+  - v6_resid
+- name: v6_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v6_x0
+- name: v6_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v6_scaled
+  - v6_scaled0
+- name: v6_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.6.weight
+- name: modulation_r0_p6
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.3.1.weight
+- name: v6_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v6_mixed
+  - v6_value_embedding
+  - modulation_r0_p6
+  - transformer.h.6.attn.c_q.weight
+  - transformer.h.6.attn.c_k.weight
+  - transformer.h.6.attn.c_v.weight
+  - transformer.h.6.attn.ve_gate.weight
+  - transformer.h.6.attn.c_proj.weight
+  - transformer.h.6.mlp.c_fc.weight
+  - transformer.h.6.mlp.c_proj.weight
+- name: v7_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - resid_lambdas
+- name: v7_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - x0_lambdas
+- name: v7_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v6_conditioned
+  - v7_resid
+- name: v7_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v7_x0
+- name: v7_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v7_scaled
+  - v7_scaled0
+- name: modulation_r0_p7
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.4.1.weight
+- name: v7_conditioned
+  template: conditioned_nextt_attention
+  inputs:
+  - v7_mixed
+  - modulation_r0_p7
+  - transformer.h.7.attn.c_q.weight
+  - transformer.h.7.attn.c_k.weight
+  - transformer.h.7.attn.c_v.weight
+  - transformer.h.7.attn.c_proj.weight
+  - transformer.h.7.mlp.c_fc.weight
+  - transformer.h.7.mlp.c_proj.weight
+- name: v8_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - resid_lambdas
+- name: v8_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - x0_lambdas
+- name: v8_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v7_conditioned
+  - v8_resid
+- name: v8_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v8_x0
+- name: v8_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v8_scaled
+  - v8_scaled0
+- name: v8_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.8.weight
+- name: modulation_r0_p8
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.5.1.weight
+- name: v8_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v8_mixed
+  - v8_value_embedding
+  - modulation_r0_p8
+  - transformer.h.8.attn.c_q.weight
+  - transformer.h.8.attn.c_k.weight
+  - transformer.h.8.attn.c_v.weight
+  - transformer.h.8.attn.ve_gate.weight
+  - transformer.h.8.attn.c_proj.weight
+  - transformer.h.8.mlp.c_fc.weight
+  - transformer.h.8.mlp.c_proj.weight
+- name: v9_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - resid_lambdas
+- name: v9_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - x0_lambdas
+- name: v9_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v8_conditioned
+  - v9_resid
+- name: v9_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v9_x0
+- name: v9_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v9_scaled
+  - v9_scaled0
+- name: modulation_r0_p9
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.6.1.weight
+- name: v9_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v9_mixed
+  - modulation_r0_p9
+  - transformer.h.9.attn.c_q.weight
+  - transformer.h.9.attn.c_k.weight
+  - transformer.h.9.attn.c_v.weight
+  - transformer.h.9.attn.c_proj.weight
+  - transformer.h.9.mlp.c_fc.weight
+  - transformer.h.9.mlp.c_proj.weight
+- name: v10_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - resid_lambdas
+- name: v10_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - x0_lambdas
+- name: v10_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v9_conditioned
+  - v10_resid
+- name: v10_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v10_x0
+- name: v10_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v10_scaled
+  - v10_scaled0
+- name: v10_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.10.weight
+- name: modulation_r0_p10
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.7.1.weight
+- name: v10_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v10_mixed
+  - v10_value_embedding
+  - modulation_r0_p10
+  - transformer.h.10.attn.c_q.weight
+  - transformer.h.10.attn.c_k.weight
+  - transformer.h.10.attn.c_v.weight
+  - transformer.h.10.attn.ve_gate.weight
+  - transformer.h.10.attn.c_proj.weight
+  - transformer.h.10.mlp.c_fc.weight
+  - transformer.h.10.mlp.c_proj.weight
+- name: v11_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - resid_lambdas
+- name: v11_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - x0_lambdas
+- name: v11_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v10_conditioned
+  - v11_resid
+- name: v11_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v11_x0
+- name: v11_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v11_scaled
+  - v11_scaled0
+- name: modulation_r0_p11
+  template: loop_modulation
+  inputs:
+  - condition_r0
+  - conditioner.modulation.8.1.weight
+- name: v11_conditioned
+  template: conditioned_nextt_attention
+  inputs:
+  - v11_mixed
+  - modulation_r0_p11
+  - transformer.h.11.attn.c_q.weight
+  - transformer.h.11.attn.c_k.weight
+  - transformer.h.11.attn.c_v.weight
+  - transformer.h.11.attn.c_proj.weight
+  - transformer.h.11.mlp.c_fc.weight
+  - transformer.h.11.mlp.c_proj.weight
+- name: v12_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - resid_lambdas
+- name: v12_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '3'
+  inputs:
+  - x0_lambdas
+- name: v12_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v11_conditioned
+  - v12_resid
+- name: v12_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v12_x0
+- name: v12_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v12_scaled
+  - v12_scaled0
+- name: condition_r1
+  template: condition_1
+  inputs:
+  - v11_conditioned
+  - conditioner.time.mlp.0.weight
+  - conditioner.time.mlp.0.bias
+  - conditioner.time.mlp.2.weight
+  - conditioner.time.mlp.2.bias
+  - conditioner.delta.mlp.0.weight
+  - conditioner.delta.mlp.0.bias
+  - conditioner.delta.mlp.2.weight
+  - conditioner.delta.mlp.2.bias
+- name: modulation_r1_p3
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.0.1.weight
+- name: v12_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v12_mixed
+  - modulation_r1_p3
+  - transformer.h.3.attn.c_q.weight
+  - transformer.h.3.attn.c_k.weight
+  - transformer.h.3.attn.c_v.weight
+  - transformer.h.3.attn.c_proj.weight
+  - transformer.h.3.mlp.c_fc.weight
+  - transformer.h.3.mlp.c_proj.weight
+- name: v13_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - resid_lambdas
+- name: v13_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '4'
+  inputs:
+  - x0_lambdas
+- name: v13_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v12_conditioned
+  - v13_resid
+- name: v13_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v13_x0
+- name: v13_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v13_scaled
+  - v13_scaled0
+- name: v13_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.4.weight
+- name: modulation_r1_p4
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.1.1.weight
+- name: v13_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v13_mixed
+  - v13_value_embedding
+  - modulation_r1_p4
+  - transformer.h.4.attn.c_q.weight
+  - transformer.h.4.attn.c_k.weight
+  - transformer.h.4.attn.c_v.weight
+  - transformer.h.4.attn.ve_gate.weight
+  - transformer.h.4.attn.c_proj.weight
+  - transformer.h.4.mlp.c_fc.weight
+  - transformer.h.4.mlp.c_proj.weight
+- name: v14_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - resid_lambdas
+- name: v14_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '5'
+  inputs:
+  - x0_lambdas
+- name: v14_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v13_conditioned
+  - v14_resid
+- name: v14_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v14_x0
+- name: v14_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v14_scaled
+  - v14_scaled0
+- name: modulation_r1_p5
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.2.1.weight
+- name: v14_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v14_mixed
+  - modulation_r1_p5
+  - transformer.h.5.attn.c_q.weight
+  - transformer.h.5.attn.c_k.weight
+  - transformer.h.5.attn.c_v.weight
+  - transformer.h.5.attn.c_proj.weight
+  - transformer.h.5.mlp.c_fc.weight
+  - transformer.h.5.mlp.c_proj.weight
+- name: v15_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - resid_lambdas
+- name: v15_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '6'
+  inputs:
+  - x0_lambdas
+- name: v15_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v14_conditioned
+  - v15_resid
+- name: v15_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v15_x0
+- name: v15_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v15_scaled
+  - v15_scaled0
+- name: v15_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.6.weight
+- name: modulation_r1_p6
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.3.1.weight
+- name: v15_conditioned
+  template: conditioned_nextt_attention_ve
+  inputs:
+  - v15_mixed
+  - v15_value_embedding
+  - modulation_r1_p6
+  - transformer.h.6.attn.c_q.weight
+  - transformer.h.6.attn.c_k.weight
+  - transformer.h.6.attn.c_v.weight
+  - transformer.h.6.attn.ve_gate.weight
+  - transformer.h.6.attn.c_proj.weight
+  - transformer.h.6.mlp.c_fc.weight
+  - transformer.h.6.mlp.c_proj.weight
+- name: v16_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - resid_lambdas
+- name: v16_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '7'
+  inputs:
+  - x0_lambdas
+- name: v16_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v15_conditioned
+  - v16_resid
+- name: v16_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v16_x0
+- name: v16_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v16_scaled
+  - v16_scaled0
+- name: modulation_r1_p7
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.4.1.weight
+- name: v16_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v16_mixed
+  - modulation_r1_p7
+  - transformer.h.7.attn.c_q.weight
+  - transformer.h.7.attn.c_k.weight
+  - transformer.h.7.attn.c_v.weight
+  - transformer.h.7.attn.c_proj.weight
+  - transformer.h.7.mlp.c_fc.weight
+  - transformer.h.7.mlp.c_proj.weight
+- name: v17_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - resid_lambdas
+- name: v17_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '8'
+  inputs:
+  - x0_lambdas
+- name: v17_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v16_conditioned
+  - v17_resid
+- name: v17_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v17_x0
+- name: v17_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v17_scaled
+  - v17_scaled0
+- name: v17_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.8.weight
+- name: modulation_r1_p8
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.5.1.weight
+- name: v17_conditioned
+  template: conditioned_nextt_attention_ve_short
+  inputs:
+  - v17_mixed
+  - v17_value_embedding
+  - modulation_r1_p8
+  - transformer.h.8.attn.c_q.weight
+  - transformer.h.8.attn.c_k.weight
+  - transformer.h.8.attn.c_v.weight
+  - transformer.h.8.attn.ve_gate.weight
+  - transformer.h.8.attn.c_proj.weight
+  - transformer.h.8.mlp.c_fc.weight
+  - transformer.h.8.mlp.c_proj.weight
+- name: v18_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - resid_lambdas
+- name: v18_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '9'
+  inputs:
+  - x0_lambdas
+- name: v18_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v17_conditioned
+  - v18_resid
+- name: v18_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v18_x0
+- name: v18_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v18_scaled
+  - v18_scaled0
+- name: modulation_r1_p9
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.6.1.weight
+- name: v18_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v18_mixed
+  - modulation_r1_p9
+  - transformer.h.9.attn.c_q.weight
+  - transformer.h.9.attn.c_k.weight
+  - transformer.h.9.attn.c_v.weight
+  - transformer.h.9.attn.c_proj.weight
+  - transformer.h.9.mlp.c_fc.weight
+  - transformer.h.9.mlp.c_proj.weight
+- name: v19_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - resid_lambdas
+- name: v19_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '10'
+  inputs:
+  - x0_lambdas
+- name: v19_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v18_conditioned
+  - v19_resid
+- name: v19_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v19_x0
+- name: v19_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v19_scaled
+  - v19_scaled0
+- name: v19_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.10.weight
+- name: modulation_r1_p10
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.7.1.weight
+- name: v19_conditioned
+  template: conditioned_nextt_attention_ve
+  inputs:
+  - v19_mixed
+  - v19_value_embedding
+  - modulation_r1_p10
+  - transformer.h.10.attn.c_q.weight
+  - transformer.h.10.attn.c_k.weight
+  - transformer.h.10.attn.c_v.weight
+  - transformer.h.10.attn.ve_gate.weight
+  - transformer.h.10.attn.c_proj.weight
+  - transformer.h.10.mlp.c_fc.weight
+  - transformer.h.10.mlp.c_proj.weight
+- name: v20_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - resid_lambdas
+- name: v20_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '11'
+  inputs:
+  - x0_lambdas
+- name: v20_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v19_conditioned
+  - v20_resid
+- name: v20_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v20_x0
+- name: v20_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v20_scaled
+  - v20_scaled0
+- name: modulation_r1_p11
+  template: loop_modulation
+  inputs:
+  - condition_r1
+  - conditioner.modulation.8.1.weight
+- name: v20_conditioned
+  template: conditioned_nextt_attention_short
+  inputs:
+  - v20_mixed
+  - modulation_r1_p11
+  - transformer.h.11.attn.c_q.weight
+  - transformer.h.11.attn.c_k.weight
+  - transformer.h.11.attn.c_v.weight
+  - transformer.h.11.attn.c_proj.weight
+  - transformer.h.11.mlp.c_fc.weight
+  - transformer.h.11.mlp.c_proj.weight
+- name: v21_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '12'
+  inputs:
+  - resid_lambdas
+- name: v21_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '12'
+  inputs:
+  - x0_lambdas
+- name: v21_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v20_conditioned
+  - v21_resid
+- name: v21_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v21_x0
+- name: v21_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v21_scaled
+  - v21_scaled0
+- name: v21_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.12.weight
+- name: v21_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v21_mixed
+- name: v21_attn
+  template: nextt_attention_ve_short
+  inputs:
+  - v21_norm_attn
+  - v21_value_embedding
+  - transformer.h.12.attn.c_q.weight
+  - transformer.h.12.attn.c_k.weight
+  - transformer.h.12.attn.c_v.weight
+  - transformer.h.12.attn.ve_gate.weight
+  - transformer.h.12.attn.c_proj.weight
+- name: v21_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v21_mixed
+  - v21_attn
+- name: v21_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v21_attn_add
+- name: v21_mlp
+  template: nextt_ffn
+  inputs:
+  - v21_norm_mlp
+  - transformer.h.12.mlp.c_fc.weight
+  - transformer.h.12.mlp.c_proj.weight
+- name: v21_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v21_attn_add
+  - v21_mlp
+- name: v22_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '13'
+  inputs:
+  - resid_lambdas
+- name: v22_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '13'
+  inputs:
+  - x0_lambdas
+- name: v22_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v21_out
+  - v22_resid
+- name: v22_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v22_x0
+- name: v22_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v22_scaled
+  - v22_scaled0
+- name: v22_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v22_mixed
+- name: v22_attn
+  template: nextt_attention_short
+  inputs:
+  - v22_norm_attn
+  - transformer.h.13.attn.c_q.weight
+  - transformer.h.13.attn.c_k.weight
+  - transformer.h.13.attn.c_v.weight
+  - transformer.h.13.attn.c_proj.weight
+- name: v22_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v22_mixed
+  - v22_attn
+- name: v22_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v22_attn_add
+- name: v22_mlp
+  template: nextt_ffn
+  inputs:
+  - v22_norm_mlp
+  - transformer.h.13.mlp.c_fc.weight
+  - transformer.h.13.mlp.c_proj.weight
+- name: v22_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v22_attn_add
+  - v22_mlp
+- name: v23_resid
+  op: slice
+  dims:
+    out: '1'
+    start: '14'
+  inputs:
+  - resid_lambdas
+- name: v23_x0
+  op: slice
+  dims:
+    out: '1'
+    start: '14'
+  inputs:
+  - x0_lambdas
+- name: v23_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v22_out
+  - v23_resid
+- name: v23_scaled0
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - initial_hidden
+  - v23_x0
+- name: v23_mixed
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v23_scaled
+  - v23_scaled0
+- name: v23_value_embedding
+  template: shared_value_lookup
+  inputs:
+  - input_ids
+  - value_embeds.14.weight
+- name: v23_norm_attn
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v23_mixed
+- name: v23_attn
+  template: nextt_attention_ve
+  inputs:
+  - v23_norm_attn
+  - v23_value_embedding
+  - transformer.h.14.attn.c_q.weight
+  - transformer.h.14.attn.c_k.weight
+  - transformer.h.14.attn.c_v.weight
+  - transformer.h.14.attn.ve_gate.weight
+  - transformer.h.14.attn.c_proj.weight
+- name: v23_attn_add
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v23_mixed
+  - v23_attn
+- name: v23_norm_mlp
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - v23_attn_add
+- name: v23_mlp
+  template: nextt_ffn
+  inputs:
+  - v23_norm_mlp
+  - transformer.h.14.mlp.c_fc.weight
+  - transformer.h.14.mlp.c_proj.weight
+- name: v23_out
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v23_attn_add
+  - v23_mlp
+- name: backout_scaled
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - v12_conditioned
+  - backout_lambda
+- name: backout_negative
+  op: scale_const
+  dims:
+    in: d_model
+  inputs:
+  - backout_scaled
+- name: backout_subtract
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - v23_out
+  - backout_negative
+- name: final_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - backout_subtract
+- name: lm_head
+  op: linear
+  boundary_role: output_head
+  dims:
+    in: d_model
+    out: n_vocab
+  weight_axes: *id003
+  inputs:
+  - final_norm
+- name: logit_div15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - lm_head
+- name: logit_tanh
+  op: tanh
+  dims:
+    dim: n_vocab
+  inputs:
+  - logit_div15
+- name: logit_mul15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - logit_tanh
+custom_ops:
+  nt_shared_linear:
+    signature:
+      x:
+      - B
+      - s_ctx
+      - I
+      w:
+      - O
+      - I
+    shape_kind: axis_replace
+    params: '0'
+    flops: 2*B*s_ctx*I*O
+    formula: x @ W.T
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on:
+    - I
+    axis_use:
+      I:
+        category: contract
+        param: sum
+    out_key: O
+  nt_rank2_linear:
+    signature:
+      x:
+      - B
+      - I
+      w:
+      - O
+      - I
+    shape_kind: axis_replace
+    params: '0'
+    flops: 2*B*I*O
+    formula: x @ W.T
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on:
+    - I
+    axis_use:
+      I:
+        category: contract
+        param: sum
+    out_key: O
+  nt_rank2_bias:
+    signature:
+      x:
+      - B
+      - D
+      bias:
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: B*D
+    formula: x+bias
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: &id016 []
+    axis_use: {}
+  nt_rank2_add:
+    signature:
+      x:
+      - B
+      - D
+      y:
+      - B
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: B*D
+    formula: x+y
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+  nt_rank2_silu:
+    signature:
+      x:
+      - B
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 4*B*D
+    formula: silu(x)
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+  nt_rank2_norm:
+    signature:
+      x:
+      - B
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 2*B*D
+    formula: parameter-free RMSNorm
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on:
+    - D
+    axis_use:
+      D:
+        category: normalize
+        param: mean_square
+  nt_rank2_bounded_tanh:
+    signature:
+      x:
+      - B
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 6*B*D
+    formula: loop_modulation_bound*tanh(x)
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+  nt_shared_embedding:
+    signature:
+      ids:
+      - B
+      - s_ctx
+      table:
+      - V
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: '0'
+    formula: lookup the shared physical value table once per virtual-layer call
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - D
+  nt_offset_modulate:
+    signature:
+      x:
+      - B
+      - s_ctx
+      - D
+      offset:
+      - B
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: B*D+B*s_ctx*D
+    formula: x*(1+offset[:,None])
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+  nt_fourier_time_0:
+    signature:
+      reference:
+      - B
+      - s_ctx
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 2*B*256
+    formula: Fourier embedding of t=0/2; exp(-log(10000)*arange(128)/128), cos/sin
+      concatenation
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+    secondary_outputs:
+      features:
+      - B
+      - '256'
+  nt_fourier_delta_0:
+    signature:
+      reference:
+      - B
+      - s_ctx
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 2*B*256
+    formula: Fourier embedding of delta=1/2; exp(-log(10000)*arange(128)/128), cos/sin
+      concatenation
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+    secondary_outputs:
+      features:
+      - B
+      - '256'
+  nt_fourier_time_1:
+    signature:
+      reference:
+      - B
+      - s_ctx
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 2*B*256
+    formula: Fourier embedding of t=1/2; exp(-log(10000)*arange(128)/128), cos/sin
+      concatenation
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+    secondary_outputs:
+      features:
+      - B
+      - '256'
+  nt_fourier_delta_1:
+    signature:
+      reference:
+      - B
+      - s_ctx
+      - D
+    shape_kind: preserve
+    params: '0'
+    flops: 2*B*256
+    formula: Fourier embedding of delta=1/2; exp(-log(10000)*arange(128)/128), cos/sin
+      concatenation
+    description: Atomic source operation; physical learned matrices are explicit shared
+      inputs.
+    couples_on: *id016
+    axis_use: {}
+    secondary_outputs:
+      features:
+      - B
+      - '256'
