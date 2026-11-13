@@ -13,6 +13,7 @@ description: 同一参考协议下完成的正式训练，以及各方法与 Den
 | **[Dense Baseline](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/dense_full.json)** | 基线 | 0.6672 | — | 33.10 | — | 4.675 |
 | [AttnRes-Canon](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/attnres_full_canon_abcd.json) | 残差 | 0.6605 | -0.0067 | 35.99 | +2.90 | 4.695 |
 | [Manifold-Constrained Hyper-Connections · mHC](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/mhc.json) | 残差 | 0.6617 | -0.0055 | 35.33 | +2.23 | 4.674 |
+| [SimpleHC](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/simplehc.json) | 残差 | 0.6628 | -0.0043 | 35.11 | +2.02 | 4.693 |
 | [Hyper-Connections · HC](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/hc.json) | 残差 | 0.6644 | -0.0028 | 35.09 | +2.00 | 4.698 |
 | [Gated Attention · headwise](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gated_attention_headwise.json) | 其他 | 0.6674 | +0.0002 | 34.27 | +1.18 | 4.677 |
 | [Block Attention Residuals · AttnRes](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/attnres.json) | 残差 | 0.6630 | -0.0042 | 34.00 | +0.90 | 4.680 |
