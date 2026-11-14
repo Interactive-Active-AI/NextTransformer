@@ -39,6 +39,24 @@ def test_dense_200b_plan(capsys):
     assert (plan['steps'], plan['accumulation'], plan['muon_lr']) == (95367, 8, .04)
 
 
+def test_t3_dense_l20_matches_the_manifest_cell(capsys):
+    cell = next(c for c in json.loads((ROOT/'configs/scaling/t3.json').read_text())['cells']
+                if c['id'] == 'dense-T3-L20')
+    mc, tc = load_config(ROOT/'configs/scaling/t3_dense_l20.json')
+    assert (mc.dense_layers, mc.width, mc.heads, mc.mlp_width) == (cell['layers'], cell['width'],
+                                                                   cell['heads'], cell['ffnWidth'])
+    assert (tc.steps, tc.total_tokens) == (cell['estimatedUpdates'], cell['estimatedTokens'])
+    assert mc.width//mc.heads == cell['headDim'] and mc.window_pattern == 'L' and not mc.value_embeddings
+    with torch.device('meta'): model = NativeExperiment(mc)
+    assert sum(p.numel() for p in model.parameters()) == 477_102_146
+    d, layers, t = mc.width, mc.dense_layers, mc.sequence_len
+    assert theoretical_training_flops(mc) == pytest.approx(72*d*d*layers+12*t*d*layers+6*d*mc.vocab_size, rel=1e-5)
+    assert abs(theoretical_training_flops(mc)*tc.total_tokens-1e20) < .01e20
+    train.main(['--config', str(ROOT/'configs/scaling/t3_dense_l20.json'), '--dry-run', '--world-size', '8'])
+    plan = json.loads(capsys.readouterr().out)
+    assert (plan['steps'], plan['accumulation'], plan['core_steps']) == (29433, 32, [20000, 29433])
+
+
 def test_value_embeddings_switch_removes_the_tables_gates_and_their_cost():
     """The 2K protocol runs the shell without value embeddings; the 4K comparison keeps them."""
     mc, _ = load_config(ROOT/'configs/scaling/dense_200b.json')
