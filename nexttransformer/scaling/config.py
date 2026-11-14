@@ -32,6 +32,12 @@ class ScalingModelConfig(NativeModelConfig):
             if data[name] == defaults[name]: data.pop(name)
         return data
 
+    def matches(self, recorded):
+        """A configuration recorded before a scoped field existed ran that field's default."""
+        defaults = {f.name: f.default for f in fields(self)}
+        return {name: value for name, value in recorded.items()
+                if not (name in SCOPED_FIELDS and value == defaults[name])} == self.serialized()
+
 
 @dataclass(frozen=True)
 class ScalingTrainConfig:

@@ -13,7 +13,7 @@ from nexttransformer.models.native.config import load_config as load_native
 from nexttransformer.models.native.model import NativeExperiment, theoretical_training_flops
 from nexttransformer.native.optimizer import build_optimizer as native_optimizer
 from nexttransformer.scaling import train
-from nexttransformer.scaling.checkpoint import prune, set_aside_after
+from nexttransformer.scaling.checkpoint import prune, set_aside_after, sha256
 from nexttransformer.scaling.config import ScalingTrainConfig, config_hash, load_config
 from nexttransformer.scaling.optimizer import build_optimizer, muon_weight_decay, scaling_params
 from tests.test_data_layout import Tokenizer, shards
@@ -110,6 +110,38 @@ TINY = {'model': dict(architecture='dense', vocab_size=64, sequence_len=16, widt
                       dense_layers=2, window_pattern='L'),
         'train': dict(protocol='test', total_tokens=8*128, global_batch_tokens=128, val_every=2, val_tokens=64,
                       final_bpb_tokens=64, checkpoint_every=2, milestone_every=4)}
+
+
+def _stub(monkeypatch):
+    monkeypatch.setattr(train, 'verify_resources', lambda resources, data_dir: (
+        dict(data_revision='r', data_inventory_sha256='i', validation_sha256='v', tokenizer_sha256='t'), 'manifest'))
+    monkeypatch.setattr(train.RustBPETokenizer, 'from_directory', staticmethod(lambda path: Tokenizer()))
+    monkeypatch.setattr(train, 'evaluate_bpb', lambda *a, **k: dict(val_bpb=1.0, forward_flops_estimate=0., seconds=0.))
+    monkeypatch.setattr(train, 'evaluate_core', lambda *a, **k: dict(core_metric=0.))
+
+
+def test_resume_accepts_a_checkpoint_written_before_value_embeddings_existed(tmp_path, monkeypatch):
+    """Older checkpoints record no value_embeddings; they ran the default and must still resume."""
+    monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '')
+    _stub(monkeypatch)
+    shards(tmp_path)
+    (tmp_path/'config.json').write_text(json.dumps(TINY))
+    run = ['--config', str(tmp_path/'config.json'), '--output', str(tmp_path/'run'), '--runtime-dir',
+           str(tmp_path/'runtime'), '--resources', str(tmp_path), '--data-dir', str(tmp_path), '--micro-batch', '1',
+           '--log-every', '1', '--wandb-mode', 'disabled', '--smoke-steps', '4']
+    train.main(run+['--stop-after', '2'])
+    directory = tmp_path/'run/checkpoint_00000002/node_000'
+    saved = torch.load(directory/'model.pt', map_location='cpu', weights_only=False)
+    assert saved['model_config'].pop('value_embeddings') is True
+    torch.save(saved, directory/'model.pt')
+    manifest = json.loads((directory/'complete.json').read_text())
+    manifest['nodes']['000']['files']['model.pt'] = {'bytes': (directory/'model.pt').stat().st_size,
+                                                     'sha256': sha256(directory/'model.pt')}
+    (directory/'complete.json').write_text(json.dumps(manifest))
+    train.main(run+['--resume', '2'])
+    steps = [json.loads(line)['step'] for line in (tmp_path/'run/metrics.jsonl').read_text().splitlines()
+             if json.loads(line)['event'] == 'train']
+    assert steps == [1, 2, 3, 4]
 
 
 def _rank(rank, port, root, run, argv):
