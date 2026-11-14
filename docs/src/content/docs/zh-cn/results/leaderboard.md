@@ -22,6 +22,7 @@ description: 同一参考协议下完成的正式训练，以及各方法与 Den
 | [Hybrid GDN + SWA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gdn_hybrid_swa.json) | 混合 | 0.6656 | -0.0015 | 33.66 | +0.57 | 4.647 |
 | [Gated Attention · elementwise](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gated_attention.json) | 其他 | 0.6695 | +0.0023 | 33.58 | +0.49 | 4.642 |
 | [Hybrid GDN + MHA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gdn_hybrid.json) | 混合 | 0.6647 | -0.0025 | 33.37 | +0.28 | 4.704 |
+| [Hybrid GDN + SWA-512](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gdn_hybrid_swa512.json) | 混合 | 0.6665 | -0.0007 | 33.09 | -0.01 | 4.686 |
 | [Hybrid MoBA + MHA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/moba_hybrid.json) | 混合 | 0.6702 | +0.0031 | 32.74 | -0.35 | 4.660 |
 | [Grouped-Query Attention · GQA](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/gqa.json) | 其他 | 0.6741 | +0.0069 | 32.62 | -0.47 | 4.687 |
 | [Multi-head Latent Attention · MLA + QK-norm](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/results/runs/mla_qknorm.json) | 其他 | 0.6759 | +0.0087 | 32.53 | -0.56 | 4.670 |
