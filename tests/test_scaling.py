@@ -1,4 +1,5 @@
 """Scaling-stage configuration, the weight-decay transfer rule, and the trainer on nodes without shared storage."""
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -13,7 +14,7 @@ from nexttransformer.models.native.model import NativeExperiment, theoretical_tr
 from nexttransformer.native.optimizer import build_optimizer as native_optimizer
 from nexttransformer.scaling import train
 from nexttransformer.scaling.checkpoint import prune, set_aside_after
-from nexttransformer.scaling.config import ScalingTrainConfig, load_config
+from nexttransformer.scaling.config import ScalingTrainConfig, config_hash, load_config
 from nexttransformer.scaling.optimizer import build_optimizer, muon_weight_decay, scaling_params
 from tests.test_data_layout import Tokenizer, shards
 
@@ -36,6 +37,28 @@ def test_dense_200b_plan(capsys):
     train.main(['--config', str(ROOT/'configs/scaling/dense_200b.json'), '--dry-run'])
     plan = json.loads(capsys.readouterr().out)
     assert (plan['steps'], plan['accumulation'], plan['muon_lr']) == (95367, 8, .04)
+
+
+def test_value_embeddings_switch_removes_the_tables_gates_and_their_cost():
+    """The 2K protocol runs the shell without value embeddings; the 4K comparison keeps them."""
+    mc, _ = load_config(ROOT/'configs/scaling/dense_200b.json')
+    off = replace(mc, value_embeddings=False)
+    with torch.device('meta'): kept, dropped = NativeExperiment(mc), NativeExperiment(off)
+    assert len(kept.value_embeds) == 20 and not dropped.value_embeds
+    assert all(block.attn.ve_gate is None for block in dropped.transformer.h)
+    tables = 20*kept.transformer.wte.weight.shape[0]*mc.width
+    assert sum(p.numel() for p in kept.parameters())-sum(p.numel() for p in dropped.parameters()) == tables+20*12*mc.heads
+    d, layers, t = mc.width, mc.dense_layers, mc.sequence_len
+    # Lookups cost nothing; only the per-layer gates leave the cost ledger.
+    assert theoretical_training_flops(mc)-theoretical_training_flops(off) == 3*20*24*mc.heads
+    assert theoretical_training_flops(off) == pytest.approx(72*d*d*layers+12*t*d*layers+6*d*mc.vocab_size, rel=1e-5)
+
+
+def test_default_value_embeddings_keep_published_configuration_hashes():
+    mc, tc = load_config(ROOT/'configs/scaling/dense_200b.json')
+    published = json.loads((ROOT/'results/scaling/runs/dense_200b.json').read_text())
+    assert mc.value_embeddings and 'value_embeddings' not in mc.serialized()
+    assert config_hash(mc, tc) == published['configSha256']
 
 
 def test_weight_decay_rule_reproduces_the_native_d24_groups():
