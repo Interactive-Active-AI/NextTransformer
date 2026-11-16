@@ -24,7 +24,7 @@ From the checkout with the [project dependencies](../../getting-started/installa
 NANOCHAT_DTYPE=float32 OMP_NUM_THREADS=1 python -m nexttransformer.scaling.reference_blocks
 ```
 
-The command runs a forward and backward pass on synthetic inputs for the existing Dense and fixed recursive benchmark models and for the two new blocks. MoE uses eight small experts and selects two. KDA–DSA exercises both sides of the burn-in boundary. A formal T3 run still needs a matching trainer, verified cost and measured throughput.
+The command runs a forward and backward pass on synthetic inputs for the existing Dense and fixed recursive benchmark models and for the three expert families. MoE uses eight small experts and selects two; Looped and Hybrid place the same routed block above their own structure, keeping one dense layer at the bottom of the stack. KDA–DSA exercises both sides of the burn-in boundary. A formal T3 run still needs a matching trainer, verified cost and measured throughput.
 
 ## Coordinate a contribution
 

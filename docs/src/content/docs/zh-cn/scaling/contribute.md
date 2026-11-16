@@ -24,7 +24,7 @@ description: 选择计划点、核对实现与成本，并提交可复核的记�
 NANOCHAT_DTYPE=float32 OMP_NUM_THREADS=1 python -m nexttransformer.scaling.reference_blocks
 ```
 
-示例用合成输入对已有的 Dense、固定递归基准模型以及新增的两个模块执行前向和反向。MoE 的小例子从 8 个专家中选 2 个，KDA–DSA 会分别运行预热和稀疏阶段。正式 T3 实验还需要完成训练器接入、成本核算和吞吐实测。
+示例用合成输入对已有的 Dense、固定递归基准模型以及三个专家家族执行前向和反向。MoE 的小例子从 8 个专家中选 2 个；Looped 与 Hybrid 在各自结构之上放同一个路由模块，并在整个栈的最底层保留一个稠密层。KDA–DSA 会分别运行预热和稀疏阶段。正式 T3 实验还需要完成训练器接入、成本核算和吞吐实测。
 
 ## 认领与提交
 
