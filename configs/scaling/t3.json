@@ -91,8 +91,8 @@
     },
     {
       "id": "kda-dsa",
-      "name": "Dense KDA–DSA",
-      "description": "Three KDA layers followed by one sparse retrieval layer. Every layer retains a dense FFN.",
+      "name": "Hybrid",
+      "description": "Linear and sparse-retrieval attention interleaved in one stack. T3 studies the family through one instance, KDA–DSA: three KDA layers followed by one sparse retrieval layer. Every layer retains a dense FFN.",
       "recipe": {
         "pattern": [
           "KDA",
@@ -125,8 +125,8 @@
     },
     {
       "id": "looped",
-      "name": "Fixed Recursive",
-      "description": "A shared core runs twice between independent input and output blocks, with full backpropagation through both passes.",
+      "name": "Looped",
+      "description": "Weights reused across depth. T3 studies the family through one instance, the fixed recursive shell: a shared core runs twice between independent input and output blocks, with full backpropagation through both passes.",
       "recipe": {
         "attention": "full causal MHA",
         "loops": 2,

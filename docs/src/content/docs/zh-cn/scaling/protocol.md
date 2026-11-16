@@ -21,7 +21,7 @@ Dense 使用全因果 MHA 和宽 4d 的 ReLU² FFN。MoE 第一层保持稠密�
 
 ### 预算与预测
 
-tokens 按完整更新步取整。Dense 的训练 FLOPs/token 主项为 72Ld² + 12SLd + 6dV，S 表示窗口，V 表示词表。MoE 核算激活专家和 router。正式运行须核对累计 FLOPs，目标偏差不超过 1%。KDA–DSA 的精确 tokens 由 burn-in 与稀疏两阶段的成本证明确定。[公开配置清单](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/configs/scaling/t3.json)列出研究设计；归档 Dense 启动器用于复现旧 4K 运行。报告正式 2K 结果前，需要对应实现及成本证明。
+tokens 按完整更新步取整。Dense 的训练 FLOPs/token 主项为 72Ld² + 12SLd + 6dV，S 表示窗口，V 表示词表。MoE 核算激活专家和 router。正式运行须核对累计 FLOPs，目标偏差不超过 1%。Hybrid（以 KDA–DSA 为例）的精确 tokens 由 burn-in 与稀疏两阶段的成本证明确定。[公开配置清单](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/configs/scaling/t3.json)列出研究设计；归档 Dense 启动器用于复现旧 4K 运行。报告正式 2K 结果前，需要对应实现及成本证明。
 
 观测站按各家族假定的单卡有效吞吐换算卡时，并计入 15% 运行开销。8 张同型号 GPU 连续使用 24 小时等于 192 卡时。小试与可选补点单列。
 

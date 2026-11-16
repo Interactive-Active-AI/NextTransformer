@@ -17,7 +17,7 @@ The public design is `nextt-scale-2k-v1`. T3 assigns **1.0 × 10²⁰ theoretica
 
 Dense uses causal MHA and a ReLU² FFN of width 4d. MoE retains that first block and subsequently uses 256 routed experts (top 8) plus one shared expert, each of width d/4. Freeze routing and optimization details using dev pilots. Hybrid repeats KDA, KDA, KDA, DSA with a dense FFN in every layer. Its token-level index uses top-256 and 4 × 128 index heads with 64 rotary dimensions. Run 512 dense burn-in updates and account for the indexer, teacher, selected edges and backward paths. The published KDA + MLA hybrid has a different fourth layer.
 
-Fixed Recursive uses p independent input blocks, c shared core blocks executed twice and p output blocks. Set p = floor(L/8 + 0.5) and c = L/2 − p. Count unique weights for capacity and both executions for compute, including full backpropagation.
+Looped, as the fixed recursive instance, uses p independent input blocks, c shared core blocks executed twice and p output blocks. Set p = floor(L/8 + 0.5) and c = L/2 − p. Count unique weights for capacity and both executions for compute, including full backpropagation.
 
 ### Budgets and reporting
 
