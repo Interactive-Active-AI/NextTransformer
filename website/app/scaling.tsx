@@ -90,7 +90,7 @@ function Scaling() {
           <div className="ts-cell-status"><span>{publishedT3.has(cell.id)
             ? <a href={REPO_FILE+'results/scaling/runs/'+cell.id+'.json'}>Published result ↗</a>
             : 'Formal result pending'}</span>
-            <a href={'#contribute?cell='+encodeURIComponent(cell.id)}>Contribute to {cell.id} <ArrowUpRight size={12}/></a></div>
+            <a href={measured?'#contribute':'#contribute?cell='+encodeURIComponent(cell.id)}>{measured?'Contribute to an open cell':'Contribute to '+cell.id} <ArrowUpRight size={12}/></a></div>
         </aside>
       </div>
     </section>

@@ -33,3 +33,8 @@ export function publishedRecords(records: RunSummary[]) {
 export function publishedCells(records: RunSummary[]) {
   return new Set(publishedRecords(records).keys());
 }
+
+// Scaling records are immutable, so a cell that has one cannot receive a second run and is no longer open to claim.
+export function openCells(published: { has(id: string): boolean }) {
+  return t3.cells.filter(c => !published.has(c.id));
+}
