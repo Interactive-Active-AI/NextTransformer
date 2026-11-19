@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { publishedCells } from '../app/lib/scaling-progress.ts';
+import { publishedCells, publishedRecords } from '../app/lib/scaling-progress.ts';
 import { t3, budget } from '../app/lib/scaling.ts';
 
 test('only the sixteen public T3 designs enter the study manifest', () => {
@@ -68,5 +68,15 @@ test('only matching T3 designs with complete endpoints count as published', () =
     { core: [] }, { training: { steps: run.training.steps + 1 } },
   ]) {
     assert.equal(publishedCells([{ ...run, ...change }]).size, 0);
+  }
+});
+
+test('a published cell keeps the record the inspector reads its endpoint from', () => {
+  const ids = ['dense-T3-L20', 'dense-T3-L28'];
+  const records = publishedRecords(ids.map(id =>
+    JSON.parse(readFileSync(new URL(`../../results/scaling/runs/${id}.json`, import.meta.url)))));
+  assert.deepEqual([...records.keys()], ids);
+  for (const run of records.values()) {
+    assert.ok(Number.isFinite(run.finalBpb.val) && Number.isFinite(run.finalCore.value));
   }
 });

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 // Published records: every JSON file under results/ in the repository, bundled at build time.
-import { publishedCells, type RunSummary } from './scaling-progress';
+import { publishedRecords, type RunSummary } from './scaling-progress';
 import type {ArenaEntry,Method,Run} from './types';
 const runFiles=import.meta.glob('../../../results/runs/*.json',{eager:true,import:'default'}) as Record<string,Run>;
 const methodFiles=import.meta.glob('../../../results/methods/*.json',{eager:true,import:'default'}) as Record<string,Method>;
@@ -16,4 +16,4 @@ export const SOURCE='Repository records · results/';
 // Completed T3 results are repository records, updated when Pages rebuilds.
 const t3Runs = import.meta.glob('../../../results/scaling/runs/*-T3-L*.json',
   { eager: true, import: 'default' }) as Record<string, RunSummary>;
-export const publishedT3 = publishedCells(Object.values(t3Runs));
+export const publishedT3 = publishedRecords(Object.values(t3Runs));
