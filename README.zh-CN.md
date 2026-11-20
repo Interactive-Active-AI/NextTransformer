@@ -11,17 +11,19 @@
 </p>
 
 <p>
-<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-8B5CF6?style=flat-square"></a>
-<a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat-square&amp;logo=huggingface&amp;logoColor=white"></a>
-<a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-F2A93B?style=flat-square"></a>
-<img alt="Python 3.10-3.13" src="https://img.shields.io/badge/python-3.10--3.13-3776AB?style=flat-square&logo=python&logoColor=white">
-<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-EE4C2C?style=flat-square&logo=pytorch&logoColor=white">
-<a href="https://discord.gg/k2XPXW6Jz"><img alt="Discord" src="https://img.shields.io/badge/Discord-join-74638C?style=flat-square&logo=discord&logoColor=white"></a>
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/WeChat-group-E5607E?style=flat-square&logo=wechat&logoColor=white"></a>
-<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/badge/discussions-ask-7A5AF0?style=flat-square&logo=github&logoColor=white"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img alt="排行榜" src="https://img.shields.io/badge/leaderboard-live-96C1F1?style=flat&amp;labelColor=D1E5FF" height="19"></a>&thinsp;
+<a href="https://interactive-active-ai.github.io/NextT-Blogs/"><img alt="NextTransformer 研究博客" src="https://img.shields.io/badge/%E5%8D%9A%E5%AE%A2-F6D7AB?style=flat" height="19"></a>&thinsp;
+<a href="https://huggingface.co/NextTransformer"><img alt="Hugging Face 模型权重" src="https://img.shields.io/badge/Hugging%20Face-models-F5CE70?style=flat&amp;logo=huggingface&amp;logoColor=79501F&amp;labelColor=FFF0BB" height="19"></a>&thinsp;
+<a href="https://discord.gg/k2XPXW6Jz"><img alt="加入 Discord" src="https://img.shields.io/badge/Discord-D3C2F3?style=flat&amp;logo=discord&amp;logoColor=574589" height="19"></a>&thinsp;
+<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/community/#wechat"><img alt="微信交流群" src="https://img.shields.io/badge/%E5%BE%AE%E4%BF%A1-F5CED9?style=flat&amp;logo=wechat&amp;logoColor=8B4161" height="19"></a>&thinsp;
+<a href="https://github.com/Interactive-Active-AI/NextTransformer/discussions"><img alt="GitHub 讨论区" src="https://img.shields.io/badge/%E8%AE%A8%E8%AE%BA%E5%8C%BA-C4D4F6?style=flat&amp;logo=github&amp;logoColor=475D8A" height="19"></a>
+<br>
+<img alt="Python 3.10–3.13" src="https://img.shields.io/badge/Python-3.10--3.13-A4CBEB?style=flat&amp;logo=python&amp;logoColor=345B86&amp;labelColor=D7EBFA" height="19">&thinsp;
+<img alt="PyTorch 2.9.1" src="https://img.shields.io/badge/PyTorch-2.9.1-F4AF98?style=flat&amp;logo=pytorch&amp;logoColor=9D4436&amp;labelColor=FFE0D2" height="19">&thinsp;
+<a href="LICENSE"><img alt="MIT 许可证" src="https://img.shields.io/badge/MIT-E3D7F4?style=flat" height="19"></a>&thinsp;
+<a href="CITATION.cff"><img alt="引用 NextTransformer" src="https://img.shields.io/badge/%E5%BC%95%E7%94%A8-F6D7AB?style=flat" height="19"></a>&thinsp;
+<a href="README.md"><img alt="English" src="https://img.shields.io/badge/English-E9EFF6?style=flat" height="19"></a>&nbsp;<img alt="简体中文（当前语言）" src="https://img.shields.io/badge/%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-A9C7EB?style=flat" height="19">
 </p>
-
-<a href="README.md">English</a> · <b>简体中文</b>
 
 </div>
 
@@ -33,7 +35,8 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 ## 新闻
 
-- <img src="https://img.shields.io/badge/RFC-8B5CF6?style=flat-square" alt="RFC" height="18"> **2026-11-05** · **[Scaling 提案](https://github.com/Interactive-Active-AI/NextTransformer/discussions/22)**：在 ClimbMix 上以 **4K 序列**训练 **200B／400B tokens 的 Dense 和 MoE 模型**，征集数据、模型配置和评测建议。
+- **2026-11-13** · [2K Scaling 研究启动](https://interactive-active-ai.github.io/NextTransformer/#scaling)。T3 开放四个家族的 16 个配置与预算。[从 Contribute 选择配置、查看参考代码并参与](https://interactive-active-ai.github.io/NextTransformer/#contribute)。
+- <img src="https://img.shields.io/badge/BLOG-F6D7AB?style=flat-square" alt="博客" height="18"> **2026-11-11** · 研究博客上线。首篇文章记录了 [Opus 如何找到 AttnRes-Canon](https://interactive-active-ai.github.io/NextT-Blogs/attnres-canon/)。[博客仓库](https://github.com/Interactive-Active-AI/NextT-Blogs)
 - <img src="https://img.shields.io/badge/COMMUNITY-2A78D6?style=flat-square" alt="Community" height="18"> **2026-11-04** · 社区项目 **[NextTransformer-V](https://github.com/Enderfga/NextTransformer-V)**（作者 [@Enderfga](https://github.com/Enderfga)）：多模态版本，在同一套算力对齐的约定下，用图文交错的 token 训练 NextTransformer 的每种方法。第一项研究经过预注册，探讨混合架构从哪里得到图像的二维布局。
 - <img src="https://img.shields.io/badge/NEW-E5607E?style=flat-square" alt="New" height="18"> **2026-10-31** · NextTransformer 正式开源：31 个完成的运行、36 张模型卡片、完整的协议、文档和观测站。
 - <img src="https://img.shields.io/badge/SOON-8B5CF6?style=flat-square" alt="Soon" height="18"> **2026-11-14 前** · **Arena v2**：全面支持 agent 自主研究。
@@ -44,7 +47,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/protocol/overview/"><img src=".github/assets/readme/card-protocol-zh.webp" alt="公平、明确的协议：每个模型使用相同的数据、token、优化器、调度和评测；训练算力对齐到 1% 以内，并对整个运行做审计。" width="100%"></a>
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/getting-started/quick-start/"><img src=".github/assets/readme/card-scale-zh.webp" alt="用 49B tokens 预训练约 1.4B 参数的模型，单机 8 卡约需 2–4 天；11 月计划扩展到 400B tokens 与更大模型。" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#scaling"><img src=".github/assets/readme/card-scale-zh.webp" alt="固定算力下的 2K Scaling 研究：Dense、MoE、KDA–DSA 和 Fixed Recursive 四个架构家族各扫四个深度，共 16 个 T3 配置，每次训练 10²⁰ FLOPs、2,048 上下文。先做 T3，再到 T4、T5 和留出的 C200 盲测。" width="100%"></a>
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/task/"><img src=".github/assets/readme/card-agent-zh.webp" alt="Agent 原生研究：把竞技场任务交给你的 agent；完整版本 Arena v2 将于 2026 年 11 月 14 日前上线。" width="100%"></a>
 
@@ -57,7 +60,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 ## 结果
 
 <!-- generated:leaderboard -->
-<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img src=".github/assets/readme/results-zh.svg" alt="全部 38 个运行在第 46,875 次更新时的 CORE，与 Dense Baseline 对比" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img src=".github/assets/readme/results-zh.svg" alt="全部 44 个运行在第 46,875 次更新时的 CORE，与 Dense Baseline 对比" width="100%"></a>
 
 [完整排行榜](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/leaderboard/) · [训练回放](https://interactive-active-ai.github.io/NextTransformer/#leaderboard)
 <!-- /generated:leaderboard -->
@@ -118,12 +121,12 @@ accelerate launch --config_file launch/accelerate.yaml \
 | 模型族 | 模型 |
 |---|---|
 | <img src="https://img.shields.io/badge/Baseline-7A8288?style=flat-square" alt="基线"> | Dense Baseline |
-| <img src="https://img.shields.io/badge/Residual-33456E?style=flat-square" alt="残差"> | Standard Residual · AttnRes · HC · mHC · AttnRes-Canon |
+| <img src="https://img.shields.io/badge/Residual-33456E?style=flat-square" alt="残差"> | Standard Residual · AttnRes · HC · mHC · MSAR · AttnRes-Canon · SimpleHC |
 | <img src="https://img.shields.io/badge/Looped-8B5CF6?style=flat-square" alt="循环"> | UT-ACT · Fixed Recursive · Huginn · Ouro · DeepLoop · MoR · LoopFormer · Circle Loop |
 | <img src="https://img.shields.io/badge/Sparse-E5607E?style=flat-square" alt="稀疏"> | DSA · QSA · NSA · SeerAttention-style · MoBA |
 | <img src="https://img.shields.io/badge/Linear-3F7FD9?style=flat-square" alt="线性"> | DeltaNet · GSA + QK-norm · GLA · KDA · RetNet · ELU-Norm · GDN |
-| <img src="https://img.shields.io/badge/Hybrid-F07856?style=flat-square" alt="混合"> | GDN–MHA · GDN–SWA · DeltaNet–MHA · KDA–MLA-NoPE · GDN–QSA\* · MoBA–MHA |
-| <img src="https://img.shields.io/badge/Others-D99A2B?style=flat-square" alt="其他"> | SSSL · MQA · GQA · MLA-QK · MLA-NoPE-QK · Gated Attention · elementwise · Gated Attention · headwise |
+| <img src="https://img.shields.io/badge/Hybrid-F07856?style=flat-square" alt="混合"> | GDN–MHA 3:1 · GDN–MHA 1:1 · GDN–SWA · DeltaNet–MHA · KDA–MLA-NoPE · GDN–QSA · MoBA–MHA |
+| <img src="https://img.shields.io/badge/Others-D99A2B?style=flat-square" alt="其他"> | SSSL · MQA · GQA · MLA-QK · MLA-NoPE-QK · Gated Attention · elementwise · Gated Attention · headwise · XSA · Exclusive Self Attention · Inkling REL |
 <!-- /generated:model-zoo -->
 
 \* 结果即将发布。论文、调整和配置见[模型库](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/)。
@@ -192,9 +195,8 @@ accelerate launch --config_file launch/accelerate.yaml \
 ## 路线图
 
 - **2026 年 11 月 14 日前：** Arena v2 和 agent 原生研究。
-- **2026 年 11 月：** 在 ClimbMix 上采用 **4K 序列**，以 **200B 和 400B tokens** 两档预算训练 **Dense 和 MoE** 模型。
-- **征集建议：** 数据混合、模型配置和 CORE 之外的评测，见 [scaling 提案](https://github.com/Interactive-Active-AI/NextTransformer/discussions/22)。
-- **即将发布的结果：** GDN + QSA 和 MoBA + MHA 混合架构。
+- **2K Scaling**：先做 [T3 尺寸扫描](https://interactive-active-ai.github.io/NextTransformer/#scaling)，再完善拟合、校验预测，最终在 C200 盲测。
+- **Hybrid GDN + QSA：** 正式结果、累计审计与[运行说明](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/runs/qsa_hybrid/)已发布。
 - **计划中：** 在 Hugging Face Hub 上发布检查点和分词器。
 
 详见[路线图](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/roadmap/)。

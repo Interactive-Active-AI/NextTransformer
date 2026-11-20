@@ -14,7 +14,7 @@ def build(candidate, profile):
     return model
 
 
-def inspect(candidate, profile):
+def _inspect(candidate, profile):
     activate(candidate)
     import torch
     from torch._subclasses.fake_tensor import FakeTensorMode
@@ -70,8 +70,57 @@ def inspect(candidate, profile):
         "backward": str(report["phases"]["backward"]),
         "optimizer": str(report["phases"]["optimizer"]),
         "parameters": parameters,
+        "activation_depth": model.config.maximum_depth,
         "training_flops_per_token": report["total"] / x.numel(),
         "anchor_ratio": report["total"] / x.numel() / 4672398325.44785,
         "accounting_version": report["formula_version"],
         "scope": "native plugin trace for the pinned configuration; not a proof of every Python branch",
     }
+
+
+def inspect(candidate, profile):
+    """Trace actual research microbatch shapes, retaining full-batch diagnostics."""
+    from collections import Counter
+    from .research import microbatches, replica_slices
+
+    report = _inspect(candidate, profile)
+    batch = profile["batch_size"]
+    micro = profile.get("microbatch_size", batch)
+    devices = profile.get("research_device_count", 1)
+    shapes = Counter()
+    rounds = 0
+    for start, end in microbatches(batch, micro, devices):
+        rounds += 1
+        for first, last in replica_slices(start, end, devices):
+            shapes[last - first] += 1
+    evaluation_shapes = Counter(
+        end - start for start, end in microbatches(batch, micro, 1)
+    )
+    traces = {batch: report}
+    for size in shapes.keys() | evaluation_shapes.keys():
+        if size not in traces:
+            traces[size] = _inspect(candidate, {**profile, "batch_size": size})
+        if traces[size]["coverage"] != "complete":
+            report["coverage"] = "incomplete"
+            report["unknown"].update(traces[size]["unknown"])
+    report["research_forward"] = str(
+        sum(int(traces[size]["forward"]) * count for size, count in shapes.items())
+    )
+    report["research_backward"] = str(
+        sum(int(traces[size]["backward"]) * count for size, count in shapes.items())
+    )
+    # Conservative arithmetic bound for loss scaling, gradient reduction and
+    # accumulation. Tensor copies/communication do not count as arithmetic.
+    report["research_reduction"] = str(
+        2 * sum(shapes.values())
+        + report["parameters"] * (sum(shapes.values()) + rounds)
+        if devices > 1 or micro < batch
+        else 0
+    )
+    report["research_evaluation"] = str(
+        sum(
+            int(traces[size]["evaluation"]) * count
+            for size, count in evaluation_shapes.items()
+        )
+    )
+    return report

@@ -1,79 +1,106 @@
-'use client';
-import {useState} from 'react';
-import {ArrowUpRight,BookOpen,Box,Eye,RotateCcw,Users} from 'lucide-react';
-import {REPO_URL,docs} from './lib/links';
-import {TONES} from './lib/palette';
-import {scalingLadder,scalingRecords} from './lib/results';
-import {FINAL_STEP,LADDER_STATUS,REFERENCE_CONTEXT,VIEWS,cellStatus,compact,familyKey,plannedPoints,scalingPoints} from './lib/scaling';
-import type {ScalingMetric,View} from './lib/scaling';
-import type {LadderCell,Method,Run,ScalingRecord} from './lib/types';
-import ScalingPlot from './scaling-plot';
-import type {FamilyTone} from './scaling-plot';
+import { memo, useState } from 'react';
+import { Activity, ArrowDownToLine, ArrowUpRight, BookOpen, Check, CircleDashed, Layers3 } from 'lucide-react';
+import { docs, REPO_FILE } from './lib/links';
+import { publishedT3 } from './lib/results';
+import { budget, t3 } from './lib/scaling';
+import type { Cell, Family, Hardware } from './lib/scaling';
 import './scaling.css';
 
-const TONE:Record<string,FamilyTone>={...TONES,baseline:{...TONES.baseline,name:'Dense'},moe:{name:'MoE',ink:'#2F7A72',mid:'#8FBDB6',soft:'#EEF6F5'}};
-const tones=(family:string)=>TONE[family]??TONE.baseline;
-const ORDER=['baseline','moe','looped','sparse','linear','residual','hybrid','others'];
-const VIEW_LABELS:[string,string][]=[['angled','3D'],['parameters','Parameters'],['tokens','Tokens'],['floor','Floor plan']];
-const TIER_NOTES:Record<string,string>={T3:'Five sizes per family map the trade-off between parameters and tokens.',T4:'The budget of the 49B comparison protocol, with five sizes per family.',C200:'Set by the Dense 200B-token reference run; predicted optima are trained here.'};
-const TASKS=[['Train a ladder cell','Claim an open cell and train it under the frozen recipe.','About 10²⁰ training FLOPs at T3'],['Add an architecture family','A method with a size rule; its cells join the ladder.','Configurations and cost proofs'],['Register a forecast','Predict the C200 optimum before the test runs start.','No training compute'],['Evaluate released checkpoints','Long-context and downstream evaluations on public weights.','Inference only'],['Improve the fits','Estimators and uncertainty for the compute-optimal frontier.','A laptop is enough'],['Reproduce a cell','Retrain a recorded cell with another seed, or re-run its checks.','One cell, or none']];
-const STEPS=[['01','Claim','Open the claim issue for one cell; a maintainer marks it claimed on this board.'],['02','Prepare','Pinned ClimbMix revision, tokenizer and CORE bundle, and the frozen scaling recipe.'],['03','Configure','Write the cell configuration and check its training FLOPs against the tier budget.'],['04','Train','Train with the scaling trainer, on any hardware; resume as often as needed.'],['05','Export','nexttransformer.scaling.export checks the run and writes its record.'],['06','Pull request','The record, the checkpoint link and the W&B run. The board and the plot update on merge.']];
-const sci=(v:number)=>{const e=Math.floor(Math.log10(v));return <>{(v/10**e).toFixed(1)} × 10<sup>{e}</sup></>;};
+const colors: Record<string,string> = {dense:'#536e88',moe:'#967752','kda-dsa':'#7c6693',looped:'#a26c76'};
+const roadmap = [
+  ['T3','Size sweep','Public design'],
+  ['T4','Refine the fit','Planned'],
+  ['T5','Check the forecast','Planned'],
+  ['C200','Final blind test','Held out'],
+];
+const configUrl = new URL('../../configs/scaling/t3.json', import.meta.url).href;
+const number = (value:number,digits=0) => value.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 
-type RecordRow={id:string;name:string;stage:string;parameters:number;tokens:number;flops?:number;bpb:number;context:number;core:number;links:[string,string][]};
-
-function Records({records,runs,methods}:{records:ScalingRecord[];runs:Run[];methods:Method[]}){
- const run=runs.find(r=>r.methodId==='dense_full'),method=methods.find(m=>m.id==='dense_full'),baseCore=run?.core.find(p=>p.step===FINAL_STEP)?.value;
- const rows:RecordRow[]=records.map(r=>({id:r.id,name:r.name,stage:`Scaling · ${r.protocol}`,parameters:r.parameters.total,tokens:r.training.inputTokens,flops:r.training.trainingFlopsEstimate,bpb:r.finalBpb.val,context:r.model.sequenceLength,core:r.finalCore.value,
-  links:[['Record',`${REPO_URL}/blob/main/results/scaling/runs/${r.id}.json`],...(r.links.wandb?[['W&B',r.links.wandb] as [string,string]]:[]),...(r.links.checkpoint?[['Checkpoint',r.links.checkpoint] as [string,string]]:[])]}));
- if(run&&method&&baseCore!==undefined&&run.finalBpb!==undefined)rows.push({id:run.id,name:'Dense Baseline',stage:'Leaderboard · 49B protocol',parameters:method.params,tokens:run.trainingCompute?.inputTokens??0,flops:run.trainingCompute?.trainingFlopsEstimate,bpb:run.finalBpb,context:REFERENCE_CONTEXT,core:baseCore,links:[['Audit',run.url]]});
- return <div className="scaling-records"><div className="scaling-board-heading"><div><h3>Recorded runs</h3><span>{records.length} scaling-stage {records.length===1?'record':'records'}, with the Dense Baseline of the 49B protocol for reference</span></div><a href={REPO_URL+'/tree/main/results/scaling/runs'} target="_blank" rel="noreferrer">All records <ArrowUpRight size={14}/></a></div>
-  <div className="records-scroll"><table className="records-table"><thead><tr><th>Run</th><th>Parameters</th><th>Training tokens</th><th>Training FLOPs</th><th>Validation BPB ↓</th><th>CORE ×100 ↑</th><th>Links</th></tr></thead>
-   <tbody>{rows.map(r=><tr key={r.id}><td><b>{r.name}</b><small>{r.stage}</small></td><td>{compact(r.parameters)}</td><td>{compact(r.tokens)}</td><td>{r.flops?sci(r.flops):'—'}</td><td>{r.bpb.toFixed(4)}<small>{r.context.toLocaleString('en-US')}-token context</small></td>
-    <td>{(r.core*100).toFixed(2)}{baseCore!==undefined&&r.id!=='dense_full'&&<small className="gain">{r.core>=baseCore?'+':'−'}{Math.abs((r.core-baseCore)*100).toFixed(2)} vs the Dense Baseline</small>}</td>
-    <td className="record-links">{r.links.map(([label,href])=><a key={label} href={href} target="_blank" rel="noreferrer">{label}<ArrowUpRight size={12}/></a>)}</td></tr>)}</tbody></table></div>
-  <p className="records-note">Validation BPB is measured at each run's own context, so compare it within a stage; CORE uses the same 22 tasks everywhere.</p>
- </div>;
+function Tradeoff({family,cell,onPick}:{family:Family;cell:Cell;onPick:(depth:number)=>void}) {
+  const cells=t3.cells.filter(c=>c.family===family.id);
+  const points=cells.filter(c=>c.estimatedTokens!==null);
+  const x=(depth:number)=>25+(depth-16)*16;
+  const y=(tokens:number)=>85-65*Math.log(tokens/7e9)/Math.log(70/7);
+  return <div className="ts-figure">
+    <div className="ts-fig-top"><span>{points.length?'Training tokens by depth':'Mixer composition by depth'}</span><small>{points.length?'Planning estimate':'Layers per model'}</small></div>
+    {points.length ? <svg viewBox="0 0 310 115" role="img" aria-label="Estimated training tokens decline with depth at the fixed T3 compute budget.">
+      {[10,25,60].map(b=><g key={b}><line x1="24" x2="280" y1={y(b*1e9)} y2={y(b*1e9)} className="ts-gridline"/><text x="287" y={y(b*1e9)+3}>{b}B</text></g>)}
+      <polyline points={points.map(c=>x(c.layers)+','+y(c.estimatedTokens!)).join(' ')} fill="none" stroke={colors[family.id]} strokeWidth="2"/>
+      {points.map(c=><g key={c.id}><circle cx={x(c.layers)} cy={y(c.estimatedTokens!)} r={cell.id===c.id?5:3.5} fill={cell.id===c.id?colors[family.id]:'white'} stroke={colors[family.id]} strokeWidth="2"/><text x={x(c.layers)} y="107" textAnchor="middle">L{c.layers}</text></g>)}
+    </svg>:<div className="ts-mix">{cells.map(c=><button key={c.id} onClick={()=>onPick(c.layers)} aria-pressed={c.id===cell.id}><b>L{c.layers}</b><span>{Array.from({length:c.layers/4},(_,i)=><i key={i}/>)}</span><small>{c.kdaLayers} + {c.dsaLayers}</small></button>)}</div>}
+  </div>;
 }
 
-function Cell({cell,status}:{cell:LadderCell;status:string}){
- const moe=cell.family==='moe';
- return <li className={'ladder-cell '+status} title={LADDER_STATUS[status]}>
-  <b>{cell.layers?`L${cell.layers}`:'Optimum'}</b>
-  <span>{cell.parameters?<>{compact(moe?cell.activeBlockParameters!:cell.blockParameters!)}{moe?' active':''} · {compact(cell.tokens!)} tokens</>:'Size from the registered forecast'}</span>
-  <em>{cell.claim?<a href={cell.claim.issue} target="_blank" rel="noreferrer">{cell.claim.by}</a>:LADDER_STATUS[status]}</em>
- </li>;
+function Scaling() {
+  const [hardware,setHardware]=useState<Hardware>('H200');
+  const [unit,setUnit]=useState<'days'|'hours'>('days');
+  const [scenario,setScenario]=useState(1);
+  const [activeFamily,setFamily]=useState('dense');
+  const [depth,setDepth]=useState(20);
+  const family=t3.families.find(f=>f.id===activeFamily)!;
+  const cell=t3.cells.find(c=>c.family===activeFamily&&c.layers===depth)!;
+  const counts=(f:Family)=>t3.cells.filter(c=>c.family===f.id).length;
+  const perRun=(f:Family)=>budget(f,hardware,scenario)[unit];
+  const max=Math.max(...t3.families.map(perRun));
+  const total=t3.families.reduce((a,f)=>a+perRun(f)*counts(f),0);
+  const quantity=(v:number)=>number(v,unit==='days'?1:0);
+  const unitText=unit==='days'?'node-days':'GPU-hours';
+  const measured=publishedT3.get(cell.id);
+  const tokens=cell.estimatedTokens===null?'Pending proof':number(cell.estimatedTokens/1e9,2)+'B';
+  const note=cell.estimatedTokens===null?'The dense burn-in and sparse phase need separate cost proofs.':'Token and update counts use the planning ledger, rounded to whole updates.';
+  const shape=cell.preLayers!==undefined?cell.preLayers+' + '+cell.coreLayers+' × 2 + '+cell.postLayers:cell.kdaLayers!==undefined?cell.kdaLayers+' KDA + '+cell.dsaLayers+' DSA':cell.expertWidth!==undefined?'256 / 8 / 1':'4 × width';
+  const shapeLabel=cell.preLayers!==undefined?'Prelude / core / coda':cell.kdaLayers!==undefined?'Mixer layers':cell.expertWidth!==undefined?'Routed / selected / shared':'FFN expansion';
+  return <section className="t3-study" id="scaling" aria-labelledby="ts-title">
+    <header className="ts-hero">
+      <div><div className="ts-eyeline"><i/>Scaling study <span>/</span> 2K pretraining</div><h1 id="ts-title">Scaling at fixed compute<span>.</span></h1>
+        <p>How should each architecture divide one training budget between model size and tokens?</p>
+        <div className="ts-facts"><span><b>2,048</b> context</span><span><b>42</b> seed</span><span><b>4</b> families</span></div></div>
+      <div className="ts-anchor"><div><Layers3 size={18}/><span>T3 budget per run</span></div><strong>10<sup>20</sup> <small>FLOPs</small></strong><p>One compute target across 16 planned runs.</p></div>
+    </header>
+    <ol className="ts-road" aria-label="Research stages">{roadmap.map(([id,title,status],i)=><li key={id} className={i===0?'current':''}><div><b>{id}</b><small>{status}</small></div><span>{title}</span></li>)}</ol>
+    <div className="ts-progress" aria-label="Public study progress">
+      <span><Check size={14}/> {t3.cells.length} T3 designs available</span>
+      <span>{publishedT3.size} / {t3.cells.length} T3 results published</span>
+      <a href={REPO_FILE+'results/scaling/runs/dense_200b.json'} target="_blank" rel="noreferrer">Completed 4K reference <ArrowUpRight size={12}/></a>
+    </div>
+    <section className="ts-sweep" aria-labelledby="ts-sweep-title">
+      <div className="ts-section-heading"><div><h2 id="ts-sweep-title">T3 budget by family</h2><p>Each family spans 16, 20, 28 and 32 layers. Select a row to inspect its design.</p></div><a href={docs('scaling/protocol/')}><BookOpen size={15}/> Protocol <ArrowUpRight size={13}/></a></div>
+      <div className="ts-toolbar">
+        <div className="ts-control"><span>Hardware</span><div role="group" aria-label="Hardware">{(['A100','H200'] as const).map(g=><button aria-pressed={g===hardware} key={g} onClick={()=>setHardware(g)}>{g}</button>)}</div></div>
+        <div className="ts-control"><span>Unit</span><div role="group" aria-label="Budget unit">{(['days','hours'] as const).map(u=><button aria-pressed={u===unit} key={u} onClick={()=>setUnit(u)}>{u==='days'?'8-GPU days':'GPU-hours'}</button>)}</div></div>
+        <label className="ts-scenario">Throughput <select value={scenario} onChange={e=>setScenario(Number(e.target.value))}><option value={0}>Lower</option><option value={1}>Central</option><option value={2}>Higher</option></select></label>
+      </div>
+      <div className="ts-main-grid">
+        <div className="ts-cost"><div className="ts-cost-label"><span>Architecture family</span><span>Per run</span><span>Four runs</span></div>
+          {t3.families.map(f=><button key={f.id} className="ts-row" aria-pressed={activeFamily===f.id} onClick={()=>setFamily(f.id)}>
+            <span className="ts-row-name"><i style={{background:colors[f.id]}}/>{f.name}</span><span className="ts-row-value">{quantity(perRun(f))}</span>
+            <span className="ts-bar-value">{quantity(perRun(f)*counts(f))}<i><em style={{width:(perRun(f)/max*100)+'%',background:colors[f.id]}}/></i></span>
+          </button>)}
+          <div className="ts-total"><span>T3 total <small>16 planned runs</small></span><b>{quantity(total)} <small>{unitText}</small></b></div>
+          <p className="ts-fine">Estimates include 15% operating overhead. One node-day is eight {hardware} GPUs for 24 hours. Pilots are budgeted separately.</p>
+        </div>
+        <aside className="ts-inspect" aria-live="polite">
+          <div className="ts-inspect-heading"><div><small>T3 configuration</small><h3>{family.name}</h3></div><a href={configUrl} download="t3.json" aria-label="Download the public T3 configuration"><ArrowDownToLine size={17}/></a></div>
+          <div className="ts-depth" role="group" aria-label="Execution depth">{t3.depths.map(l=><button key={l} onClick={()=>setDepth(l)} aria-pressed={l===depth}>L{l}</button>)}</div>
+          <Tradeoff family={family} cell={cell} onPick={setDepth}/>
+          <dl className="ts-values">{[['Width / heads',number(cell.width)+' / '+cell.heads],[shapeLabel,shape],['Training tokens',tokens],['Updates',cell.estimatedUpdates===null?'Pending proof':number(cell.estimatedUpdates)]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+          <p className="ts-note">{note}</p>
+          {measured&&<div className="ts-measured"><small>Measured at the endpoint</small>
+            <dl className="ts-values">{[['Final validation BPB',number(measured.finalBpb!.val,4)],['CORE-22',number(measured.finalCore!.value,4)]].map(([k,v])=><div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>}
+          <div className="ts-cell-status"><span>{publishedT3.has(cell.id)
+            ? <a href={REPO_FILE+'results/scaling/runs/'+cell.id+'.json'}>Published result ↗</a>
+            : 'Formal result pending'}</span>
+            <a href={measured?'#contribute':'#contribute?cell='+encodeURIComponent(cell.id)}>{measured?'Contribute to an open cell':'Contribute to '+cell.id} <ArrowUpRight size={12}/></a></div>
+        </aside>
+      </div>
+    </section>
+    <section className="ts-method"><div className="ts-section-heading"><div><h2>Reading the study</h2><p>Designs share ClimbMix, the tokenizer, seed and evaluation. Each family changes one size variable.</p></div></div>
+      <div className="ts-notes"><article><Activity size={18}/><h3>Find the fit</h3><p>Use final validation BPB to select size and token count. Track CORE-22 as a downstream check.</p></article><article><CircleDashed size={18}/><h3>Forecast before training</h3><p>Publish the T5 predictions, score them, then include those observations in the final fit.</p></article><article><Check size={18}/><h3>Hold out C200</h3><p>Freeze forecasts across all four families before the final test. The historical 4K Dense run supplies the compute reference.</p></article></div>
+      <details><summary>Recipe, budget assumptions and participation</summary><p>{family.description} The selected configuration uses a {cell.ffnWidth.toLocaleString('en-US')}-wide dense FFN{cell.expertWidth===undefined?' in every layer':' in its first layer, then routes each token to eight of 256 experts of width '+cell.expertWidth.toLocaleString('en-US')+' plus one shared expert'}. Model width is 64 × execution depth. All families omit value embeddings.</p>
+        <p>For {family.name} the {hardware} planning rates are {family.effectiveTflops[t3.hardware.indexOf(hardware)].join(' / ')} effective TFLOP/s per device (lower / central / higher). These are estimates pending measurements. The published configurations are planning specifications; a run requires a matching trainer and cost proof.</p>
+        <a href={docs('scaling/contribute/')}>Contribution guide <ArrowUpRight size={13}/></a></details>
+    </section>
+  </section>;
 }
 
-export default function Scaling({runs,methods}:{runs:Run[];methods:Method[]}){
- const [metric,setMetric]=useState<ScalingMetric>('core'),[view,setView]=useState<View>(VIEWS.angled),[planned,setPlanned]=useState(true),[hidden,setHidden]=useState<string[]>([]);
- const all=scalingPoints(runs,methods,scalingRecords),rings=plannedPoints(scalingLadder,scalingRecords);
- const families=ORDER.filter(f=>all.some(p=>p.family===f)||rings.some(p=>p.family===f));
- const points=all.filter(p=>!hidden.includes(p.family)),floor=rings.filter(p=>!hidden.includes(p.family));
- const ladder=scalingLadder,cells=ladder?.cells??[];
- const toggle=(f:string)=>setHidden(h=>h.includes(f)?h.filter(x=>x!==f):[...h,f]);
- const preset=Object.entries(VIEWS).find(([,v])=>v.yaw===view.yaw&&v.pitch===view.pitch)?.[0];
- return <section className="scaling" id="scaling" aria-label="Scaling">
-  <div className="scaling-hero"><div><p className="eyebrow">04 / SCALING</p><h2>One budget, spent three ways.<span>Parameters, training tokens and architecture, chosen together for the best CORE and validation BPB.</span></h2>
-   <p className="scaling-lede">The leaderboard fixes the compute and the model size. The scaling stage fixes only the compute: at each budget, every architecture family may trade parameters against training tokens. Two small budgets locate each family's optimum; the largest tests a forecast registered before its runs start.</p>
-   <div className="scaling-actions"><a className="primary" href={docs('scaling/overview/')}><BookOpen size={16}/> Scaling protocol</a><a className="secondary" href={docs('scaling/contribute/')}><Users size={16}/> Take part</a><a className="scaling-text-link" href={REPO_URL+'/tree/main/results/scaling'} target="_blank" rel="noreferrer">Records <ArrowUpRight size={14}/></a></div></div>
-   <div className="scaling-tiers">{(ladder?.tiers??[]).map(t=>{const own=cells.filter(c=>c.tier===t.id),done=own.filter(c=>cellStatus(c,scalingRecords)==='recorded').length;return <div key={t.id} className={t.role}><span>{t.id} · {t.role==='fit'?'FIT':'TEST'}</span><b>{sci(t.flops)} FLOPs</b><p>{TIER_NOTES[t.id]}</p><small>{own.length} cells · {done} recorded</small></div>;})}</div>
-  </div>
-  <div className="scaling-surface">
-   <div className="results-toolbar scaling-toolbar"><div className="metric-switch" role="group" aria-label="Height"><button aria-pressed={metric==='core'} onClick={()=>setMetric('core')}>CORE <span>↑</span></button><button aria-pressed={metric==='bpb'} onClick={()=>setMetric('bpb')}>Validation BPB <span>↓</span></button></div>
-    <div className="chart-mode" role="group" aria-label="Viewpoint">{VIEW_LABELS.map(([id,label])=><button key={id} className={preset===id?'active':''} aria-pressed={preset===id} onClick={()=>setView(VIEWS[id])}>{id==='angled'?<Box size={13}/>:<Eye size={13}/>}{label}</button>)}<button onClick={()=>setView(VIEWS.angled)} aria-label="Reset view"><RotateCcw size={13}/></button></div></div>
-   <div className="scaling-legend">{families.map(f=><button key={f} aria-pressed={!hidden.includes(f)} onClick={()=>toggle(f)}><i style={{background:tones(f).ink}}/>{tones(f).name}</button>)}<span className="scaling-shapes"><i className="dot"/>49B protocol<i className="diamond"/>Scaling stage<label className="checkbox"><input type="checkbox" checked={planned} onChange={e=>setPlanned(e.target.checked)}/>Planned runs</label></span></div>
-   <ScalingPlot points={points} planned={floor} metric={metric} view={view} onView={setView} onReset={()=>setView(VIEWS.angled)} showPlanned={planned} tones={tones}/>
-   <div className="scaling-caption"><span>Each point is a finished run: total parameters with embeddings, training tokens, and final {metric==='core'?'CORE':'validation BPB'} as height; colour is the architecture family. Circles follow the 49B protocol at a 2,048-token context and diamonds the scaling stage at 4,096, so compare BPB within one shape. Hollow rings on the floor are planned cells.</span><span>Drag or use the arrow keys to rotate · double-click to reset</span></div>
-  </div>
-  <Records records={scalingRecords} runs={runs} methods={methods}/>
-  {ladder&&<div className="scaling-board"><div className="scaling-board-heading"><div><h3>The ladder</h3><span>{cells.length} cells · {ladder.protocol} · token counts from the theoretical training FLOPs of each size</span></div><a href={docs('scaling/contribute/')}>How to claim a cell <ArrowUpRight size={14}/></a></div>
-   <div className="ladder-grid" style={{'--tiers':ladder.tiers.length} as any}><span/>{ladder.tiers.map(t=><span key={t.id} className="ladder-tier">{t.id}<small>{sci(t.flops)} FLOPs</small></span>)}
-    {ladder.families.map(f=><div key={f.id} className="ladder-row" style={{'--family':tones(familyKey(f.id)).ink} as any}><div className="ladder-family"><b><i/>{f.name}</b><p>{f.rule}</p>{f.gate&&<small>{f.gate}</small>}</div>{ladder.tiers.map(t=><ul key={t.id} aria-label={`${f.name} at ${t.id}`}>{cells.filter(c=>c.family===f.id&&c.tier===t.id).map(c=><Cell key={c.id} cell={c} status={cellStatus(c,scalingRecords)}/>)}</ul>)}</div>)}
-   </div></div>}
-  <div className="scaling-lower">
-   <div className="scaling-panel"><h3>What the community can build</h3><p>Every contribution is a file in the repository, reviewed and merged like any result.</p><ul className="scaling-tasks">{TASKS.map(([title,text,cost])=><li key={title}><b>{title}</b><span>{text}</span><small>{cost}</small></li>)}</ul></div>
-   <div className="scaling-panel"><h3>How to take part</h3><p>Training a cell, step by step. The <a href={docs('scaling/contribute/')}>contribution guide</a> has the commands and the other paths.</p><ol className="scaling-steps">{STEPS.map(([n,title,text])=><li key={n}><span>{n}</span><div><b>{title}</b><p>{text}</p></div></li>)}</ol></div>
-  </div>
- </section>;
-}
+export default memo(Scaling);

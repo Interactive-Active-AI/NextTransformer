@@ -22,7 +22,7 @@ description: 对照原论文及锁定的参考代码，说明各方法在统一�
 | [Attention Residuals](https://arxiv.org/abs/2603.15031v1) | arXiv v1，第 3 节、图 2； [官方仓库](https://github.com/MoonshotAI/Attention-Residuals/tree/85e22310fe5ee860b4a023de312d791de8a5a5e6) |
 | [lucidrains/hyper-connections](https://github.com/lucidrains/hyper-connections/blob/e89e30357d1f79945b0d3558e6721451ff68789a/hyper_connections/manifold_constrained_hyper_connections.py) | 仅用于核对 mHC 的静态偏置初始化 |
 
-数学参考实现独立编写。CUDA 线性注意力训练调用 MIT 许可的 `fla-core==0.5.2`，版本及哈希锁定在 `requirements/linear.txt`；仓库不包含上游 CUDA 或 Triton 内核源码。
+除下文注明来源的 MSAR 内核依赖外，数学参考实现独立编写。CUDA 线性注意力训练调用 MIT 许可的 `fla-core==0.5.2`，版本及哈希锁定在 `requirements/linear.txt`。
 
 ## 统一骨干
 
@@ -81,6 +81,8 @@ DSA、QSA 和 Seer 均从随机初始化开始，在总计 46,875 次更新中�
 | `mhc` | [mHC](https://arxiv.org/html/2512.24880v2) 式 7–9：四路，门尺度 0.01，20 次 Sinkhorn-Knopp 迭代 | 展平 4 × 1536 路表示，经无参数 RMSNorm 和 6144 × 24 投影得到读、写和残差 logits。`H_pre = σ`、`H_post = 2σ`；`H_res` 在对数域对指数值执行 20 次先列后行的归一化，避免下溢除零。投影从零开始，静态偏置沿用 HC，系数至少为 FP32。迭代后行和为 1，列和近似 1。校准后的 FFN 宽度为 6016。 |
 | `attnres` | [Attention Residuals](https://arxiv.org/abs/2603.15031v1)：Block AttnRes，约 8 组 | 以注意力和 FFN 子层数计深度，各子层及最终读出使用零初始化的伪查询。键用无参数 RMSNorm。23 块划为 3、3、3、3、3、3、3、2；输入源为嵌入、已完成的组之和及当前部分和。 |
 | `attnres_full_canon_abcd` | Full AttnRes（[Attention Residuals](https://arxiv.org/abs/2603.15031v1)，每块一组），并在四个位置（A–D）加入 [Canon 层](https://arxiv.org/abs/2512.17351)；由 NextT-Gym 在 arena v1 中找到 | 每个块自成一组，所以每个子层分别读取嵌入和此前每个块的输出，而不是组之和。Canon 层是对最近四个位置的因果逐通道卷积，加回到输入上；权重从零开始，所以模型初始时就是 Full AttnRes。Canon-A/C 作用于每个子层经深度读取后的输入，在子层的 RMSNorm 之前；Canon-B 作用于 q、k、v，在旋转位置编码和 QK-norm 之前；Canon-D 作用于 MLP 的隐藏激活，在平方 ReLU 之前。卷积权重用 AdamW 训练（骨干中非矩阵参数所在的组）。插件 `nexttransformer/methods/attnres_full_canon_abcd`；Canon AttnRes 的代码在辅助模块 `nexttransformer/methods/attnres_canon_abcd` 中。 |
+| `simplehc` | [SimpleHC](https://arxiv.org/abs/2611.05984) 第 3.1–3.2 节、式 3–6：恒等残差传递（`H_res = I`）、mHC 全状态读写门、每 `K = 4` 个子层共享门控输入 | 四路 1536 宽残差流（`n = 4`）；46 个注意力和 FFN 子层划分为 11 个 4 子层组与最后 1 个 2 子层组。每组对展平的 `4 × 1536` 入口状态做一次无参数 RMSNorm，投影生成 `H_pre = σ` 与 `H_post = 2σ`（权重 `N(0, 0.006)`、门尺度 `0.01`、零偏置，初始读门 `0.5`、写门 `1`，见附录 A.1）。组内前序子层输出通过标量修正 `d_{j,k} = h_pre_j · h_post_k`（式 4）传入后续子层输入，并在组尾一次性写回四路状态（式 5）。采用等价 PyTorch 代数实现，不包含论文融合的 DeepGEMM/Triton 内核；门控参数归入无权重衰减的辅助 AdamW 参数组。插件 `nexttransformer/methods/simplehc`。 |
+| `msar` | [Multi-Stream Attention Residuals](https://arxiv.org/abs/2610.13630v1)：多流深度注意力、时间源增强与自适应流混合 | 原始状态与宽度 4/8/12 的零初始化因果逐通道卷积构成四流。每三个 Transformer 层组成一个 block，子层输出先累加为单流状态，再做时间展开。每流独立 softmax depth read，通过 two-phase read 合并已完成源与当前部分和；HPre 用每流一个 sigmoid 标量混合四流。首层 attention 直接读取 embedding，最后 MLP 返回输入加输出，保留子层 pre-normalization。Query 和 HPre 使用辅助 AdamW，时间卷积参数使用非矩阵 AdamW。插件 `nexttransformer/methods/msar`；时间卷积内核的来源及许可位于 `_temporal_kernels.py` 文件头。 |
 
 残差家族的各方法与 `dense_full` 共用完整 MHA 骨干。对 Standard Residual 的配对差值应与相对 Dense 的总体差值分开报告。原论文在其他规模和 MoE 骨干上的增益不能直接推算本基准结果。
 
@@ -121,3 +123,11 @@ SSSL、MoR、LoopFormer-Fixed2 和 Circle Loop 使用早期原生轨道（`nextt
 在部分 GPU 和 Triton 3.4.0–3.7.0 的组合上，FLA 0.5.2 限制了 GDN 反向内核（FLA issue #640）。注册环境使用 Triton 3.5.1，因此 GDN 将标量对数衰减广播到各键通道，调用已验证的 KDA 内核。输出门控 RMSNorm 使用 FLA `rms_norm_gated`，CPU 和审计使用等价的 PyTorch 实现。
 
 KDA、RetNet、GDN 的传递状态和累加使用 FP32，操作数与分块边界状态使用 BF16。KDA 和 GDN 的三角求逆使用 TF32。已训练的强门值可能使 KDA 的整块代数在 FP32 溢出，校验这类输入时应使用 FP64 循环参考实现。当前未保证二阶导数或优化的生成缓存。所有 ELU 变体使用稳定的 FP32 特征映射，运算保持 IEEE FP32、关闭 TF32，不做重计算。
+
+## XSA 与 Inkling REL
+
+**XSA** 实现 [Exclusive Self Attention](https://arxiv.org/abs/2603.09078v1) 的公式 2 / 算法 1：在普通因果 softmax 之后，逐头移除注意力输出在当前有效 value 方向上的投影。self 项仍参与 softmax；投影方向包含共享的门控 value embedding，保留 RoPE、QK 归一化、缩放与优化器。归一化及投影在低精度输入下使用 FP32。它适配论文的机制，不复刻论文的完整训练配方。
+
+**Inkling REL** 独立替换 RoPE，使用查询相关的相对位置 logits；每头查询投影维度为 16，层内跨头共享距离表，覆盖 0–2047。实现保留共享 Dense 骨架的 QK 归一化、1.2 gain、1/sqrt(head_dim) 缩放、value embedding 与优化器，未引入源模型的 MoE、短卷积、GQA 或层布局。CPU 可微参考与原创 Triton 前向/反向计算同一函数。[插件说明](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/nexttransformer/methods/inkling_rel/README.md) 列出固定的上游配置与源码版本及数值边界。
+
+两个完成的 49.152B-token 运行保留原协议分数。训练后的 BOS 诊断用于解释 CORE 左截断对 SQuAD 的影响，不替换榜单结果。64-rank 布局已登记进运行审计（#57），详见各自的 run notes。

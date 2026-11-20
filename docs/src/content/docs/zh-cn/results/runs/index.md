@@ -35,9 +35,9 @@ sidebar:
 
 MQA、GQA、MLA-QK 和 MLA-NoPE-QK 均来自尚未移植到当前主线的冻结源码。累计审计已复算各任务 CORE、中心化及汇总值。MLA 运行还记录了确定性模式。MQA 在第 5,000 和 35,000 步续训，GQA 在第 5,000 步续训，两个 MLA 变体均在单段内完成。
 
-## 混合结构（DeltaNet–MHA、GDN–MHA、GDN–SWA、KDA–MLA-NoPE、MoBA–MHA）
+## 混合结构（DeltaNet–MHA、GDN–MHA 3:1、GDN–MHA 1:1、KDA–MLA-NoPE、MoBA–MHA）
 
-五者使用冻结源码，[DeltaNet–MHA](./deltanet_hybrid/)、GDN–SWA、[KDA–MLA-NoPE](./kda_hybrid/) 和 [MoBA–MHA](./moba_hybrid/) 另有一项启动环境补丁未留存源码差异。只读审计通过，累计偏差分别为 **+0.063%**（DeltaNet–MHA，单段完成，最终 CORE ×100 为 29.9012）、**+0.672%**（GDN–MHA）、**−0.542%**（GDN–SWA）、**+0.426%**（KDA–MLA-NoPE，单段去除值嵌入训练，最终 CORE ×100 为 31.5418）和 **−0.266%**（MoBA–MHA，单段完成，最终 CORE ×100 为 32.7422）。DeltaNet–MHA、KDA–MLA-NoPE 与 MoBA–MHA 提供了 8 个 rank 下 12 步新进程续训一致性验收记录；因缺少独立的 512 步 pilot 记录，最终验收仍待完成。在本基准的 2,048-token 上下文中，SWA 窗口覆盖所有因果位置，所以 GDN–SWA 在这里实际是 1:1 的 GDN 与完整注意力混合。
+五者使用冻结源码，[DeltaNet–MHA](./deltanet_hybrid/)、GDN–MHA 1:1、[KDA–MLA-NoPE](./kda_hybrid/) 和 [MoBA–MHA](./moba_hybrid/) 另有一项启动环境补丁未留存源码差异。只读审计通过，累计偏差分别为 **+0.063%**（DeltaNet–MHA，单段完成，最终 CORE ×100 为 29.9012）、**+0.672%**（GDN–MHA 3:1）、**−0.542%**（GDN–MHA 1:1）、**+0.426%**（KDA–MLA-NoPE，单段去除值嵌入训练，最终 CORE ×100 为 31.5418）和 **−0.266%**（MoBA–MHA，单段完成，最终 CORE ×100 为 32.7422）。DeltaNet–MHA、KDA–MLA-NoPE 与 MoBA–MHA 提供了 8 个 rank 下 12 步新进程续训一致性验收记录；因缺少独立的 512 步 pilot 记录，最终验收仍待完成。GDN–MHA 1:1 注册为 2048 窗口的 GDN + SWA；在本基准的 2,048-token 上下文中，该窗口覆盖所有因果位置，所以它实际是 1:1 的 GDN 与完整注意力混合。
 
 ## 循环与稀疏结构
 
@@ -47,6 +47,6 @@ UT-ACT、Fixed Recursive、Huginn、Ouro、DeepLoop、DSA、QSA、NSA、Seer 和
 
 SSSL、MoR、LoopFormer 和 Circle Loop 是项目首批运行，采用当时的原生实现。算力依据维护者核验的最终日志，使用矩阵 FLOPs 估算（¹）。若要纳入严格的等算力比较，仍需独立的完整计算成本凭证。
 
-## 待发布的方法
+## Hybrid GDN + QSA（`qsa_hybrid`）
 
-观测站中待发布结果的模型为 GDN–QSA。
+[H05](./qsa_hybrid/) 已完成 46,875 次更新、189 次验证和六次完整 CORE-22 评估。最终定期验证 BPB 为 **0.66650463**，CORE ×100 为 **33.002036**，累计计算量相对 SSSL 锚点为 **+0.411750%**。审计与运行说明记录了冻结源码、恢复经过、CORE 执行包装器和检查点验证。
