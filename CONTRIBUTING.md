@@ -13,7 +13,7 @@ Pick a T3 cell on the [Contribute page](https://interactive-active-ai.github.io/
    [Discussions](https://github.com/Interactive-Active-AI/NextTransformer/discussions).
 2. **Fork the repository** and work on a branch of your fork.
 3. **For a new method**, discuss the run plan in the issue, then calibrate and test the plugin on your fork, complete a `--formal` run, and audit and export its result.
-   Only then open one pull request into upstream `main` with the implementation and result together. Link the proposal issue.
+   Only then open one pull request into upstream `main` with the implementation and result together. Name the proposal issue with `Closes #N` so it closes on merge.
 4. Run the local checks below before submitting. For Arena entries, preregister the fork commit and calibrated configuration in the proposal issue before the formal run.
 
 By contributing you agree that your contribution is licensed under the [MIT License](LICENSE).
