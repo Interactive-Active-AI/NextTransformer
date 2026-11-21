@@ -1,0 +1,1028 @@
+# Fixed spec for custom:nextt-residual_standard
+# Scope: fixed exported configuration, complete causal full-sequence inference
+# Checkpoint unavailable; do not mark checkpoint_validated or valid true.
+# Constants: backout_negative=-1; logit_div15=1/15; logit_mul15=15; inverse split-half RoPE theta=100000.
+match:
+  model_id:
+  - custom:nextt-residual_standard
+  model_type:
+  - nexttransformer_residual_standard
+dims:
+  d_model: config.hidden_size
+  n_heads: 12
+  n_kv_heads: 12
+  d_gate: 1
+  d_head: 128
+  d_ffn: 6144
+  n_vocab: 32768
+  n_layers: 23
+  s_max: 2048
+model_inputs:
+  input_ids:
+    kind: tokens
+blocks:
+  nextt_attention:
+    role: attention
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_heads
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id001
+        - &id006
+          replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_heads
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_ffn:
+    role: ffn_dense
+    graph:
+      c_fc:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_ffn
+        weight_axes: *id001
+      relu:
+        op: relu
+        in: c_fc
+        dims:
+          dim: d_ffn
+      square:
+        op: mul
+        in:
+        - relu
+        - relu
+        dims:
+          dim: d_ffn
+      c_proj:
+        op: linear
+        in: square
+        dims:
+          in: d_ffn
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_attention_ve:
+    role: attention
+    inputs:
+    - x
+    - ve
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_mixed
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id002
+        - replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      gate_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: linear
+        in: gate_channels
+        dims:
+          in: '12'
+          out: n_heads
+        weight_axes: &id003
+        - replicated: true
+        - replicated: true
+      gate_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      gate3:
+        op: scale_const
+        formula: 3 * x
+        in: gate_sigmoid
+        dims:
+          in: n_heads
+      gate_heads:
+        op: head_split
+        in: gate3
+        dims:
+          n_heads: n_heads
+          d_head: d_gate
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      gated_ve:
+        op: mul
+        in:
+        - ve_heads
+        - gate_heads
+        dims:
+          dim: d_head
+      v_mixed:
+        op: add
+        in:
+        - v_heads
+        - gated_ve
+        dims:
+          dim: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_mixed
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id003
+    outputs:
+    - c_proj
+  nextt_decoder__ve:
+    role: block
+    inputs: &id004
+    - x
+    - ve
+    graph:
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      attn:
+        op: nextt_attention_ve
+        in:
+        - norm_attn
+        - ve
+      attn_residual:
+        op: add
+        in:
+        - x
+        - attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_residual
+        dims:
+          dim: d_model
+      mlp:
+        op: nextt_ffn
+        in: norm_mlp
+      out:
+        op: add
+        in:
+        - attn_residual
+        - mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  nextt_decoder_:
+    role: block
+    inputs: &id005
+    - x
+    graph:
+      norm_attn:
+        op: rmsnorm_unscaled
+        in: x
+        dims:
+          dim: d_model
+      attn:
+        op: nextt_attention
+        in: norm_attn
+      attn_residual:
+        op: add
+        in:
+        - x
+        - attn
+        dims:
+          dim: d_model
+      norm_mlp:
+        op: rmsnorm_unscaled
+        in: attn_residual
+        dims:
+          dim: d_model
+      mlp:
+        op: nextt_ffn
+        in: norm_mlp
+      out:
+        op: add
+        in:
+        - attn_residual
+        - mlp
+        dims:
+          dim: d_model
+    outputs:
+    - out
+  physical_transformer_h_0:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.0
+    outputs:
+    - module_call
+  physical_transformer_h_1:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.1
+    outputs:
+    - module_call
+  physical_transformer_h_2:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.2
+    outputs:
+    - module_call
+  physical_transformer_h_3:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.3
+    outputs:
+    - module_call
+  physical_transformer_h_4:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.4
+    outputs:
+    - module_call
+  physical_transformer_h_5:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.5
+    outputs:
+    - module_call
+  physical_transformer_h_6:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.6
+    outputs:
+    - module_call
+  physical_transformer_h_7:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.7
+    outputs:
+    - module_call
+  physical_transformer_h_8:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.8
+    outputs:
+    - module_call
+  physical_transformer_h_9:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.9
+    outputs:
+    - module_call
+  physical_transformer_h_10:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.10
+    outputs:
+    - module_call
+  physical_transformer_h_11:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.11
+    outputs:
+    - module_call
+  physical_transformer_h_12:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.12
+    outputs:
+    - module_call
+  physical_transformer_h_13:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.13
+    outputs:
+    - module_call
+  physical_transformer_h_14:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.14
+    outputs:
+    - module_call
+  physical_transformer_h_15:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.15
+    outputs:
+    - module_call
+  physical_transformer_h_16:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.16
+    outputs:
+    - module_call
+  physical_transformer_h_17:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.17
+    outputs:
+    - module_call
+  physical_transformer_h_18:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.18
+    outputs:
+    - module_call
+  physical_transformer_h_19:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.19
+    outputs:
+    - module_call
+  physical_transformer_h_20:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.20
+    outputs:
+    - module_call
+  physical_transformer_h_21:
+    role: block
+    inputs: *id005
+    graph:
+      module_call:
+        op: nextt_decoder_
+        in: *id005
+        module: transformer.h.21
+    outputs:
+    - module_call
+  physical_transformer_h_22:
+    role: block
+    inputs: *id004
+    graph:
+      module_call:
+        op: nextt_decoder__ve
+        in: *id004
+        module: transformer.h.22
+    outputs:
+    - module_call
+model:
+- name: resid_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id006
+  stored_without_graph_reader:
+    kind: forward_unread
+    reason: Frozen native parameter retained in state_dict; this method uses its own
+      residual path.
+    source_anchor: nexttransformer/models/lm.py:25-26, _block:200 and _residual_hidden:248-252
+- name: x0_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id006
+  stored_without_graph_reader:
+    kind: forward_unread
+    reason: Frozen native parameter retained in state_dict; this method uses its own
+      residual path.
+    source_anchor: nexttransformer/models/lm.py:25-26, _block:200 and _residual_hidden:248-252
+- name: smear_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id006
+- name: backout_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id006
+  stored_without_graph_reader:
+    kind: forward_unread
+    reason: Frozen native parameter retained in state_dict; this method uses its own
+      residual path.
+    source_anchor: nexttransformer/models/lm.py:25-26, _block:200 and _residual_hidden:248-252
+- name: transformer.wte
+  op: embedding
+  boundary_role: input_embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: embedding_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.wte
+- name: smear_current
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '1'
+  inputs:
+  - embedding_norm
+- name: smear_previous
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: smear_channels
+  op: slice
+  dims:
+    in: d_model
+    out: '24'
+    start: '0'
+  inputs:
+  - smear_current
+- name: smear_gate
+  op: linear
+  dims:
+    in: '24'
+    out: '1'
+  weight_axes: *id001
+  inputs:
+  - smear_channels
+- name: smear_sigmoid
+  op: sigmoid
+  dims:
+    dim: '1'
+  inputs:
+  - smear_gate
+- name: smear_scaled
+  op: mul
+  dims:
+    dim: '1'
+  inputs:
+  - smear_sigmoid
+  - smear_lambda
+- name: smear_contribution
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - smear_previous
+  - smear_scaled
+- name: smear_sum
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - smear_current
+  - smear_contribution
+- name: first_token
+  op: slice
+  axis: 1
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: initial_hidden
+  op: concat
+  axis: 1
+  dims:
+    out: s_ctx
+  inputs:
+  - first_token
+  - smear_sum
+- name: value_embeds.0
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.0
+  template: physical_transformer_h_0
+  inputs:
+  - initial_hidden
+  - value_embeds.0
+- name: transformer.h.1
+  template: physical_transformer_h_1
+  inputs:
+  - transformer.h.0
+- name: value_embeds.2
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.2
+  template: physical_transformer_h_2
+  inputs:
+  - transformer.h.1
+  - value_embeds.2
+- name: transformer.h.3
+  template: physical_transformer_h_3
+  inputs:
+  - transformer.h.2
+- name: value_embeds.4
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.4
+  template: physical_transformer_h_4
+  inputs:
+  - transformer.h.3
+  - value_embeds.4
+- name: transformer.h.5
+  template: physical_transformer_h_5
+  inputs:
+  - transformer.h.4
+- name: value_embeds.6
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.6
+  template: physical_transformer_h_6
+  inputs:
+  - transformer.h.5
+  - value_embeds.6
+- name: transformer.h.7
+  template: physical_transformer_h_7
+  inputs:
+  - transformer.h.6
+- name: value_embeds.8
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.8
+  template: physical_transformer_h_8
+  inputs:
+  - transformer.h.7
+  - value_embeds.8
+- name: transformer.h.9
+  template: physical_transformer_h_9
+  inputs:
+  - transformer.h.8
+- name: value_embeds.10
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.10
+  template: physical_transformer_h_10
+  inputs:
+  - transformer.h.9
+  - value_embeds.10
+- name: transformer.h.11
+  template: physical_transformer_h_11
+  inputs:
+  - transformer.h.10
+- name: value_embeds.12
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.12
+  template: physical_transformer_h_12
+  inputs:
+  - transformer.h.11
+  - value_embeds.12
+- name: transformer.h.13
+  template: physical_transformer_h_13
+  inputs:
+  - transformer.h.12
+- name: value_embeds.14
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.14
+  template: physical_transformer_h_14
+  inputs:
+  - transformer.h.13
+  - value_embeds.14
+- name: transformer.h.15
+  template: physical_transformer_h_15
+  inputs:
+  - transformer.h.14
+- name: value_embeds.16
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.16
+  template: physical_transformer_h_16
+  inputs:
+  - transformer.h.15
+  - value_embeds.16
+- name: transformer.h.17
+  template: physical_transformer_h_17
+  inputs:
+  - transformer.h.16
+- name: value_embeds.18
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.18
+  template: physical_transformer_h_18
+  inputs:
+  - transformer.h.17
+  - value_embeds.18
+- name: transformer.h.19
+  template: physical_transformer_h_19
+  inputs:
+  - transformer.h.18
+- name: value_embeds.20
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.20
+  template: physical_transformer_h_20
+  inputs:
+  - transformer.h.19
+  - value_embeds.20
+- name: transformer.h.21
+  template: physical_transformer_h_21
+  inputs:
+  - transformer.h.20
+- name: value_embeds.22
+  op: embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: transformer.h.22
+  template: physical_transformer_h_22
+  inputs:
+  - transformer.h.21
+  - value_embeds.22
+- name: final_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.h.22
+- name: lm_head
+  op: linear
+  boundary_role: output_head
+  dims:
+    in: d_model
+    out: n_vocab
+  weight_axes: *id001
+  inputs:
+  - final_norm
+- name: logit_div15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - lm_head
+- name: logit_tanh
+  op: tanh
+  dims:
+    dim: n_vocab
+  inputs:
+  - logit_div15
+- name: logit_mul15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - logit_tanh
+dim_symbols:
+  d_gate:
+    kind: whole
+    group: per_arch_one_offs
+    meaning: Singleton per-head gate axis from gate.unsqueeze(-1) in CausalSelfAttention.forward
