@@ -91,12 +91,12 @@
     "options": {
       "gate_init": 0.01,
       "init_std": 0.006,
-      "sinkhorn_iterations": 2,
+      "sinkhorn_iterations": 20,
       "streams": 4
     },
     "scale": "formal"
   },
-  "model_hash": "8b014994187ff6890f7bc3e5a8e9655fa0aae6218061a240ae53faf4cca1e2dd",
+  "model_hash": "b3729662ed0fd52181c4bbbec77b1abea83ecd9cb3ba90eec32a11ae1c6a02ae",
   "calibration": {
     "status": "admitted",
     "cost_record": "moe/evidence/costs/d768-240tpp/mhc.json",
