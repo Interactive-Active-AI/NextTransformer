@@ -148,8 +148,9 @@ The flow is the dense track's ([plugins](../docs/src/content/docs/guides/plugins
 - Baseline configurations are admitted on all four tracks. The three residual plugins are admitted on d768-240tpp.
 - Measured baseline throughput, 8 devices: **d768 686k tokens/s (MFU 8.1%, 1.8 h)** and **d1024 536k tokens/s
   (MFU 11.5%, 4.4 h)**, both at micro-batch 8. Details in `references.json`.
-- **Published:** the d768-240tpp baseline, 53,686 formal updates on 14.07B tokens, validation **0.7708 BPB** and
-  **MoE-CORE 0.3682** ([record](results/d768-240tpp/baseline.json), [audit](evidence/audits/d768-240tpp/baseline.json)).
+- **Published runs:** exported records in [`results/`](results/) with their audits in
+  [`evidence/audits/`](evidence/audits/), listed with every task score on the
+  [results page](https://interactive-active-ai.github.io/NextTransformer/docs/moe/results/).
 - **Pending:** the d1024-240tpp baseline run.
 - **Scaling:** the 300B-token stream covers far larger tracks. A third size or longer budgets are added as new tracks;
   each track keeps its own fingerprint.

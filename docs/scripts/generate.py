@@ -3,9 +3,9 @@
     python docs/scripts/generate.py           # rewrite the generated files
     python docs/scripts/generate.py --check   # exit 1 when a generated file is out of date (CI)
 
-Writes docs/src/content/docs/methods/zoo.md and methods/configurations.md, the results charts in
-.github/assets/readme/, and the blocks between the `<!-- generated:leaderboard -->` markers in results/leaderboard.md,
-README.md and README.zh-CN.md.
+Writes docs/src/content/docs/methods/zoo.md, methods/configurations.md and moe/results.md, the results charts in
+.github/assets/readme/, and the blocks between the `<!-- generated:leaderboard -->` and `<!-- generated:moe-results -->`
+markers in results/leaderboard.md, README.md and README.zh-CN.md.
 """
 import argparse, html, json, math, re, sys
 from pathlib import Path
@@ -22,6 +22,13 @@ TITLE = {"baseline": "Baseline", "looped": "Looped", "sparse": "Sparse", "linear
          "hybrid": "Hybrid", "others": "Others"}
 ASSETS = ROOT/".github/assets/readme"
 START, END = "<!-- generated:leaderboard -->", "<!-- /generated:leaderboard -->"
+MOE = ROOT/"moe"
+MOE_START, MOE_END = "<!-- generated:moe-results -->", "<!-- /generated:moe-results -->"
+MOE_TASKS = {"arc_easy": "ARC-E", "arc_challenge": "ARC-C", "hellaswag": "HellaSwag", "piqa": "PIQA",
+             "winogrande": "WinoGrande", "commonsense_qa": "CSQA", "openbook_qa": "OBQA",
+             "lambada_openai": "LAMBADA", "squad": "SQuAD", "triviaqa": "TriviaQA",
+             "ruler_niah_2k": "RULER S-NIAH-1 2K", "ruler_niah_4k": "RULER S-NIAH-1 4K", "fda": "FDA", "swde": "SWDE"}
+MOE_LONG = {"ruler_niah_2k", "ruler_niah_4k", "fda", "swde"}
 
 
 def load(path): return json.loads(path.read_text())
@@ -297,6 +304,120 @@ def snapshot(chinese):
             f"[Full leaderboard]({SITE}docs/results/leaderboard/) · [Training replay]({SITE}#leaderboard)")
 
 
+def moe_tracks():
+    """Every MoE track with its published records: the 240 TPP comparison first, best MoE-CORE first."""
+    tracks = []
+    for path in sorted((MOE/"configs").iterdir()):
+        if not path.is_dir(): continue
+        records = sorted((load(p) for p in (MOE/"results"/path.name).glob("*.json")),
+                         key=lambda r: (-r["final"]["moe_core"], r["method"]))
+        tracks.append(dict(name=path.name, width=int(re.match(r"d(\d+)", path.name)[1]), records=records))
+    return sorted(tracks, key=lambda t: (not t["name"].endswith("-240tpp"), t["width"]))
+
+
+def moe_title(track):
+    base, _, suffix = track.partition("-")
+    return f"{base} · 240 TPP" if suffix == "240tpp" else base
+
+
+def signed(value, digits):
+    return f"±{0:.{digits}f}" if abs(value) < 0.5*10**-digits else f"{value:+.{digits}f}"
+
+
+def moe_track_section(track, chinese):
+    """One track: its budget, the published records, the task breakdown and MoE-CORE over training."""
+    records, name = track["records"], track["name"]
+    if not records:
+        return "本赛道尚无已发布的运行。" if chinese else "No published run yet."
+    base = next((r for r in records if r["method"] == "baseline"), None)
+    first, p = records[0], records[0]["parameters"]
+    updates, tokens = first["evaluations"][-1]["step"], first["tokens"]
+    tpp = tokens/p["active_non_embedding"]
+    delta = lambda value, key, digits, scale: ("—" if base is None or value is base
+                                               else signed(scale*(value["final"][key] - base["final"][key]), digits))
+    out = [f"{updates:,} 次更新 · {tokens/1e9:.2f}B 输入 token · 每个激活参数 {tpp:.0f} 个 token · "
+           f"总参数 {p['total']/1e9:.2f}B，激活参数 {p['active']/1e6:.0f}M。" if chinese else
+           f"{updates:,} updates · {tokens/1e9:.2f}B input tokens · {tpp:.0f} tokens per active parameter · "
+           f"{p['total']/1e9:.2f}B total and {p['active']/1e6:.0f}M active parameters.", "",
+           "| 方法 | MoE-CORE ↑ | Δ | 验证 BPB ↓ | Δ | 短任务 | 长任务 | 相对吞吐 |" if chinese else
+           "| Method | MoE-CORE ↑ | Δ | Val BPB ↓ | Δ | Short | Long | Relative throughput |",
+           "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for r in records:
+        f, harness = r["final"], r["throughput"].get("harness")
+        link = f"[{r['name']}]({REPO_FILE}moe/results/{name}/{r['method']}.json)"
+        rate = "—" if harness is None else f"{harness['relative_throughput']:.3f}×"
+        out.append(f"| {f'**{link}**' if r is base else link} | {100*f['moe_core']:.2f} | "
+                   f"{delta(r, 'moe_core', 2, 100)} | {f['val_macro_bpb']:.4f} | {delta(r, 'val_macro_bpb', 4, 1)} | "
+                   f"{100*f['short']:.2f} | {100*f['long']:.2f} | {rate} |")
+    names = " | ".join(r["name"] for r in records)
+    out += ["", "### 各任务得分" if chinese else "### MoE-CORE by task", "",
+            f"| 任务 | 类别 | {names} |" if chinese else f"| Task | Group | {names} |",
+            "|---|---|" + "---:|"*len(records)]
+    for key in first["final"]["centered"]:
+        group = ("长" if chinese else "long") if key in MOE_LONG else ("短" if chinese else "short")
+        scores = " | ".join(f"{100*r['final']['centered'][key]:.2f}" for r in records)
+        out.append(f"| {MOE_TASKS.get(key, f'`{key}`')} | {group} | {scores} |")
+    out += ["", "### 训练过程中的 MoE-CORE" if chinese else "### MoE-CORE over training", "",
+            f"| 更新 | {names} |" if chinese else f"| Update | {names} |", "|---:|" + "---:|"*len(records)]
+    for step in sorted({e["step"] for r in records for e in r["evaluations"]}):
+        scores = " | ".join(next((f"{100*e['moe_core']:.2f}" for e in r["evaluations"] if e["step"] == step), "—")
+                            for r in records)
+        out.append(f"| {step:,} | {scores} |")
+    return "\n".join(out)
+
+
+def moe_results(chinese=False):
+    tracks = moe_tracks()
+    sections = "\n\n".join(f"## {moe_title(t['name'])}\n\n{moe_track_section(t, chinese)}" for t in tracks)
+    if chinese:
+        return f"""---
+title: MoE 结果
+description: MoE 各赛道上已发布的正式运行，含 MoE-CORE、验证 BPB 和逐任务得分。
+---
+
+MoE 赛道上每个已发布的正式运行都在这里。本页由 `python docs/scripts/generate.py` 从 `moe/results/` 生成。
+
+MoE-CORE 及其短任务、长任务两半和每一项任务的得分都按 ×100 显示。Δ 列是与本赛道 baseline 的差值。方法名链接到运行记录，记录里写明了准入它的审计文件。相对吞吐是 `moe.throughput` 在同一节点上与 baseline 前后脚测得的比值，baseline 自身是基准。
+
+验证 BPB 取的是训练结束后那次完整验证，读六个数据源的全部行，越低越好；训练途中每 500 步的那次验证只读每个数据源的固定抽样，数值更低，两者不能直接比较。最后那次 MoE-CORE 评测和收尾的完整评测是两趟独立的评测，所以下面表格的最后一行与上面的总分会有零点零几的出入。
+
+{sections}
+"""
+    return f"""---
+title: MoE results
+description: Published formal runs on the MoE tracks, with MoE-CORE, validation BPB and the task breakdown.
+---
+
+Every formal run published on a MoE track is listed here. This page is generated from `moe/results/` by
+`python docs/scripts/generate.py`.
+
+MoE-CORE, its short and long halves and every task score are shown ×100. Δ columns are differences from the track's
+baseline. Each method links to its run record, which names the audit that admitted it. Relative throughput is the ratio
+`moe.throughput` measures against the baseline back to back on one node, so the baseline itself is the reference.
+
+Validation BPB is the full evaluation that follows the last update, over every row of the six sources, where lower is
+better. The validation every 500 updates reads a fixed sample per source instead and lands lower, so the two are not
+comparable. The last scheduled MoE-CORE evaluation and the final one are separate passes, which is why the last row of
+the schedule below differs from the headline by a few hundredths.
+
+{sections}
+"""
+
+
+def moe_snapshot(chinese):
+    """The README block: every published MoE run, newest track first."""
+    rows = [(track, record) for track in moe_tracks() for record in track["records"]]
+    if not rows:
+        return "MoE 赛道尚无已发布的运行。" if chinese else "No MoE run is published yet."
+    out = ["| 赛道 | 方法 | MoE-CORE ↑ | 验证 BPB ↓ |" if chinese else "| Track | Method | MoE-CORE ↑ | Val BPB ↓ |",
+           "|---|---|---:|---:|"]
+    for track, r in rows:
+        link = f"[{r['name']}](moe/results/{track['name']}/{r['method']}.json)"
+        out.append(f"| {moe_title(track['name'])} | {link} | {100*r['final']['moe_core']:.2f} | "
+                   f"{r['final']['val_macro_bpb']:.4f} |")
+    return "\n".join(out)
+
+
 def splice(text, block, start=START, end=END):
     before, rest = text.split(start, 1)
     return before + start + "\n" + block + "\n" + end + rest.split(end, 1)[1]
@@ -314,7 +435,8 @@ def readme_sections(path, chinese):
                  for card in cards if card["family"] == family]
         table.append(f"| {badge} | {' · '.join(names)} |")
     text = splice(path.read_text(), snapshot(chinese))
-    return splice(text, "\n".join(table), "<!-- generated:model-zoo -->", "<!-- /generated:model-zoo -->")
+    text = splice(text, "\n".join(table), "<!-- generated:model-zoo -->", "<!-- /generated:model-zoo -->")
+    return splice(text, moe_snapshot(chinese), MOE_START, MOE_END)
 
 
 def chinese_leaderboard(table):
@@ -335,6 +457,7 @@ def outputs():
     zh_leaderboard = zh / "results/leaderboard.md"
     return {DOCS/"methods/zoo.md": zoo(), DOCS/"methods/configurations.md": configurations(),
             zh/"methods/zoo.md": zoo(True), zh/"methods/configurations.md": configurations(True),
+            DOCS/"moe/results.md": moe_results(), zh/"moe/results.md": moe_results(True),
             zh_leaderboard: splice(zh_leaderboard.read_text(), chinese_leaderboard(docs_table)),
             leaderboard: splice(leaderboard.read_text(), docs_table),
             readme: readme_sections(readme, False),

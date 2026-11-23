@@ -7,6 +7,8 @@ on:
       - "website/**"
       - "docs/**"
       - "results/**"
+      - "moe/results/**"
+      - "moe/configs/**"
       - "nexttransformer/evaluation/core-lengths.json"
       - "configs/scaling/t3.json"
       - "nexttransformer/scaling/reference_blocks.py"
