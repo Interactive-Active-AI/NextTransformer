@@ -2,7 +2,7 @@
   "formula": "moe-matmul-measured-attention-rule-v1",
   "method": "mhc",
   "track": "d768-240tpp",
-  "model_hash": "8b014994187ff6890f7bc3e5a8e9655fa0aae6218061a240ae53faf4cca1e2dd",
+  "model_hash": "b3729662ed0fd52181c4bbbec77b1abea83ecd9cb3ba90eec32a11ae1c6a02ae",
   "torch": "2.9.1",
   "source": {
     "files": {
