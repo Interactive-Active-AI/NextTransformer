@@ -167,11 +167,11 @@
  "core": [
   {
    "step": 20000,
-   "value": 0.2398894639570323
+   "value": 0.238280048662529
   },
   {
    "step": 29433,
-   "value": 0.2734251518574415
+   "value": 0.27273636626168024
   }
  ],
  "finalBpb": {
@@ -179,30 +179,30 @@
   "train": 0.7037669357237508
  },
  "finalCore": {
-  "value": 0.2734251518574415,
+  "value": 0.27273636626168024,
   "tasks": {
-   "hellaswag_zeroshot": 0.4371639092763265,
-   "jeopardy": 0.12328767031431198,
-   "bigbench_qa_wikidata": 0.5046995878219604,
-   "arc_easy": 0.6060605843861898,
-   "arc_challenge": 0.24118316173553467,
-   "copa": 0.41999995708465576,
-   "commonsense_qa": 0.06224407255649565,
-   "piqa": 0.4951033592224121,
+   "hellaswag_zeroshot": 0.4363672733306885,
+   "jeopardy": 0.1261218637228012,
+   "bigbench_qa_wikidata": 0.5052900910377502,
+   "arc_easy": 0.6071829001108805,
+   "arc_challenge": 0.23777016003926596,
+   "copa": 0.3999999761581421,
+   "commonsense_qa": 0.05405405908823012,
+   "piqa": 0.49619150161743164,
    "openbook_qa": 0.20800002415974936,
-   "lambada_openai": 0.45798563957214355,
-   "hellaswag": 0.4416782855987549,
+   "lambada_openai": 0.4568212628364563,
+   "hellaswag": 0.4410143693288167,
    "winograd": 0.37728941440582275,
-   "winogrande": 0.14127862453460693,
-   "bigbench_dyck_languages": 0.08500000089406967,
-   "agi_eval_lsat_ar": 0.027173891663551317,
-   "bigbench_cs_algorithms": 0.43030300736427307,
+   "winogrande": 0.14285707473754883,
+   "bigbench_dyck_languages": 0.08700000494718552,
+   "agi_eval_lsat_ar": 0.03260868042707442,
+   "bigbench_cs_algorithms": 0.43409088253974915,
    "bigbench_operators": 0.18571428954601288,
    "bigbench_repeat_copy_logic": 0.03125,
-   "squad": 0.45354777574539185,
-   "coqa": 0.3545033037662506,
-   "boolq": -0.24336073273106623,
-   "bigbench_language_identification": 0.17524751394626462
+   "squad": 0.460737943649292,
+   "coqa": 0.35300013422966003,
+   "boolq": -0.2481893363751863,
+   "bigbench_language_identification": 0.17502748821959374
   }
  },
  "links": {
