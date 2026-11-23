@@ -50,6 +50,7 @@ export default defineConfig({
           { slug: 'results/runs', label: 'Run notes', translations: { 'zh-CN': '运行说明' } },
         ]),
         group('Scaling', '规模扩展', ['scaling/overview', 'scaling/protocol', 'scaling/contribute']),
+        group('MoE track', 'MoE 赛道', ['moe/overview', 'moe/protocol']),
         group('Arena', '竞技场', ['arena/overview', 'arena/rules', 'arena/task', 'arena/disclosure', 'arena/circle-loop'],
           { badge: { text: 'v2 · Nov 14', variant: 'note' } }),
         group('Project', '项目', ['roadmap', 'community']),
