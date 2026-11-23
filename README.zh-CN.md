@@ -60,7 +60,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 ## 结果
 
 <!-- generated:leaderboard -->
-<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img src=".github/assets/readme/results-zh.svg" alt="全部 44 个运行在第 46,875 次更新时的 CORE，与 Dense Baseline 对比" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard"><img src=".github/assets/readme/results-zh.svg" alt="全部 46 个运行在第 46,875 次更新时的 CORE，与 Dense Baseline 对比" width="100%"></a>
 
 [完整排行榜](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/leaderboard/) · [训练回放](https://interactive-active-ai.github.io/NextTransformer/#leaderboard)
 <!-- /generated:leaderboard -->
@@ -126,7 +126,7 @@ accelerate launch --config_file launch/accelerate.yaml \
 | <img src="https://img.shields.io/badge/Sparse-E5607E?style=flat-square" alt="稀疏"> | DSA · QSA · NSA · SeerAttention-style · MoBA |
 | <img src="https://img.shields.io/badge/Linear-3F7FD9?style=flat-square" alt="线性"> | DeltaNet · GSA + QK-norm · GLA · KDA · RetNet · ELU-Norm · GDN |
 | <img src="https://img.shields.io/badge/Hybrid-F07856?style=flat-square" alt="混合"> | GDN–MHA 3:1 · GDN–MHA 1:1 · GDN–SWA · DeltaNet–MHA · KDA–MLA-NoPE · GDN–QSA · MoBA–MHA |
-| <img src="https://img.shields.io/badge/Others-D99A2B?style=flat-square" alt="其他"> | SSSL · MQA · GQA · MLA-QK · MLA-NoPE-QK · Gated Attention · elementwise · Gated Attention · headwise · XSA · Exclusive Self Attention · Inkling REL |
+| <img src="https://img.shields.io/badge/Others-D99A2B?style=flat-square" alt="其他"> | SSSL · MQA · GQA · MLA-QK · MLA-NoPE-QK · Gated Attention · elementwise · Gated Attention · headwise · XSA · Exclusive Self Attention · Inkling REL · Static ShortConv · MLP output · Dynamic-KV ShortConv · MLP output |
 <!-- /generated:model-zoo -->
 
 \* 结果即将发布。论文、调整和配置见[模型库](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/methods/zoo/)。
@@ -196,6 +196,7 @@ accelerate launch --config_file launch/accelerate.yaml \
 
 - **2026 年 11 月 14 日前：** Arena v2 和 agent 原生研究。
 - **2K Scaling**：先做 [T3 尺寸扫描](https://interactive-active-ai.github.io/NextTransformer/#scaling)，再完善拟合、校验预测，最终在 C200 盲测。
+- **MoE 赛道**：两个复现 Marin 的 MoE 尺寸（d768、d1024），token 和 FLOPs 预算固定，完整复现 Marin 的 Grug MoE recipe，用 MoE-CORE（10 个短任务加 RULER、FDA、SWDE 等最长 4K 的长上下文任务）和统一吞吐标准评测。见 [`moe/`](moe/README.zh-CN.md)。[240 TPP](moe/PROTOCOL.md#240-tpp-comparison) · d768 baseline / HC / mHC / SimpleHC (14.07B tokens) · d1024 baseline (34.06B tokens)。
 - **Hybrid GDN + QSA：** 正式结果、累计审计与[运行说明](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/runs/qsa_hybrid/)已发布。
 - **计划中：** 在 Hugging Face Hub 上发布检查点和分词器。
 
