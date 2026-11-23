@@ -169,6 +169,10 @@ published tasks: 10 short ones plus RULER S-NIAH-1 at 2K and 4K, FDA and SWDE. E
 BPB and its throughput relative to the baseline on the same node, and every configuration is admitted within 1% of
 its track anchor and audited within 2% over the run.
 
+The first formal run is published: the **d768 baseline** finished its 53,686 updates at **0.7708 validation BPB** and
+**MoE-CORE 0.3682** ([record](moe/results/d768-240tpp/baseline.json)). It is the reference every d768 method is
+measured against.
+
 [MoE overview](https://interactive-active-ai.github.io/NextTransformer/docs/moe/overview/) ·
 [MoE protocol](https://interactive-active-ai.github.io/NextTransformer/docs/moe/protocol/) ·
 [`moe/`](moe/README.md) · [submission flow](moe/README.md#submitting-a-method)
