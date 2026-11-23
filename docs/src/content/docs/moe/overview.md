@@ -28,6 +28,8 @@ baseline at 34,064,564,224 input tokens. Both use the same global batch as their
 - **Compute.** Matmul FLOPs are measured block by block, and attention edges are charged by rule. A method is admitted
   within 1% of the track anchor and audited within 2% cumulatively.
 
+Published runs, their task breakdown and their MoE-CORE over training are on the [results page](../results/).
+
 The [protocol](../protocol/) gives every value. The
 [MoE README](https://github.com/Interactive-Active-AI/NextTransformer/blob/main/moe/README.md#submitting-a-method)
 gives the submission flow, which is the dense track's flow with `moe.*` entry points: plugin, calibrate, formal

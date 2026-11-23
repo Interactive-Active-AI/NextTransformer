@@ -159,8 +159,15 @@ accelerate launch --config_file launch/accelerate.yaml \
 
 训练数据是 Dolma 3 HQ，优化器为 MuonH，用 **MoE-CORE** 计分：14 个公开任务的中心化准确率均值，其中 10 个短任务，另加 2K 与 4K 的 RULER S-NIAH-1、FDA 和 SWDE。每个结果还会报告验证 BPB，以及在同一节点上相对 baseline 的吞吐；每份配置在准入时对齐到赛道锚点的 1% 以内，整个运行的累计偏差控制在 2% 以内。
 
-第一个正式结果已经发布：**d768 baseline** 跑满 53,686 步，验证 **0.7708 BPB**、**MoE-CORE 0.3682**（[记录](moe/results/d768-240tpp/baseline.json)）。d768 赛道上的每个方法都以它为基准。
+已发布的运行如下，MoE-CORE 按 ×100 显示。每个赛道的 baseline 就是该赛道上所有方法的基准。
 
+<!-- generated:moe-results -->
+| 赛道 | 方法 | MoE-CORE ↑ | 验证 BPB ↓ |
+|---|---|---:|---:|
+| d768 · 240 TPP | [MoE Baseline](moe/results/d768-240tpp/baseline.json) | 36.82 | 0.7708 |
+<!-- /generated:moe-results -->
+
+[MoE 结果](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/results/) ·
 [MoE 总览](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/overview/) ·
 [MoE 协议](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/protocol/) ·
 [`moe/`](moe/README.zh-CN.md) · [提交流程](moe/README.md#submitting-a-method)
