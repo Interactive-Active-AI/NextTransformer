@@ -161,7 +161,7 @@ the [240 TPP comparison](moe/PROTOCOL.md#240-tpp-comparison) trains them at 240 
 
 | Track | Shape | Context | Updates | Input tokens | Admitted methods |
 |---|---|---:|---:|---:|---|
-| **d768** | 8 × 768 · GQA 6/1 · 256 experts × top-4 + shared | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC |
+| **d768** | 8 × 768 · GQA 6/1 · 256 experts × top-4 + shared | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC · iHC |
 | **d1024** | 11 × 1024 · GQA 8/2 · 256 experts × top-4 + shared | 4,096 | 64,973 | 34.06B | baseline |
 
 Runs train on Dolma 3 HQ with the MuonH optimizer and are scored by **MoE-CORE**, the mean centered accuracy over 14

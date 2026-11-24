@@ -154,7 +154,7 @@ accelerate launch --config_file launch/accelerate.yaml \
 
 | 赛道 | 结构 | 上下文 | 更新步数 | 输入 tokens | 已准入的方法 |
 |---|---|---:|---:|---:|---|
-| **d768** | 8 × 768 · GQA 6/1 · 256 个专家选 4 + 共享专家 | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC |
+| **d768** | 8 × 768 · GQA 6/1 · 256 个专家选 4 + 共享专家 | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC · iHC |
 | **d1024** | 11 × 1024 · GQA 8/2 · 256 个专家选 4 + 共享专家 | 4,096 | 64,973 | 34.06B | baseline |
 
 训练数据是 Dolma 3 HQ，优化器为 MuonH，用 **MoE-CORE** 计分：14 个公开任务的中心化准确率均值，其中 10 个短任务，另加 2K 与 4K 的 RULER S-NIAH-1、FDA 和 SWDE。每个结果还会报告验证 BPB，以及在同一节点上相对 baseline 的吞吐；每份配置在准入时对齐到赛道锚点的 1% 以内，整个运行的累计偏差控制在 2% 以内。

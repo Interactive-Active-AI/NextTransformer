@@ -11,7 +11,7 @@ Test plugins in [`tests/moe_plugins/`](../../tests/moe_plugins) show a router an
 
 ## d768 residual comparison
 
-The [240 TPP configurations](../configs/d768-240tpp/) share the same attention, experts and routing. The three
+The [240 TPP configurations](../configs/d768-240tpp/) share the same attention, experts and routing. The four
 plugins each carry four residual streams. Each plugin's declaration links to the paper and fixes its options.
 
 | Method | Residual computation | Measured FLOPs/token vs baseline |
@@ -20,5 +20,6 @@ plugins each carry four residual streams. Each plugin's declaration links to the
 | [HC](hc/) | Dynamic read, residual mixing and write weights for each attention and FFN sublayer. | +0.3463% |
 | [mHC](mhc/) | Constrained mixing with two Sinkhorn iterations per sublayer. | +0.9129% |
 | [SimpleHC](simplehc/) | One group's read and write gates are computed at block entry for its two sublayers. | +0.3148% |
+| [iHC](ihc/) | Each sublayer reads and writes four streams with scalar gates and identity residual transport. A learned read merges the final streams. | +0.2931% |
 
 The [cost records](../evidence/costs/d768-240tpp/) contain each measured configuration and its source hash.

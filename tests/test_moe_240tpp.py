@@ -29,7 +29,7 @@ def test_240tpp_budgets(name, steps, tokens, warmup, core):
 
 @pytest.mark.parametrize("track_name,method", [
     ("d768-240tpp", "baseline"), ("d768-240tpp", "hc"), ("d768-240tpp", "mhc"),
-    ("d768-240tpp", "simplehc"), ("d1024-240tpp", "baseline"),
+    ("d768-240tpp", "simplehc"), ("d768-240tpp", "ihc"), ("d1024-240tpp", "baseline"),
 ])
 def test_240tpp_config_is_admitted(track_name, method):
     track = spec.track(track_name)
