@@ -15,7 +15,7 @@
   gap: 10px;
   padding-inline: 10px 6px;
   border-radius: 5px;
-  background: #f2e9dc;
+  background: #f2edf8;
 }
 .track-title, .track-control > span {
   color: #616b75;
@@ -35,7 +35,7 @@
   font-weight: 550;
   cursor: pointer;
 }
-.track-options button:hover, .track-options button[aria-pressed=true] { color: #6f5741; }
+.track-options button:hover, .track-options button[aria-pressed=true] { color: #74638c; }
 .track-options button[aria-pressed=true]::after {
   content: "";
   position: absolute;
