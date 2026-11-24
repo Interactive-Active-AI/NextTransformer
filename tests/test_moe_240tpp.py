@@ -29,7 +29,9 @@ def test_240tpp_budgets(name, steps, tokens, warmup, core):
 
 @pytest.mark.parametrize("track_name,method", [
     ("d768-240tpp", "baseline"), ("d768-240tpp", "hc"), ("d768-240tpp", "mhc"),
-    ("d768-240tpp", "simplehc"), ("d768-240tpp", "ihc"), ("d1024-240tpp", "baseline"),
+    ("d768-240tpp", "simplehc"), ("d768-240tpp", "ihc"),
+    ("d1024-240tpp", "baseline"), ("d1024-240tpp", "hc"), ("d1024-240tpp", "mhc"),
+    ("d1024-240tpp", "simplehc"), ("d1024-240tpp", "ihc"),
 ])
 def test_240tpp_config_is_admitted(track_name, method):
     track = spec.track(track_name)
@@ -42,13 +44,15 @@ def test_240tpp_config_is_admitted(track_name, method):
     assert abs(calibration["relative_gap"]) <= spec.PROTOCOL.preflight_tolerance
 
 
+@pytest.mark.parametrize("track_name", ["d768-240tpp", "d1024-240tpp"])
 @pytest.mark.parametrize("method,parameter", [
     ("hc", "attn_connection.dynamic_alpha"),
     ("mhc", "attn_connection.projection"),
     ("simplehc", "gates.projection"),
+    ("ihc", "attn_mapping.projection"),
 ])
-def test_residual_plugins_train(method, parameter):
-    config = plugins.config_for(method, "d768-240tpp", debug=True)
+def test_residual_plugins_train(track_name, method, parameter):
+    config = plugins.config_for(method, track_name, debug=True)
     model = build_model(config, "cpu")
     tokens = torch.randint(0, config.vocab_size, (config.qb_group_rows, 16))
     loss = model(tokens, tokens.roll(-1, dims=1))
