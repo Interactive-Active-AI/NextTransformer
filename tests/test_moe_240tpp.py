@@ -77,6 +77,30 @@ def test_audit_preserves_the_initial_d768_run_identity(tmp_path):
     assert any("protocol fingerprint" in p for p in audit.audit(tmp_path)[0])
 
 
+def test_published_moe_result_requires_matching_audit_and_complete_final_scores(tmp_path, monkeypatch):
+    track_file = "d768-240tpp/baseline.json"
+    for section in ("configs", "evidence/costs", "evidence/audits", "results"):
+        source = audit.HERE / section / track_file
+        target = tmp_path / section / track_file
+        target.parent.mkdir(parents=True)
+        target.write_bytes(source.read_bytes())
+    monkeypatch.setattr(audit, "HERE", tmp_path)
+    monkeypatch.setattr(audit, "AUDITS", tmp_path / "evidence/audits")
+    result = tmp_path / "results" / track_file
+    assert audit.check_record(result) == []
+
+    evidence = audit.AUDITS / track_file
+    original_audit = evidence.read_text()
+    evidence.write_text(json.dumps({**json.loads(original_audit), "method": "hc"}))
+    assert "no matching passing audit for the complete budget" in audit.check_record(result)
+
+    evidence.write_text(original_audit)
+    data = json.loads(result.read_text())
+    data["final"]["centered"].pop(next(iter(data["final"]["centered"])))
+    result.write_text(json.dumps(data))
+    assert "invalid final MoE-CORE or full macro BPB" in audit.check_record(result)
+
+
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="checks pinned host storage and CUDA streams")
 def test_activation_offload_preserves_values_strides_and_gradients():
     from moe.offload import _pack, _unpack, activation_storage

@@ -52,7 +52,7 @@ AI agent 也可以在完全相同的规则下研究新架构。
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/arena/task/"><img src=".github/assets/readme/card-agent-zh.webp" alt="Agent 原生研究：把竞技场任务交给你的 agent；完整版本 Arena v2 已于 2026 年 11 月 14 日上线。" width="100%"></a>
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/protocol/"><img src=".github/assets/readme/card-moe-zh.webp" alt="MoE 赛道：稀疏专家，同一套约定。两个 Marin 口径的尺寸，d768 训练 14.07B tokens、d1024 训练 34.06B tokens，都是 256 个专家选 4，按每激活参数 240 个 token 训练，用 MoE-CORE 计分。" width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp"><img src=".github/assets/readme/card-moe-zh.webp" alt="MoE 赛道：稀疏专家，同一套约定。两个 Marin 口径的尺寸，d768 训练 14.07B tokens、d1024 训练 34.06B tokens，都是 256 个专家选 4，按每激活参数 240 个 token 训练，用 MoE-CORE 计分。" width="100%"></a>
 
 ## 观测站
 
@@ -150,24 +150,19 @@ accelerate launch --config_file launch/accelerate.yaml \
 
 ## MoE 赛道
 
-稀疏模型用的是同一套做法，只是另有一份约定：相同的数据和数据顺序、相同的每 token 训练 FLOPs、相同的评测。两个骨干网络复现 Marin 的 compute-optimal Grug MoE 配置，[240 TPP 对照](moe/PROTOCOL.md#240-tpp-comparison)按每个激活参数 240 个 token 训练它们。
-
-| 赛道 | 结构 | 上下文 | 更新步数 | 输入 tokens | 已准入的方法 |
-|---|---|---:|---:|---:|---|
-| **d768** | 8 × 768 · GQA 6/1 · 256 个专家选 4 + 共享专家 | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC · iHC |
-| **d1024** | 11 × 1024 · GQA 8/2 · 256 个专家选 4 + 共享专家 | 4,096 | 64,973 | 34.06B | baseline |
+稀疏模型用的是同一套做法，只是另有一份约定：相同的数据和数据顺序、相同的每 token 训练 FLOPs、相同的评测。两个骨干网络复现 Marin 的 compute-optimal Grug MoE 配置，[240 TPP 对照](moe/PROTOCOL.md#240-tpp-comparison)按基线每个激活主干参数（不含输入嵌入和输出头）240 个 token 训练它们。
 
 训练数据是 Dolma 3 HQ，优化器为 MuonH，用 **MoE-CORE** 计分：14 个公开任务的中心化准确率均值，其中 10 个短任务，另加 2K 与 4K 的 RULER S-NIAH-1、FDA 和 SWDE。每个结果还会报告验证 BPB，以及在同一节点上相对 baseline 的吞吐；每份配置在准入时对齐到赛道锚点的 1% 以内，整个运行的累计偏差控制在 2% 以内。
 
-已发布的运行如下，MoE-CORE 按 ×100 显示。每个赛道的 baseline 就是该赛道上所有方法的基准。
+在观测站切换赛道即可查看[模型榜单](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp)、[训练曲线和逐任务结果](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp)。
 
 <!-- generated:moe-results -->
-| 赛道 | 方法 | MoE-CORE ↑ | 验证 BPB ↓ |
-|---|---|---:|---:|
-| d768 · 240 TPP | [MoE Baseline](moe/results/d768-240tpp/baseline.json) | 36.82 | 0.7708 |
+| 240 TPP 榜单 | 更新步数 | 输入 tokens | 观测站入口 |
+|---|---:|---:|---|
+| [d768](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) | 53,686 | 14.07B | [模型配置](https://interactive-active-ai.github.io/NextTransformer/#atlas?track=d768-240tpp) · [曲线与评测](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp) |
+| [d1024](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d1024-240tpp) | 64,973 | 34.06B | [模型配置](https://interactive-active-ai.github.io/NextTransformer/#atlas?track=d1024-240tpp) · [曲线与评测](https://interactive-active-ai.github.io/NextTransformer/#results?track=d1024-240tpp) |
 <!-- /generated:moe-results -->
 
-[MoE 结果](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/results/) ·
 [MoE 总览](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/overview/) ·
 [MoE 协议](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/moe/protocol/) ·
 [`moe/`](moe/README.zh-CN.md) · [提交流程](moe/README.md#submitting-a-method)
@@ -222,7 +217,7 @@ accelerate launch --config_file launch/accelerate.yaml \
 ## 路线图
 
 - **2K Scaling**：先做 [T3 尺寸扫描](https://interactive-active-ai.github.io/NextTransformer/#scaling)，再完善拟合、校验预测，最终在 C200 盲测。
-- **MoE 赛道**：两个骨干网络与 [240 TPP 对照](#moe-赛道)已发布，正式训练随后进行。
+- **MoE 赛道**：[240 TPP 榜单](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp)随正式记录更新。
 - **Hybrid GDN + QSA：** 正式结果、累计审计与[运行说明](https://interactive-active-ai.github.io/NextTransformer/docs/zh-cn/results/runs/qsa_hybrid/)已发布。
 - **计划中：** 在 Hugging Face Hub 上发布检查点和分词器。
 

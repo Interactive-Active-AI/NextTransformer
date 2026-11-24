@@ -1,5 +1,7 @@
 # NextTransformer-MoE
 
+[240 TPP leaderboard](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) · [Training curves and task scores](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp)
+
 A compute-controlled comparison platform for **Mixture-of-Experts** language models, built on the NextTransformer
 contract: same data, same order, same FLOPs per token, same evaluation; parameters and speed are outcomes. The two reference
 tracks reproduce Marin's compute-optimal Grug MoE cells: model, MuonH optimizer, schedule,
@@ -150,7 +152,7 @@ The flow is the dense track's ([plugins](../docs/src/content/docs/guides/plugins
   (MFU 11.5%, 4.4 h)**, both at micro-batch 8. Details in `references.json`.
 - **Published runs:** exported records in [`results/`](results/) with their audits in
   [`evidence/audits/`](evidence/audits/), listed with every task score on the
-  [results page](https://interactive-active-ai.github.io/NextTransformer/docs/moe/results/).
+  [results page](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp).
 - **Pending:** the d1024-240tpp baseline run.
 - **Scaling:** the 300B-token stream covers far larger tracks. A third size or longer budgets are added as new tracks;
   each track keeps its own fingerprint.

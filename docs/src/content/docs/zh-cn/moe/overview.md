@@ -21,6 +21,6 @@ QB 路由、上下文、batch 和更新步数。
   - 长任务（4 项）：RULER S-NIAH-1 的 2,048 和 4,096 两档、FDA、SWDE。
 - **吞吐**：统一用 `moe.throughput` 测量，每次在同一节点上先后测 baseline 和待测方法，发布两者的相对吞吐。
 
-已发布的运行、逐任务得分和训练过程中的 MoE-CORE 见[结果页](../results/)。
+在观测站查看 [MoE 榜单](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp)和[训练曲线、最终逐任务得分](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp)。
 
 完整规范见 [协议](../protocol/)（以英文为准）。

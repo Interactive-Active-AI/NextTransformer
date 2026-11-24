@@ -53,7 +53,7 @@ result is an audited, file-backed record, and AI agents can research new archite
 
 <a href="https://interactive-active-ai.github.io/NextTransformer/docs/arena/task/"><img src=".github/assets/readme/card-agent-en.webp" alt="Agent-native research: hand the arena task to your agent; the full version, Arena v2, has been live since November 14, 2026." width="100%"></a>
 
-<a href="https://interactive-active-ai.github.io/NextTransformer/docs/moe/protocol/"><img src=".github/assets/readme/card-moe-en.webp" alt="MoE track: sparse experts under one contract. Two Marin-derived sizes, d768 at 14.07B tokens and d1024 at 34.06B tokens, both 256 experts with top-4 routing at 240 tokens per active parameter, scored by MoE-CORE." width="100%"></a>
+<a href="https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp"><img src=".github/assets/readme/card-moe-en.webp" alt="MoE track: sparse experts under one contract. Two Marin-derived sizes, d768 at 14.07B tokens and d1024 at 34.06B tokens, both 256 experts with top-4 routing at 240 tokens per active parameter, scored by MoE-CORE." width="100%"></a>
 
 ## The observatory
 
@@ -157,28 +157,22 @@ what is counted.
 
 Sparse models get the same treatment as dense ones, under their own contract: same data in the same order, same
 training FLOPs per token, same evaluation. The two backbones reproduce Marin's compute-optimal Grug MoE cells, and
-the [240 TPP comparison](moe/PROTOCOL.md#240-tpp-comparison) trains them at 240 tokens per active parameter.
-
-| Track | Shape | Context | Updates | Input tokens | Admitted methods |
-|---|---|---:|---:|---:|---|
-| **d768** | 8 × 768 · GQA 6/1 · 256 experts × top-4 + shared | 4,096 | 53,686 | 14.07B | baseline · HC · mHC · SimpleHC · iHC |
-| **d1024** | 11 × 1024 · GQA 8/2 · 256 experts × top-4 + shared | 4,096 | 64,973 | 34.06B | baseline |
+the [240 TPP comparison](moe/PROTOCOL.md#240-tpp-comparison) trains them at 240 tokens per active baseline parameter excluding the embedding and output head.
 
 Runs train on Dolma 3 HQ with the MuonH optimizer and are scored by **MoE-CORE**, the mean centered accuracy over 14
 published tasks: 10 short ones plus RULER S-NIAH-1 at 2K and 4K, FDA and SWDE. Every result also reports validation
 BPB and its throughput relative to the baseline on the same node, and every configuration is admitted within 1% of
 its track anchor and audited within 2% over the run.
 
-Published runs, with MoE-CORE shown ×100. The baseline of a track is the reference every method on it is measured
-against.
+Choose MoE in the observatory for the [model leaderboard](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) and [training curves and task scores](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp).
 
 <!-- generated:moe-results -->
-| Track | Method | MoE-CORE ↑ | Val BPB ↓ |
-|---|---|---:|---:|
-| d768 · 240 TPP | [MoE Baseline](moe/results/d768-240tpp/baseline.json) | 36.82 | 0.7708 |
+| 240 TPP leaderboard | Updates | Input tokens | Observatory views |
+|---|---:|---:|---|
+| [d768](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) | 53,686 | 14.07B | [Model atlas](https://interactive-active-ai.github.io/NextTransformer/#atlas?track=d768-240tpp) · [Curves and evaluations](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp) |
+| [d1024](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d1024-240tpp) | 64,973 | 34.06B | [Model atlas](https://interactive-active-ai.github.io/NextTransformer/#atlas?track=d1024-240tpp) · [Curves and evaluations](https://interactive-active-ai.github.io/NextTransformer/#results?track=d1024-240tpp) |
 <!-- /generated:moe-results -->
 
-[MoE results](https://interactive-active-ai.github.io/NextTransformer/docs/moe/results/) ·
 [MoE overview](https://interactive-active-ai.github.io/NextTransformer/docs/moe/overview/) ·
 [MoE protocol](https://interactive-active-ai.github.io/NextTransformer/docs/moe/protocol/) ·
 [`moe/`](moe/README.md) · [submission flow](moe/README.md#submitting-a-method)
@@ -237,7 +231,7 @@ Community projects that extend NextTransformer.
 ## Roadmap
 
 - **2K scaling:** start with the [T3 size sweep](https://interactive-active-ai.github.io/NextTransformer/#scaling), refine the fits, check preregistered forecasts, then hold out C200 for the final test.
-- **MoE track:** the two backbones and the [240 TPP comparison](#the-moe-track) are published; the formal runs follow.
+- **MoE track:** the [240 TPP leaderboard](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) updates with each published run.
 - **Hybrid GDN + QSA:** completed formal results, cumulative audit and [run notes](https://interactive-active-ai.github.io/NextTransformer/docs/results/runs/qsa_hybrid/).
 - **Planned:** checkpoints and the tokenizer on the Hugging Face Hub.
 

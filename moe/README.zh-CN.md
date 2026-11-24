@@ -1,5 +1,7 @@
 # NextTransformer-MoE
 
+[240 TPP 模型榜单](https://interactive-active-ai.github.io/NextTransformer/#leaderboard?track=d768-240tpp) · [训练曲线与任务分数](https://interactive-active-ai.github.io/NextTransformer/#results?track=d768-240tpp)
+
 面向 **Mixture-of-Experts** 语言模型的算力受控对比平台。沿用 NextTransformer 的契约：数据相同、顺序相同、每 token 训练
 FLOPs 相同、评测相同；参数量和速度是结果，不是约束。平台设两个固定赛道，形状与预算复现 Marin 的 compute-optimal
 Grug MoE：
