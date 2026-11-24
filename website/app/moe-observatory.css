@@ -11,7 +11,12 @@
   display: flex;
   align-items: center;
 }
-.track-primary { gap: 10px; }
+.track-primary {
+  gap: 10px;
+  padding-inline: 10px 6px;
+  border-radius: 5px;
+  background: #f2e9dc;
+}
 .track-title, .track-control > span {
   color: #616b75;
   font-size: 12px;
@@ -30,7 +35,7 @@
   font-weight: 550;
   cursor: pointer;
 }
-.track-options button:hover, .track-options button[aria-pressed=true] { color: #435c75; }
+.track-options button:hover, .track-options button[aria-pressed=true] { color: #6f5741; }
 .track-options button[aria-pressed=true]::after {
   content: "";
   position: absolute;
