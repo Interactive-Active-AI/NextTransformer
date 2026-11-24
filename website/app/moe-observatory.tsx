@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
-import {ArrowRight, ArrowUpRight, X} from 'lucide-react';
+import {ArrowRight, ArrowUpRight, Check, X} from 'lucide-react';
 import Chart, {seriesColor} from './learning-chart';
 import Leaderboard from './leaderboard';
 import {docs, REPO_FILE} from './lib/links';
@@ -18,10 +18,16 @@ const taskLabels: Record<string,string> = {
 
 export function TrackSelector({track, onChange}:{track?: MoeTrack; onChange:(id?:string)=>void}) {
   return <div className="track-selector">
-    <div className="track-control" role="group" aria-label="Benchmark track">
-      <span>Track</span>
-      <button aria-pressed={!track} onClick={()=>onChange()}>Dense</button>
-      <button aria-pressed={!!track} onClick={()=>onChange(track?.id ?? defaultMoeTrack)}>MoE</button>
+    <div className="track-primary" role="group" aria-labelledby="benchmark-track-label">
+      <span className="track-title" id="benchmark-track-label">Benchmark track</span>
+      <div className="track-options">
+        <button aria-pressed={!track} onClick={()=>onChange()}>
+          Dense {!track && <Check size={17} aria-hidden="true"/>}
+        </button>
+        <button aria-pressed={!!track} onClick={()=>onChange(track?.id ?? defaultMoeTrack)}>
+          MoE {track && <Check size={17} aria-hidden="true"/>}
+        </button>
+      </div>
     </div>
     {track && <div className="track-control" role="group" aria-label="MoE budget">
       <span>240 TPP</span>
