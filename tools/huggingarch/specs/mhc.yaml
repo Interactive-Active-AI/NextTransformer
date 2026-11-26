@@ -1,0 +1,5155 @@
+match:
+  model_type:
+  - nexttransformer_mhc
+  model_id:
+  - custom:nextt-mhc
+dims:
+  d_model: config.hidden_size
+  n_heads: config.num_attention_heads
+  n_kv_heads: config.num_attention_heads
+  d_head: d_model // n_heads
+  d_ffn: config.intermediate_size
+  n_vocab: config.vocab_size
+  n_layers: config.num_hidden_layers
+  s_max: config.max_position_embeddings
+  n_hidden_copies: config.residual_streams
+  d_hc_mix: n_hidden_copies*n_hidden_copies+2*n_hidden_copies
+model_inputs:
+  input_ids:
+    kind: tokens
+blocks:
+  nextt_attention:
+    role: attention
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_heads
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id001
+        - &id038
+          replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_heads
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_ffn:
+    role: ffn_dense
+    graph:
+      c_fc:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_ffn
+        weight_axes: *id001
+      relu:
+        op: relu
+        in: c_fc
+        dims:
+          dim: d_ffn
+      square:
+        op: mul
+        in:
+        - relu
+        - relu
+        dims:
+          dim: d_ffn
+      c_proj:
+        op: linear
+        in: square
+        dims:
+          in: d_ffn
+          out: d_model
+        weight_axes: *id001
+    outputs:
+    - c_proj
+  nextt_attention_ve:
+    role: attention
+    inputs: &id003
+    - x
+    - ve
+    cache:
+      family: GQA
+      entries:
+      - node: k_scale
+        kind: kv
+      - node: v_mixed
+        kind: kv
+    graph:
+      c_q:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: &id002
+        - replicated: true
+        - replicated: true
+      q_heads:
+        op: head_split
+        in: c_q
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_k:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      k_heads:
+        op: head_split
+        in: c_k
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_v:
+        op: linear
+        in: x
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes: *id002
+      v_heads:
+        op: head_split
+        in: c_v
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      q_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: q_heads
+        dims:
+          dim: d_head
+      q_norm:
+        op: rmsnorm_unscaled
+        in: q_rope
+        dims:
+          dim: d_head
+      q_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: q_norm
+        dims:
+          in: d_head
+      k_rope:
+        op: rope
+        formula: Inverse RoPE; split-half pairing; theta=100000
+        in: k_heads
+        dims:
+          dim: d_head
+      k_norm:
+        op: rmsnorm_unscaled
+        in: k_rope
+        dims:
+          dim: d_head
+      k_scale:
+        op: scale_const
+        formula: y = 1.2 * x
+        in: k_norm
+        dims:
+          in: d_head
+      gate_channels:
+        op: slice
+        in: x
+        dims:
+          in: d_model
+          out: '12'
+          start: '0'
+      ve_gate:
+        op: linear
+        in: gate_channels
+        dims:
+          in: '12'
+          out: n_heads
+        weight_axes: *id001
+      gate_sigmoid:
+        op: sigmoid
+        in: ve_gate
+        dims:
+          dim: n_heads
+      gate3:
+        op: scale_const
+        formula: 3 * x
+        in: gate_sigmoid
+        dims:
+          in: n_heads
+      ve_heads:
+        op: head_split
+        in: ve
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      gated_ve:
+        op: headwise_gate
+        in:
+        - ve_heads
+        - gate3
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      v_mixed:
+        op: add
+        in:
+        - v_heads
+        - gated_ve
+        dims:
+          dim: d_head
+      scores:
+        op: attention_score
+        in:
+        - q_scale
+        - k_scale
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      probabilities:
+        op: softmax
+        in: scores
+        dims:
+          n_heads: n_heads
+      weighted_values:
+        op: attention_apply
+        in:
+        - probabilities
+        - v_mixed
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      merge_heads:
+        op: head_merge
+        in: weighted_values
+        dims:
+          n_heads: n_heads
+          d_head: d_head
+      c_proj:
+        op: linear
+        in: merge_heads
+        dims:
+          in: d_model
+          out: d_model
+        weight_axes:
+        - replicated: true
+        - replicated: true
+    outputs:
+    - c_proj
+  module_transformer_h_0_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.0.attn
+    outputs:
+    - call
+  module_transformer_h_0_mlp:
+    inputs: &id004
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id004
+        module: transformer.h.0.mlp
+    outputs:
+    - call
+  module_transformer_h_1_attn:
+    inputs: &id005
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id005
+        module: transformer.h.1.attn
+    outputs:
+    - call
+  module_transformer_h_1_mlp:
+    inputs: &id006
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id006
+        module: transformer.h.1.mlp
+    outputs:
+    - call
+  module_transformer_h_2_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.2.attn
+    outputs:
+    - call
+  module_transformer_h_2_mlp:
+    inputs: &id007
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id007
+        module: transformer.h.2.mlp
+    outputs:
+    - call
+  module_transformer_h_3_attn:
+    inputs: &id008
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id008
+        module: transformer.h.3.attn
+    outputs:
+    - call
+  module_transformer_h_3_mlp:
+    inputs: &id009
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id009
+        module: transformer.h.3.mlp
+    outputs:
+    - call
+  module_transformer_h_4_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.4.attn
+    outputs:
+    - call
+  module_transformer_h_4_mlp:
+    inputs: &id010
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id010
+        module: transformer.h.4.mlp
+    outputs:
+    - call
+  module_transformer_h_5_attn:
+    inputs: &id011
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id011
+        module: transformer.h.5.attn
+    outputs:
+    - call
+  module_transformer_h_5_mlp:
+    inputs: &id012
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id012
+        module: transformer.h.5.mlp
+    outputs:
+    - call
+  module_transformer_h_6_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.6.attn
+    outputs:
+    - call
+  module_transformer_h_6_mlp:
+    inputs: &id013
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id013
+        module: transformer.h.6.mlp
+    outputs:
+    - call
+  module_transformer_h_7_attn:
+    inputs: &id014
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id014
+        module: transformer.h.7.attn
+    outputs:
+    - call
+  module_transformer_h_7_mlp:
+    inputs: &id015
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id015
+        module: transformer.h.7.mlp
+    outputs:
+    - call
+  module_transformer_h_8_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.8.attn
+    outputs:
+    - call
+  module_transformer_h_8_mlp:
+    inputs: &id016
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id016
+        module: transformer.h.8.mlp
+    outputs:
+    - call
+  module_transformer_h_9_attn:
+    inputs: &id017
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id017
+        module: transformer.h.9.attn
+    outputs:
+    - call
+  module_transformer_h_9_mlp:
+    inputs: &id018
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id018
+        module: transformer.h.9.mlp
+    outputs:
+    - call
+  module_transformer_h_10_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.10.attn
+    outputs:
+    - call
+  module_transformer_h_10_mlp:
+    inputs: &id019
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id019
+        module: transformer.h.10.mlp
+    outputs:
+    - call
+  module_transformer_h_11_attn:
+    inputs: &id020
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id020
+        module: transformer.h.11.attn
+    outputs:
+    - call
+  module_transformer_h_11_mlp:
+    inputs: &id021
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id021
+        module: transformer.h.11.mlp
+    outputs:
+    - call
+  module_transformer_h_12_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.12.attn
+    outputs:
+    - call
+  module_transformer_h_12_mlp:
+    inputs: &id022
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id022
+        module: transformer.h.12.mlp
+    outputs:
+    - call
+  module_transformer_h_13_attn:
+    inputs: &id023
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id023
+        module: transformer.h.13.attn
+    outputs:
+    - call
+  module_transformer_h_13_mlp:
+    inputs: &id024
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id024
+        module: transformer.h.13.mlp
+    outputs:
+    - call
+  module_transformer_h_14_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.14.attn
+    outputs:
+    - call
+  module_transformer_h_14_mlp:
+    inputs: &id025
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id025
+        module: transformer.h.14.mlp
+    outputs:
+    - call
+  module_transformer_h_15_attn:
+    inputs: &id026
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id026
+        module: transformer.h.15.attn
+    outputs:
+    - call
+  module_transformer_h_15_mlp:
+    inputs: &id027
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id027
+        module: transformer.h.15.mlp
+    outputs:
+    - call
+  module_transformer_h_16_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.16.attn
+    outputs:
+    - call
+  module_transformer_h_16_mlp:
+    inputs: &id028
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id028
+        module: transformer.h.16.mlp
+    outputs:
+    - call
+  module_transformer_h_17_attn:
+    inputs: &id029
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id029
+        module: transformer.h.17.attn
+    outputs:
+    - call
+  module_transformer_h_17_mlp:
+    inputs: &id030
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id030
+        module: transformer.h.17.mlp
+    outputs:
+    - call
+  module_transformer_h_18_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.18.attn
+    outputs:
+    - call
+  module_transformer_h_18_mlp:
+    inputs: &id031
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id031
+        module: transformer.h.18.mlp
+    outputs:
+    - call
+  module_transformer_h_19_attn:
+    inputs: &id032
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id032
+        module: transformer.h.19.attn
+    outputs:
+    - call
+  module_transformer_h_19_mlp:
+    inputs: &id033
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id033
+        module: transformer.h.19.mlp
+    outputs:
+    - call
+  module_transformer_h_20_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.20.attn
+    outputs:
+    - call
+  module_transformer_h_20_mlp:
+    inputs: &id034
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id034
+        module: transformer.h.20.mlp
+    outputs:
+    - call
+  module_transformer_h_21_attn:
+    inputs: &id035
+    - x
+    graph:
+      call:
+        op: nextt_attention
+        in: *id035
+        module: transformer.h.21.attn
+    outputs:
+    - call
+  module_transformer_h_21_mlp:
+    inputs: &id036
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id036
+        module: transformer.h.21.mlp
+    outputs:
+    - call
+  module_transformer_h_22_attn:
+    inputs: *id003
+    graph:
+      call:
+        op: nextt_attention_ve
+        in: *id003
+        module: transformer.h.22.attn
+    outputs:
+    - call
+  module_transformer_h_22_mlp:
+    inputs: &id037
+    - x
+    graph:
+      call:
+        op: nextt_ffn
+        in: *id037
+        module: transformer.h.22.mlp
+    outputs:
+    - call
+  nextt_residual_model:
+    inputs:
+    - x
+    - input_ids
+    - p0
+    - p1
+    - p2
+    - p3
+    - p4
+    - p5
+    - p6
+    - p7
+    - p8
+    - p9
+    - p10
+    - p11
+    - p12
+    - p13
+    - p14
+    - p15
+    - p16
+    - p17
+    - p18
+    - p19
+    - p20
+    - p21
+    - p22
+    - p23
+    - p24
+    - p25
+    - p26
+    - p27
+    - p28
+    - p29
+    - p30
+    - p31
+    - p32
+    - p33
+    - p34
+    - p35
+    - p36
+    - p37
+    - p38
+    - p39
+    - p40
+    - p41
+    - p42
+    - p43
+    - p44
+    - p45
+    - p46
+    - p47
+    - p48
+    - p49
+    - p50
+    - p51
+    - p52
+    - p53
+    - p54
+    - p55
+    - p56
+    - p57
+    - p58
+    - p59
+    - p60
+    - p61
+    - p62
+    - p63
+    - p64
+    - p65
+    - p66
+    - p67
+    - p68
+    - p69
+    - p70
+    - p71
+    - p72
+    - p73
+    - p74
+    - p75
+    - p76
+    - p77
+    - p78
+    - p79
+    - p80
+    - p81
+    - p82
+    - p83
+    - p84
+    - p85
+    - p86
+    - p87
+    - p88
+    - p89
+    - p90
+    - p91
+    - p92
+    - p93
+    - p94
+    - p95
+    - p96
+    - p97
+    - p98
+    - p99
+    - p100
+    - p101
+    - p102
+    - p103
+    - p104
+    - p105
+    - p106
+    - p107
+    - p108
+    - p109
+    - p110
+    - p111
+    - p112
+    - p113
+    - p114
+    - p115
+    - p116
+    - p117
+    - p118
+    - p119
+    - p120
+    - p121
+    - p122
+    - p123
+    - p124
+    - p125
+    - p126
+    - p127
+    - p128
+    - p129
+    - p130
+    - p131
+    - p132
+    - p133
+    - p134
+    - p135
+    - p136
+    - p137
+    graph:
+      initial_streams:
+        op: broadcast
+        axis: 2
+        dims:
+          width: n_hidden_copies
+        in: x
+      mhc_flat_0:
+        op: view_merge
+        in: initial_streams
+      mhc_norm_0:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_0
+      mhc_logits_0:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_0
+        - p0
+      mhc_maps_0:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_0.value
+        - p2
+        - p1
+      mhc_read_0:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - initial_streams
+        - mhc_maps_0.pre
+      mhc_mix_0:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_0.res
+        - initial_streams
+      branch_norm_0:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_0.value
+      value_embeds.0:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.0
+      transformer.h.0.attn:
+        in:
+        - branch_norm_0
+        - value_embeds.0
+        op: nextt_attention_ve
+        module: transformer.h.0.attn
+      hc_write_0:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_0
+        - transformer.h.0.attn
+        - mhc_maps_0.post
+      mhc_flat_1:
+        op: view_merge
+        in: hc_write_0.value
+      mhc_norm_1:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_1
+      mhc_logits_1:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_1
+        - p3
+      mhc_maps_1:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_1.value
+        - p5
+        - p4
+      mhc_read_1:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_0.value
+        - mhc_maps_1.pre
+      mhc_mix_1:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_1.res
+        - hc_write_0.value
+      branch_norm_1:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_1.value
+      transformer.h.0.mlp:
+        in: branch_norm_1
+        op: nextt_ffn
+        module: transformer.h.0.mlp
+      hc_write_1:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_1
+        - transformer.h.0.mlp
+        - mhc_maps_1.post
+      mhc_flat_2:
+        op: view_merge
+        in: hc_write_1.value
+      mhc_norm_2:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_2
+      mhc_logits_2:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_2
+        - p6
+      mhc_maps_2:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_2.value
+        - p8
+        - p7
+      mhc_read_2:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_1.value
+        - mhc_maps_2.pre
+      mhc_mix_2:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_2.res
+        - hc_write_1.value
+      branch_norm_2:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_2.value
+      transformer.h.1.attn:
+        in: branch_norm_2
+        op: nextt_attention
+        module: transformer.h.1.attn
+      hc_write_2:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_2
+        - transformer.h.1.attn
+        - mhc_maps_2.post
+      mhc_flat_3:
+        op: view_merge
+        in: hc_write_2.value
+      mhc_norm_3:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_3
+      mhc_logits_3:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_3
+        - p9
+      mhc_maps_3:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_3.value
+        - p11
+        - p10
+      mhc_read_3:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_2.value
+        - mhc_maps_3.pre
+      mhc_mix_3:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_3.res
+        - hc_write_2.value
+      branch_norm_3:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_3.value
+      transformer.h.1.mlp:
+        in: branch_norm_3
+        op: nextt_ffn
+        module: transformer.h.1.mlp
+      hc_write_3:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_3
+        - transformer.h.1.mlp
+        - mhc_maps_3.post
+      mhc_flat_4:
+        op: view_merge
+        in: hc_write_3.value
+      mhc_norm_4:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_4
+      mhc_logits_4:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_4
+        - p12
+      mhc_maps_4:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_4.value
+        - p14
+        - p13
+      mhc_read_4:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_3.value
+        - mhc_maps_4.pre
+      mhc_mix_4:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_4.res
+        - hc_write_3.value
+      branch_norm_4:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_4.value
+      value_embeds.2:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.2
+      transformer.h.2.attn:
+        in:
+        - branch_norm_4
+        - value_embeds.2
+        op: nextt_attention_ve
+        module: transformer.h.2.attn
+      hc_write_4:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_4
+        - transformer.h.2.attn
+        - mhc_maps_4.post
+      mhc_flat_5:
+        op: view_merge
+        in: hc_write_4.value
+      mhc_norm_5:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_5
+      mhc_logits_5:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_5
+        - p15
+      mhc_maps_5:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_5.value
+        - p17
+        - p16
+      mhc_read_5:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_4.value
+        - mhc_maps_5.pre
+      mhc_mix_5:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_5.res
+        - hc_write_4.value
+      branch_norm_5:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_5.value
+      transformer.h.2.mlp:
+        in: branch_norm_5
+        op: nextt_ffn
+        module: transformer.h.2.mlp
+      hc_write_5:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_5
+        - transformer.h.2.mlp
+        - mhc_maps_5.post
+      mhc_flat_6:
+        op: view_merge
+        in: hc_write_5.value
+      mhc_norm_6:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_6
+      mhc_logits_6:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_6
+        - p18
+      mhc_maps_6:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_6.value
+        - p20
+        - p19
+      mhc_read_6:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_5.value
+        - mhc_maps_6.pre
+      mhc_mix_6:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_6.res
+        - hc_write_5.value
+      branch_norm_6:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_6.value
+      transformer.h.3.attn:
+        in: branch_norm_6
+        op: nextt_attention
+        module: transformer.h.3.attn
+      hc_write_6:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_6
+        - transformer.h.3.attn
+        - mhc_maps_6.post
+      mhc_flat_7:
+        op: view_merge
+        in: hc_write_6.value
+      mhc_norm_7:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_7
+      mhc_logits_7:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_7
+        - p21
+      mhc_maps_7:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_7.value
+        - p23
+        - p22
+      mhc_read_7:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_6.value
+        - mhc_maps_7.pre
+      mhc_mix_7:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_7.res
+        - hc_write_6.value
+      branch_norm_7:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_7.value
+      transformer.h.3.mlp:
+        in: branch_norm_7
+        op: nextt_ffn
+        module: transformer.h.3.mlp
+      hc_write_7:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_7
+        - transformer.h.3.mlp
+        - mhc_maps_7.post
+      mhc_flat_8:
+        op: view_merge
+        in: hc_write_7.value
+      mhc_norm_8:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_8
+      mhc_logits_8:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_8
+        - p24
+      mhc_maps_8:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_8.value
+        - p26
+        - p25
+      mhc_read_8:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_7.value
+        - mhc_maps_8.pre
+      mhc_mix_8:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_8.res
+        - hc_write_7.value
+      branch_norm_8:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_8.value
+      value_embeds.4:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.4
+      transformer.h.4.attn:
+        in:
+        - branch_norm_8
+        - value_embeds.4
+        op: nextt_attention_ve
+        module: transformer.h.4.attn
+      hc_write_8:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_8
+        - transformer.h.4.attn
+        - mhc_maps_8.post
+      mhc_flat_9:
+        op: view_merge
+        in: hc_write_8.value
+      mhc_norm_9:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_9
+      mhc_logits_9:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_9
+        - p27
+      mhc_maps_9:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_9.value
+        - p29
+        - p28
+      mhc_read_9:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_8.value
+        - mhc_maps_9.pre
+      mhc_mix_9:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_9.res
+        - hc_write_8.value
+      branch_norm_9:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_9.value
+      transformer.h.4.mlp:
+        in: branch_norm_9
+        op: nextt_ffn
+        module: transformer.h.4.mlp
+      hc_write_9:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_9
+        - transformer.h.4.mlp
+        - mhc_maps_9.post
+      mhc_flat_10:
+        op: view_merge
+        in: hc_write_9.value
+      mhc_norm_10:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_10
+      mhc_logits_10:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_10
+        - p30
+      mhc_maps_10:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_10.value
+        - p32
+        - p31
+      mhc_read_10:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_9.value
+        - mhc_maps_10.pre
+      mhc_mix_10:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_10.res
+        - hc_write_9.value
+      branch_norm_10:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_10.value
+      transformer.h.5.attn:
+        in: branch_norm_10
+        op: nextt_attention
+        module: transformer.h.5.attn
+      hc_write_10:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_10
+        - transformer.h.5.attn
+        - mhc_maps_10.post
+      mhc_flat_11:
+        op: view_merge
+        in: hc_write_10.value
+      mhc_norm_11:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_11
+      mhc_logits_11:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_11
+        - p33
+      mhc_maps_11:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_11.value
+        - p35
+        - p34
+      mhc_read_11:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_10.value
+        - mhc_maps_11.pre
+      mhc_mix_11:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_11.res
+        - hc_write_10.value
+      branch_norm_11:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_11.value
+      transformer.h.5.mlp:
+        in: branch_norm_11
+        op: nextt_ffn
+        module: transformer.h.5.mlp
+      hc_write_11:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_11
+        - transformer.h.5.mlp
+        - mhc_maps_11.post
+      mhc_flat_12:
+        op: view_merge
+        in: hc_write_11.value
+      mhc_norm_12:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_12
+      mhc_logits_12:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_12
+        - p36
+      mhc_maps_12:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_12.value
+        - p38
+        - p37
+      mhc_read_12:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_11.value
+        - mhc_maps_12.pre
+      mhc_mix_12:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_12.res
+        - hc_write_11.value
+      branch_norm_12:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_12.value
+      value_embeds.6:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.6
+      transformer.h.6.attn:
+        in:
+        - branch_norm_12
+        - value_embeds.6
+        op: nextt_attention_ve
+        module: transformer.h.6.attn
+      hc_write_12:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_12
+        - transformer.h.6.attn
+        - mhc_maps_12.post
+      mhc_flat_13:
+        op: view_merge
+        in: hc_write_12.value
+      mhc_norm_13:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_13
+      mhc_logits_13:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_13
+        - p39
+      mhc_maps_13:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_13.value
+        - p41
+        - p40
+      mhc_read_13:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_12.value
+        - mhc_maps_13.pre
+      mhc_mix_13:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_13.res
+        - hc_write_12.value
+      branch_norm_13:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_13.value
+      transformer.h.6.mlp:
+        in: branch_norm_13
+        op: nextt_ffn
+        module: transformer.h.6.mlp
+      hc_write_13:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_13
+        - transformer.h.6.mlp
+        - mhc_maps_13.post
+      mhc_flat_14:
+        op: view_merge
+        in: hc_write_13.value
+      mhc_norm_14:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_14
+      mhc_logits_14:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_14
+        - p42
+      mhc_maps_14:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_14.value
+        - p44
+        - p43
+      mhc_read_14:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_13.value
+        - mhc_maps_14.pre
+      mhc_mix_14:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_14.res
+        - hc_write_13.value
+      branch_norm_14:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_14.value
+      transformer.h.7.attn:
+        in: branch_norm_14
+        op: nextt_attention
+        module: transformer.h.7.attn
+      hc_write_14:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_14
+        - transformer.h.7.attn
+        - mhc_maps_14.post
+      mhc_flat_15:
+        op: view_merge
+        in: hc_write_14.value
+      mhc_norm_15:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_15
+      mhc_logits_15:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_15
+        - p45
+      mhc_maps_15:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_15.value
+        - p47
+        - p46
+      mhc_read_15:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_14.value
+        - mhc_maps_15.pre
+      mhc_mix_15:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_15.res
+        - hc_write_14.value
+      branch_norm_15:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_15.value
+      transformer.h.7.mlp:
+        in: branch_norm_15
+        op: nextt_ffn
+        module: transformer.h.7.mlp
+      hc_write_15:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_15
+        - transformer.h.7.mlp
+        - mhc_maps_15.post
+      mhc_flat_16:
+        op: view_merge
+        in: hc_write_15.value
+      mhc_norm_16:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_16
+      mhc_logits_16:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_16
+        - p48
+      mhc_maps_16:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_16.value
+        - p50
+        - p49
+      mhc_read_16:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_15.value
+        - mhc_maps_16.pre
+      mhc_mix_16:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_16.res
+        - hc_write_15.value
+      branch_norm_16:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_16.value
+      value_embeds.8:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.8
+      transformer.h.8.attn:
+        in:
+        - branch_norm_16
+        - value_embeds.8
+        op: nextt_attention_ve
+        module: transformer.h.8.attn
+      hc_write_16:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_16
+        - transformer.h.8.attn
+        - mhc_maps_16.post
+      mhc_flat_17:
+        op: view_merge
+        in: hc_write_16.value
+      mhc_norm_17:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_17
+      mhc_logits_17:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_17
+        - p51
+      mhc_maps_17:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_17.value
+        - p53
+        - p52
+      mhc_read_17:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_16.value
+        - mhc_maps_17.pre
+      mhc_mix_17:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_17.res
+        - hc_write_16.value
+      branch_norm_17:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_17.value
+      transformer.h.8.mlp:
+        in: branch_norm_17
+        op: nextt_ffn
+        module: transformer.h.8.mlp
+      hc_write_17:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_17
+        - transformer.h.8.mlp
+        - mhc_maps_17.post
+      mhc_flat_18:
+        op: view_merge
+        in: hc_write_17.value
+      mhc_norm_18:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_18
+      mhc_logits_18:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_18
+        - p54
+      mhc_maps_18:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_18.value
+        - p56
+        - p55
+      mhc_read_18:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_17.value
+        - mhc_maps_18.pre
+      mhc_mix_18:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_18.res
+        - hc_write_17.value
+      branch_norm_18:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_18.value
+      transformer.h.9.attn:
+        in: branch_norm_18
+        op: nextt_attention
+        module: transformer.h.9.attn
+      hc_write_18:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_18
+        - transformer.h.9.attn
+        - mhc_maps_18.post
+      mhc_flat_19:
+        op: view_merge
+        in: hc_write_18.value
+      mhc_norm_19:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_19
+      mhc_logits_19:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_19
+        - p57
+      mhc_maps_19:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_19.value
+        - p59
+        - p58
+      mhc_read_19:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_18.value
+        - mhc_maps_19.pre
+      mhc_mix_19:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_19.res
+        - hc_write_18.value
+      branch_norm_19:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_19.value
+      transformer.h.9.mlp:
+        in: branch_norm_19
+        op: nextt_ffn
+        module: transformer.h.9.mlp
+      hc_write_19:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_19
+        - transformer.h.9.mlp
+        - mhc_maps_19.post
+      mhc_flat_20:
+        op: view_merge
+        in: hc_write_19.value
+      mhc_norm_20:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_20
+      mhc_logits_20:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_20
+        - p60
+      mhc_maps_20:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_20.value
+        - p62
+        - p61
+      mhc_read_20:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_19.value
+        - mhc_maps_20.pre
+      mhc_mix_20:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_20.res
+        - hc_write_19.value
+      branch_norm_20:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_20.value
+      value_embeds.10:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.10
+      transformer.h.10.attn:
+        in:
+        - branch_norm_20
+        - value_embeds.10
+        op: nextt_attention_ve
+        module: transformer.h.10.attn
+      hc_write_20:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_20
+        - transformer.h.10.attn
+        - mhc_maps_20.post
+      mhc_flat_21:
+        op: view_merge
+        in: hc_write_20.value
+      mhc_norm_21:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_21
+      mhc_logits_21:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_21
+        - p63
+      mhc_maps_21:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_21.value
+        - p65
+        - p64
+      mhc_read_21:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_20.value
+        - mhc_maps_21.pre
+      mhc_mix_21:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_21.res
+        - hc_write_20.value
+      branch_norm_21:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_21.value
+      transformer.h.10.mlp:
+        in: branch_norm_21
+        op: nextt_ffn
+        module: transformer.h.10.mlp
+      hc_write_21:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_21
+        - transformer.h.10.mlp
+        - mhc_maps_21.post
+      mhc_flat_22:
+        op: view_merge
+        in: hc_write_21.value
+      mhc_norm_22:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_22
+      mhc_logits_22:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_22
+        - p66
+      mhc_maps_22:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_22.value
+        - p68
+        - p67
+      mhc_read_22:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_21.value
+        - mhc_maps_22.pre
+      mhc_mix_22:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_22.res
+        - hc_write_21.value
+      branch_norm_22:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_22.value
+      transformer.h.11.attn:
+        in: branch_norm_22
+        op: nextt_attention
+        module: transformer.h.11.attn
+      hc_write_22:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_22
+        - transformer.h.11.attn
+        - mhc_maps_22.post
+      mhc_flat_23:
+        op: view_merge
+        in: hc_write_22.value
+      mhc_norm_23:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_23
+      mhc_logits_23:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_23
+        - p69
+      mhc_maps_23:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_23.value
+        - p71
+        - p70
+      mhc_read_23:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_22.value
+        - mhc_maps_23.pre
+      mhc_mix_23:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_23.res
+        - hc_write_22.value
+      branch_norm_23:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_23.value
+      transformer.h.11.mlp:
+        in: branch_norm_23
+        op: nextt_ffn
+        module: transformer.h.11.mlp
+      hc_write_23:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_23
+        - transformer.h.11.mlp
+        - mhc_maps_23.post
+      mhc_flat_24:
+        op: view_merge
+        in: hc_write_23.value
+      mhc_norm_24:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_24
+      mhc_logits_24:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_24
+        - p72
+      mhc_maps_24:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_24.value
+        - p74
+        - p73
+      mhc_read_24:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_23.value
+        - mhc_maps_24.pre
+      mhc_mix_24:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_24.res
+        - hc_write_23.value
+      branch_norm_24:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_24.value
+      value_embeds.12:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.12
+      transformer.h.12.attn:
+        in:
+        - branch_norm_24
+        - value_embeds.12
+        op: nextt_attention_ve
+        module: transformer.h.12.attn
+      hc_write_24:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_24
+        - transformer.h.12.attn
+        - mhc_maps_24.post
+      mhc_flat_25:
+        op: view_merge
+        in: hc_write_24.value
+      mhc_norm_25:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_25
+      mhc_logits_25:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_25
+        - p75
+      mhc_maps_25:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_25.value
+        - p77
+        - p76
+      mhc_read_25:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_24.value
+        - mhc_maps_25.pre
+      mhc_mix_25:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_25.res
+        - hc_write_24.value
+      branch_norm_25:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_25.value
+      transformer.h.12.mlp:
+        in: branch_norm_25
+        op: nextt_ffn
+        module: transformer.h.12.mlp
+      hc_write_25:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_25
+        - transformer.h.12.mlp
+        - mhc_maps_25.post
+      mhc_flat_26:
+        op: view_merge
+        in: hc_write_25.value
+      mhc_norm_26:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_26
+      mhc_logits_26:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_26
+        - p78
+      mhc_maps_26:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_26.value
+        - p80
+        - p79
+      mhc_read_26:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_25.value
+        - mhc_maps_26.pre
+      mhc_mix_26:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_26.res
+        - hc_write_25.value
+      branch_norm_26:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_26.value
+      transformer.h.13.attn:
+        in: branch_norm_26
+        op: nextt_attention
+        module: transformer.h.13.attn
+      hc_write_26:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_26
+        - transformer.h.13.attn
+        - mhc_maps_26.post
+      mhc_flat_27:
+        op: view_merge
+        in: hc_write_26.value
+      mhc_norm_27:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_27
+      mhc_logits_27:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_27
+        - p81
+      mhc_maps_27:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_27.value
+        - p83
+        - p82
+      mhc_read_27:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_26.value
+        - mhc_maps_27.pre
+      mhc_mix_27:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_27.res
+        - hc_write_26.value
+      branch_norm_27:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_27.value
+      transformer.h.13.mlp:
+        in: branch_norm_27
+        op: nextt_ffn
+        module: transformer.h.13.mlp
+      hc_write_27:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_27
+        - transformer.h.13.mlp
+        - mhc_maps_27.post
+      mhc_flat_28:
+        op: view_merge
+        in: hc_write_27.value
+      mhc_norm_28:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_28
+      mhc_logits_28:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_28
+        - p84
+      mhc_maps_28:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_28.value
+        - p86
+        - p85
+      mhc_read_28:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_27.value
+        - mhc_maps_28.pre
+      mhc_mix_28:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_28.res
+        - hc_write_27.value
+      branch_norm_28:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_28.value
+      value_embeds.14:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.14
+      transformer.h.14.attn:
+        in:
+        - branch_norm_28
+        - value_embeds.14
+        op: nextt_attention_ve
+        module: transformer.h.14.attn
+      hc_write_28:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_28
+        - transformer.h.14.attn
+        - mhc_maps_28.post
+      mhc_flat_29:
+        op: view_merge
+        in: hc_write_28.value
+      mhc_norm_29:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_29
+      mhc_logits_29:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_29
+        - p87
+      mhc_maps_29:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_29.value
+        - p89
+        - p88
+      mhc_read_29:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_28.value
+        - mhc_maps_29.pre
+      mhc_mix_29:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_29.res
+        - hc_write_28.value
+      branch_norm_29:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_29.value
+      transformer.h.14.mlp:
+        in: branch_norm_29
+        op: nextt_ffn
+        module: transformer.h.14.mlp
+      hc_write_29:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_29
+        - transformer.h.14.mlp
+        - mhc_maps_29.post
+      mhc_flat_30:
+        op: view_merge
+        in: hc_write_29.value
+      mhc_norm_30:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_30
+      mhc_logits_30:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_30
+        - p90
+      mhc_maps_30:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_30.value
+        - p92
+        - p91
+      mhc_read_30:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_29.value
+        - mhc_maps_30.pre
+      mhc_mix_30:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_30.res
+        - hc_write_29.value
+      branch_norm_30:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_30.value
+      transformer.h.15.attn:
+        in: branch_norm_30
+        op: nextt_attention
+        module: transformer.h.15.attn
+      hc_write_30:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_30
+        - transformer.h.15.attn
+        - mhc_maps_30.post
+      mhc_flat_31:
+        op: view_merge
+        in: hc_write_30.value
+      mhc_norm_31:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_31
+      mhc_logits_31:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_31
+        - p93
+      mhc_maps_31:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_31.value
+        - p95
+        - p94
+      mhc_read_31:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_30.value
+        - mhc_maps_31.pre
+      mhc_mix_31:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_31.res
+        - hc_write_30.value
+      branch_norm_31:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_31.value
+      transformer.h.15.mlp:
+        in: branch_norm_31
+        op: nextt_ffn
+        module: transformer.h.15.mlp
+      hc_write_31:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_31
+        - transformer.h.15.mlp
+        - mhc_maps_31.post
+      mhc_flat_32:
+        op: view_merge
+        in: hc_write_31.value
+      mhc_norm_32:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_32
+      mhc_logits_32:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_32
+        - p96
+      mhc_maps_32:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_32.value
+        - p98
+        - p97
+      mhc_read_32:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_31.value
+        - mhc_maps_32.pre
+      mhc_mix_32:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_32.res
+        - hc_write_31.value
+      branch_norm_32:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_32.value
+      value_embeds.16:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.16
+      transformer.h.16.attn:
+        in:
+        - branch_norm_32
+        - value_embeds.16
+        op: nextt_attention_ve
+        module: transformer.h.16.attn
+      hc_write_32:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_32
+        - transformer.h.16.attn
+        - mhc_maps_32.post
+      mhc_flat_33:
+        op: view_merge
+        in: hc_write_32.value
+      mhc_norm_33:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_33
+      mhc_logits_33:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_33
+        - p99
+      mhc_maps_33:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_33.value
+        - p101
+        - p100
+      mhc_read_33:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_32.value
+        - mhc_maps_33.pre
+      mhc_mix_33:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_33.res
+        - hc_write_32.value
+      branch_norm_33:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_33.value
+      transformer.h.16.mlp:
+        in: branch_norm_33
+        op: nextt_ffn
+        module: transformer.h.16.mlp
+      hc_write_33:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_33
+        - transformer.h.16.mlp
+        - mhc_maps_33.post
+      mhc_flat_34:
+        op: view_merge
+        in: hc_write_33.value
+      mhc_norm_34:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_34
+      mhc_logits_34:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_34
+        - p102
+      mhc_maps_34:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_34.value
+        - p104
+        - p103
+      mhc_read_34:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_33.value
+        - mhc_maps_34.pre
+      mhc_mix_34:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_34.res
+        - hc_write_33.value
+      branch_norm_34:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_34.value
+      transformer.h.17.attn:
+        in: branch_norm_34
+        op: nextt_attention
+        module: transformer.h.17.attn
+      hc_write_34:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_34
+        - transformer.h.17.attn
+        - mhc_maps_34.post
+      mhc_flat_35:
+        op: view_merge
+        in: hc_write_34.value
+      mhc_norm_35:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_35
+      mhc_logits_35:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_35
+        - p105
+      mhc_maps_35:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_35.value
+        - p107
+        - p106
+      mhc_read_35:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_34.value
+        - mhc_maps_35.pre
+      mhc_mix_35:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_35.res
+        - hc_write_34.value
+      branch_norm_35:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_35.value
+      transformer.h.17.mlp:
+        in: branch_norm_35
+        op: nextt_ffn
+        module: transformer.h.17.mlp
+      hc_write_35:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_35
+        - transformer.h.17.mlp
+        - mhc_maps_35.post
+      mhc_flat_36:
+        op: view_merge
+        in: hc_write_35.value
+      mhc_norm_36:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_36
+      mhc_logits_36:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_36
+        - p108
+      mhc_maps_36:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_36.value
+        - p110
+        - p109
+      mhc_read_36:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_35.value
+        - mhc_maps_36.pre
+      mhc_mix_36:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_36.res
+        - hc_write_35.value
+      branch_norm_36:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_36.value
+      value_embeds.18:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.18
+      transformer.h.18.attn:
+        in:
+        - branch_norm_36
+        - value_embeds.18
+        op: nextt_attention_ve
+        module: transformer.h.18.attn
+      hc_write_36:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_36
+        - transformer.h.18.attn
+        - mhc_maps_36.post
+      mhc_flat_37:
+        op: view_merge
+        in: hc_write_36.value
+      mhc_norm_37:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_37
+      mhc_logits_37:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_37
+        - p111
+      mhc_maps_37:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_37.value
+        - p113
+        - p112
+      mhc_read_37:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_36.value
+        - mhc_maps_37.pre
+      mhc_mix_37:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_37.res
+        - hc_write_36.value
+      branch_norm_37:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_37.value
+      transformer.h.18.mlp:
+        in: branch_norm_37
+        op: nextt_ffn
+        module: transformer.h.18.mlp
+      hc_write_37:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_37
+        - transformer.h.18.mlp
+        - mhc_maps_37.post
+      mhc_flat_38:
+        op: view_merge
+        in: hc_write_37.value
+      mhc_norm_38:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_38
+      mhc_logits_38:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_38
+        - p114
+      mhc_maps_38:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_38.value
+        - p116
+        - p115
+      mhc_read_38:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_37.value
+        - mhc_maps_38.pre
+      mhc_mix_38:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_38.res
+        - hc_write_37.value
+      branch_norm_38:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_38.value
+      transformer.h.19.attn:
+        in: branch_norm_38
+        op: nextt_attention
+        module: transformer.h.19.attn
+      hc_write_38:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_38
+        - transformer.h.19.attn
+        - mhc_maps_38.post
+      mhc_flat_39:
+        op: view_merge
+        in: hc_write_38.value
+      mhc_norm_39:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_39
+      mhc_logits_39:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_39
+        - p117
+      mhc_maps_39:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_39.value
+        - p119
+        - p118
+      mhc_read_39:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_38.value
+        - mhc_maps_39.pre
+      mhc_mix_39:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_39.res
+        - hc_write_38.value
+      branch_norm_39:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_39.value
+      transformer.h.19.mlp:
+        in: branch_norm_39
+        op: nextt_ffn
+        module: transformer.h.19.mlp
+      hc_write_39:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_39
+        - transformer.h.19.mlp
+        - mhc_maps_39.post
+      mhc_flat_40:
+        op: view_merge
+        in: hc_write_39.value
+      mhc_norm_40:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_40
+      mhc_logits_40:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_40
+        - p120
+      mhc_maps_40:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_40.value
+        - p122
+        - p121
+      mhc_read_40:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_39.value
+        - mhc_maps_40.pre
+      mhc_mix_40:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_40.res
+        - hc_write_39.value
+      branch_norm_40:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_40.value
+      value_embeds.20:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.20
+      transformer.h.20.attn:
+        in:
+        - branch_norm_40
+        - value_embeds.20
+        op: nextt_attention_ve
+        module: transformer.h.20.attn
+      hc_write_40:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_40
+        - transformer.h.20.attn
+        - mhc_maps_40.post
+      mhc_flat_41:
+        op: view_merge
+        in: hc_write_40.value
+      mhc_norm_41:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_41
+      mhc_logits_41:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_41
+        - p123
+      mhc_maps_41:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_41.value
+        - p125
+        - p124
+      mhc_read_41:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_40.value
+        - mhc_maps_41.pre
+      mhc_mix_41:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_41.res
+        - hc_write_40.value
+      branch_norm_41:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_41.value
+      transformer.h.20.mlp:
+        in: branch_norm_41
+        op: nextt_ffn
+        module: transformer.h.20.mlp
+      hc_write_41:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_41
+        - transformer.h.20.mlp
+        - mhc_maps_41.post
+      mhc_flat_42:
+        op: view_merge
+        in: hc_write_41.value
+      mhc_norm_42:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_42
+      mhc_logits_42:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_42
+        - p126
+      mhc_maps_42:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_42.value
+        - p128
+        - p127
+      mhc_read_42:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_41.value
+        - mhc_maps_42.pre
+      mhc_mix_42:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_42.res
+        - hc_write_41.value
+      branch_norm_42:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_42.value
+      transformer.h.21.attn:
+        in: branch_norm_42
+        op: nextt_attention
+        module: transformer.h.21.attn
+      hc_write_42:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_42
+        - transformer.h.21.attn
+        - mhc_maps_42.post
+      mhc_flat_43:
+        op: view_merge
+        in: hc_write_42.value
+      mhc_norm_43:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_43
+      mhc_logits_43:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_43
+        - p129
+      mhc_maps_43:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_43.value
+        - p131
+        - p130
+      mhc_read_43:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_42.value
+        - mhc_maps_43.pre
+      mhc_mix_43:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_43.res
+        - hc_write_42.value
+      branch_norm_43:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_43.value
+      transformer.h.21.mlp:
+        in: branch_norm_43
+        op: nextt_ffn
+        module: transformer.h.21.mlp
+      hc_write_43:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_43
+        - transformer.h.21.mlp
+        - mhc_maps_43.post
+      mhc_flat_44:
+        op: view_merge
+        in: hc_write_43.value
+      mhc_norm_44:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_44
+      mhc_logits_44:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_44
+        - p132
+      mhc_maps_44:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_44.value
+        - p134
+        - p133
+      mhc_read_44:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_43.value
+        - mhc_maps_44.pre
+      mhc_mix_44:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_44.res
+        - hc_write_43.value
+      branch_norm_44:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_44.value
+      value_embeds.22:
+        op: embedding
+        dims:
+          d_model: d_model
+          n_vocab: n_vocab
+        weight_axes:
+        - replicated: true
+        - replicated: true
+        in: input_ids
+        module: value_embeds.22
+      transformer.h.22.attn:
+        in:
+        - branch_norm_44
+        - value_embeds.22
+        op: nextt_attention_ve
+        module: transformer.h.22.attn
+      hc_write_44:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_44
+        - transformer.h.22.attn
+        - mhc_maps_44.post
+      mhc_flat_45:
+        op: view_merge
+        in: hc_write_44.value
+      mhc_norm_45:
+        op: rmsnorm_unscaled
+        dims:
+          dim: n_hidden_copies*d_model
+        in: mhc_flat_45
+      mhc_logits_45:
+        op: nt_mhc_projection
+        dims:
+          ND: n_hidden_copies*d_model
+          A: d_hc_mix
+        in:
+        - mhc_norm_45
+        - p135
+      mhc_maps_45:
+        op: nt_mhc_maps
+        dims:
+          N: n_hidden_copies
+          A: d_hc_mix
+          I: '20'
+        in:
+        - mhc_logits_45.value
+        - p137
+        - p136
+      mhc_read_45:
+        op: nt_hc_read
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - hc_write_44.value
+        - mhc_maps_45.pre
+      mhc_mix_45:
+        op: hc_mix
+        dims:
+          n_hidden_copies: n_hidden_copies
+          d_model: d_model
+        in:
+        - mhc_maps_45.res
+        - hc_write_44.value
+      branch_norm_45:
+        op: rmsnorm_unscaled
+        dims:
+          dim: d_model
+        in: mhc_read_45.value
+      transformer.h.22.mlp:
+        in: branch_norm_45
+        op: nextt_ffn
+        module: transformer.h.22.mlp
+      hc_write_45:
+        op: nt_hc_write
+        dims:
+          N: n_hidden_copies
+          D: d_model
+        in:
+        - mhc_mix_45
+        - transformer.h.22.mlp
+        - mhc_maps_45.post
+      sum_final_streams:
+        op: sum_reduce
+        axis: 2
+        dims:
+          in: n_hidden_copies
+        in: hc_write_45.value
+      out:
+        op: identity
+        in: sum_final_streams
+    outputs:
+    - out
+model:
+- name: resid_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id038
+- name: x0_lambdas
+  op: parameter_vector
+  dims:
+    dim: '23'
+  weight_axes:
+  - *id038
+- name: smear_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: backout_lambda
+  op: parameter_vector
+  dims:
+    dim: '1'
+  weight_axes:
+  - *id038
+- name: transformer.wte
+  op: embedding
+  boundary_role: input_embedding
+  dims:
+    n_vocab: n_vocab
+    d_model: d_model
+  weight_axes: *id001
+  inputs:
+  - input_ids
+- name: embedding_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - transformer.wte
+- name: smear_current
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '1'
+  inputs:
+  - embedding_norm
+- name: smear_previous
+  op: slice
+  axis: 1
+  dims:
+    out: s_ctx - 1
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: smear_channels
+  op: slice
+  dims:
+    in: d_model
+    out: '24'
+    start: '0'
+  inputs:
+  - smear_current
+- name: smear_gate
+  op: linear
+  dims:
+    in: '24'
+    out: '1'
+  weight_axes: *id001
+  inputs:
+  - smear_channels
+- name: smear_sigmoid
+  op: sigmoid
+  dims:
+    dim: '1'
+  inputs:
+  - smear_gate
+- name: smear_scaled
+  op: mul
+  dims:
+    dim: '1'
+  inputs:
+  - smear_sigmoid
+  - smear_lambda
+- name: smear_contribution
+  op: mul
+  dims:
+    dim: d_model
+  inputs:
+  - smear_previous
+  - smear_scaled
+- name: smear_sum
+  op: add
+  dims:
+    dim: d_model
+  inputs:
+  - smear_current
+  - smear_contribution
+- name: first_token
+  op: slice
+  axis: 1
+  dims:
+    out: '1'
+    start: '0'
+  inputs:
+  - embedding_norm
+- name: initial_hidden
+  op: concat
+  axis: 1
+  dims:
+    out: s_ctx
+  inputs:
+  - first_token
+  - smear_sum
+- name: residual_maps.0.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.0.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.0.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.1.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.1.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.1.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.2.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.2.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.2.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.3.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.3.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.3.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.4.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.4.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.4.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.5.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.5.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.5.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.6.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.6.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.6.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.7.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.7.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.7.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.8.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.8.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.8.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.9.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.9.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.9.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.10.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.10.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.10.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.11.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.11.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.11.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.12.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.12.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.12.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.13.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.13.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.13.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.14.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.14.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.14.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.15.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.15.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.15.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.16.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.16.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.16.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.17.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.17.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.17.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.18.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.18.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.18.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.19.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.19.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.19.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.20.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.20.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.20.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.21.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.21.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.21.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.22.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.22.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.22.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.23.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.23.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.23.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.24.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.24.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.24.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.25.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.25.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.25.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.26.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.26.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.26.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.27.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.27.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.27.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.28.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.28.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.28.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.29.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.29.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.29.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.30.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.30.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.30.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.31.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.31.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.31.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.32.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.32.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.32.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.33.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.33.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.33.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.34.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.34.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.34.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.35.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.35.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.35.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.36.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.36.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.36.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.37.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.37.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.37.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.38.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.38.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.38.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.39.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.39.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.39.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.40.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.40.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.40.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.41.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.41.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.41.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.42.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.42.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.42.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.43.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.43.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.43.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.44.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.44.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.44.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: residual_maps.45.projection
+  op: parameter_tensor
+  shape:
+  - n_hidden_copies*d_model
+  - d_hc_mix
+  weight_axes: *id001
+- name: residual_maps.45.bias
+  op: parameter_vector
+  dims:
+    dim: d_hc_mix
+  weight_axes:
+  - *id038
+- name: residual_maps.45.gates
+  op: parameter_vector
+  dims:
+    dim: '3'
+  weight_axes:
+  - *id038
+- name: trunk
+  template: nextt_residual_model
+  inputs:
+  - initial_hidden
+  - input_ids
+  - residual_maps.0.projection
+  - residual_maps.0.bias
+  - residual_maps.0.gates
+  - residual_maps.1.projection
+  - residual_maps.1.bias
+  - residual_maps.1.gates
+  - residual_maps.2.projection
+  - residual_maps.2.bias
+  - residual_maps.2.gates
+  - residual_maps.3.projection
+  - residual_maps.3.bias
+  - residual_maps.3.gates
+  - residual_maps.4.projection
+  - residual_maps.4.bias
+  - residual_maps.4.gates
+  - residual_maps.5.projection
+  - residual_maps.5.bias
+  - residual_maps.5.gates
+  - residual_maps.6.projection
+  - residual_maps.6.bias
+  - residual_maps.6.gates
+  - residual_maps.7.projection
+  - residual_maps.7.bias
+  - residual_maps.7.gates
+  - residual_maps.8.projection
+  - residual_maps.8.bias
+  - residual_maps.8.gates
+  - residual_maps.9.projection
+  - residual_maps.9.bias
+  - residual_maps.9.gates
+  - residual_maps.10.projection
+  - residual_maps.10.bias
+  - residual_maps.10.gates
+  - residual_maps.11.projection
+  - residual_maps.11.bias
+  - residual_maps.11.gates
+  - residual_maps.12.projection
+  - residual_maps.12.bias
+  - residual_maps.12.gates
+  - residual_maps.13.projection
+  - residual_maps.13.bias
+  - residual_maps.13.gates
+  - residual_maps.14.projection
+  - residual_maps.14.bias
+  - residual_maps.14.gates
+  - residual_maps.15.projection
+  - residual_maps.15.bias
+  - residual_maps.15.gates
+  - residual_maps.16.projection
+  - residual_maps.16.bias
+  - residual_maps.16.gates
+  - residual_maps.17.projection
+  - residual_maps.17.bias
+  - residual_maps.17.gates
+  - residual_maps.18.projection
+  - residual_maps.18.bias
+  - residual_maps.18.gates
+  - residual_maps.19.projection
+  - residual_maps.19.bias
+  - residual_maps.19.gates
+  - residual_maps.20.projection
+  - residual_maps.20.bias
+  - residual_maps.20.gates
+  - residual_maps.21.projection
+  - residual_maps.21.bias
+  - residual_maps.21.gates
+  - residual_maps.22.projection
+  - residual_maps.22.bias
+  - residual_maps.22.gates
+  - residual_maps.23.projection
+  - residual_maps.23.bias
+  - residual_maps.23.gates
+  - residual_maps.24.projection
+  - residual_maps.24.bias
+  - residual_maps.24.gates
+  - residual_maps.25.projection
+  - residual_maps.25.bias
+  - residual_maps.25.gates
+  - residual_maps.26.projection
+  - residual_maps.26.bias
+  - residual_maps.26.gates
+  - residual_maps.27.projection
+  - residual_maps.27.bias
+  - residual_maps.27.gates
+  - residual_maps.28.projection
+  - residual_maps.28.bias
+  - residual_maps.28.gates
+  - residual_maps.29.projection
+  - residual_maps.29.bias
+  - residual_maps.29.gates
+  - residual_maps.30.projection
+  - residual_maps.30.bias
+  - residual_maps.30.gates
+  - residual_maps.31.projection
+  - residual_maps.31.bias
+  - residual_maps.31.gates
+  - residual_maps.32.projection
+  - residual_maps.32.bias
+  - residual_maps.32.gates
+  - residual_maps.33.projection
+  - residual_maps.33.bias
+  - residual_maps.33.gates
+  - residual_maps.34.projection
+  - residual_maps.34.bias
+  - residual_maps.34.gates
+  - residual_maps.35.projection
+  - residual_maps.35.bias
+  - residual_maps.35.gates
+  - residual_maps.36.projection
+  - residual_maps.36.bias
+  - residual_maps.36.gates
+  - residual_maps.37.projection
+  - residual_maps.37.bias
+  - residual_maps.37.gates
+  - residual_maps.38.projection
+  - residual_maps.38.bias
+  - residual_maps.38.gates
+  - residual_maps.39.projection
+  - residual_maps.39.bias
+  - residual_maps.39.gates
+  - residual_maps.40.projection
+  - residual_maps.40.bias
+  - residual_maps.40.gates
+  - residual_maps.41.projection
+  - residual_maps.41.bias
+  - residual_maps.41.gates
+  - residual_maps.42.projection
+  - residual_maps.42.bias
+  - residual_maps.42.gates
+  - residual_maps.43.projection
+  - residual_maps.43.bias
+  - residual_maps.43.gates
+  - residual_maps.44.projection
+  - residual_maps.44.bias
+  - residual_maps.44.gates
+  - residual_maps.45.projection
+  - residual_maps.45.bias
+  - residual_maps.45.gates
+- name: final_norm
+  op: rmsnorm_unscaled
+  dims:
+    dim: d_model
+  inputs:
+  - trunk
+- name: lm_head
+  op: linear
+  boundary_role: output_head
+  dims:
+    in: d_model
+    out: n_vocab
+  weight_axes: *id001
+  inputs:
+  - final_norm
+- name: logit_div15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - lm_head
+- name: logit_tanh
+  op: tanh
+  dims:
+    dim: n_vocab
+  inputs:
+  - logit_div15
+- name: logit_mul15
+  op: scale_const
+  dims:
+    in: n_vocab
+  inputs:
+  - logit_tanh
+custom_ops:
+  nt_hc_alpha:
+    signature:
+      x:
+      - B
+      - s_ctx
+      - N
+      - D
+      weight:
+      - D
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - N
+      - A
+    flops: 2*B*s_ctx*N*D*A
+    params: '0'
+    couples_on:
+    - D
+    axis_use:
+      D:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: normalized streams @ dynamic_alpha (stored [D,N+1])
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_mix:
+    signature:
+      alpha:
+      - B
+      - s_ctx
+      - N
+      - A
+      streams:
+      - B
+      - s_ctx
+      - N
+      - D
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - A
+      - D
+    flops: 2*B*s_ctx*N*A*D
+    params: '0'
+    couples_on:
+    - N
+    axis_use:
+      N:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: einsum btjk,btjd -> btkd; alpha transpose mixes original streams
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_mhc_projection:
+    signature:
+      flat:
+      - B
+      - s_ctx
+      - ND
+      weight:
+      - ND
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - A
+    flops: 2*B*s_ctx*ND*A
+    params: '0'
+    couples_on:
+    - ND
+    axis_use:
+      ND:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: flattened streams @ projection (stored [N*D,N*N+2*N])
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_mhc_maps:
+    signature:
+      logits:
+      - B
+      - s_ctx
+      - A
+      gates:
+      - 3
+      bias:
+      - A
+    shape_kind: preserve
+    secondary_outputs:
+      pre:
+      - B
+      - s_ctx
+      - N
+      post:
+      - B
+      - s_ctx
+      - N
+      res:
+      - B
+      - s_ctx
+      - N
+      - N
+    flops: B*s_ctx*(2*A+8*N+I*(12*N*N+4*N))
+    params: '0'
+    couples_on:
+    - A
+    axis_use:
+      A:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: split; pre=sigmoid(g0*lpre+bpre); post=2sigmoid(g1*lpost+bpost); res=exp(logits
+      after I column then row log-Sinkhorn normalizations)
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_read:
+    signature:
+      streams:
+      - B
+      - s_ctx
+      - N
+      - D
+      weights:
+      - B
+      - s_ctx
+      - N
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - D
+    flops: 2*B*s_ctx*N*D
+    params: '0'
+    couples_on:
+    - N
+    axis_use:
+      N:
+        category: route
+        note: Explicit source contraction/normalization
+    formula: einsum btj,btjd -> btd
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
+  nt_hc_write:
+    signature:
+      mixed:
+      - B
+      - s_ctx
+      - N
+      - D
+      output:
+      - B
+      - s_ctx
+      - D
+      weights:
+      - B
+      - s_ctx
+      - N
+    shape_kind: preserve
+    secondary_outputs:
+      value:
+      - B
+      - s_ctx
+      - N
+      - D
+    flops: 2*B*s_ctx*N*D
+    params: '0'
+    couples_on: []
+    axis_use: {}
+    formula: mixed+weights[...,None]*output[:,:,None]
+    description: Atomic parameter-free operation. All projections and parameter tensors
+      are separate nodes.
