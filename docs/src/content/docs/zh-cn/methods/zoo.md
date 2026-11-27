@@ -3,7 +3,7 @@ title: 模型库
 description: 按模型族浏览已注册的架构、论文和结果状态。
 ---
 
-当前共有 46 张模型卡。各方法在同一骨干上校准至相同训练算力。在[观测站](https://interactive-active-ai.github.io/NextTransformer/#atlas)选择模型可查看结构图、曲线和模型卡。“已注册”表示已有配置与模型卡，尚无公开运行结果。
+当前共有 46 张模型卡。各方法在同一骨干上校准至相同训练算力。在[观测站](https://interactive-active-ai.github.io/NextTransformer/#atlas)选择模型可查看结构图、曲线和模型卡。“已注册”表示已有配置与模型卡，尚无公开运行结果；“仅竞技场”表示结果只在[竞技场](https://interactive-active-ai.github.io/NextTransformer/#arena)展示，不进入排行榜。
 
 | 模型族 | 方法 | 论文 | 结果 |
 |---|---|---|---|
