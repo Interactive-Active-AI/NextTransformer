@@ -3,16 +3,17 @@
     python docs/scripts/generate.py           # rewrite the generated files
     python docs/scripts/generate.py --check   # exit 1 when a generated file is out of date (CI)
 
-Writes docs/src/content/docs/methods/zoo.md and methods/configurations.md, the results charts in
-.github/assets/readme/, and the blocks between the `<!-- generated:leaderboard -->` markers in results/leaderboard.md,
-README.md and README.zh-CN.md.
+Writes docs/src/content/docs/methods/zoo.md, methods/configurations.md and moe/results.md, the results charts in
+.github/assets/readme/, and the blocks between the `<!-- generated:leaderboard -->` and `<!-- generated:moe-results -->`
+markers in results/leaderboard.md, README.md and README.zh-CN.md.
 """
-import argparse, html, json, math, re, sys
+import argparse, html, json, math, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from nexttransformer.export_run import CARD_ALIASES, summary  # noqa: E402
+from nexttransformer.arena import arena_only_runs  # noqa: E402
 
 DOCS = ROOT/"docs/src/content/docs"
 REPO_FILE = "https://github.com/Interactive-Active-AI/NextTransformer/blob/main/"
@@ -22,21 +23,29 @@ TITLE = {"baseline": "Baseline", "looped": "Looped", "sparse": "Sparse", "linear
          "hybrid": "Hybrid", "others": "Others"}
 ASSETS = ROOT/".github/assets/readme"
 START, END = "<!-- generated:leaderboard -->", "<!-- /generated:leaderboard -->"
-
-
+MOE = ROOT/"moe"
+MOE_START, MOE_END = "<!-- generated:moe-results -->", "<!-- /generated:moe-results -->"
 def load(path): return json.loads(path.read_text())
+
+
+def arena_only_methods():
+    """Methods whose published runs all belong to arena-only entries: shown in the arena, not with the results."""
+    hidden, runs = arena_only_runs(), [load(p) for p in (ROOT/"results/runs").glob("*.json")]
+    return {r["methodId"] for r in runs if r["id"] in hidden} - {r["methodId"] for r in runs if r["id"] not in hidden}
 
 
 def zoo(chinese=False):
     cards = [load(p) for p in (ROOT/"results/methods").glob("*.json")]
-    published = {p.stem for p in (ROOT/"results/runs").glob("*.json")}
+    arena_only = arena_only_methods()
+    published = {p.stem for p in (ROOT/"results/runs").glob("*.json")} - arena_only
     rows = []
     for c in sorted(cards, key=lambda c: (FAMILIES.index(c["family"]), c.get("order", 99), c["id"])):
         paper = f"[{c['paperTitle']}]({c['paperUrl']})" if c.get("paperUrl") else c.get("paperTitle", "")
-        status = "published" if c["id"] in published else "coming soon" if c.get("status") == "pending" else "registered"
+        status = ("published" if c["id"] in published else "arena only" if c["id"] in arena_only
+                  else "coming soon" if c.get("status") == "pending" else "registered")
         family = FAMILY_ZH[c["family"]] if chinese else TITLE[c["family"]]
         if chinese:
-            status = {"published": "已发布", "coming soon": "待发布", "registered": "已注册"}[status]
+            status = {"published": "已发布", "arena only": "仅竞技场", "coming soon": "待发布", "registered": "已注册"}[status]
         rows.append(f"| {family} | {c['name']} (`{c['id']}`) | {paper} | {status} |")
     if chinese:
         return f"""---
@@ -44,7 +53,7 @@ title: 模型库
 description: 按模型族浏览已注册的架构、论文和结果状态。
 ---
 
-当前共有 {len(cards)} 张模型卡。各方法在同一骨干上校准至相同训练算力。在[观测站]({SITE}#atlas)选择模型可查看结构图、曲线和模型卡。“已注册”表示已有配置与模型卡，尚无公开运行结果。
+当前共有 {len(cards)} 张模型卡。各方法在同一骨干上校准至相同训练算力。在[观测站]({SITE}#atlas)选择模型可查看结构图、曲线和模型卡。“已注册”表示已有配置与模型卡，尚无公开运行结果；“仅竞技场”表示结果只在[竞技场]({SITE}#arena)展示，不进入排行榜。
 
 | 模型族 | 方法 | 论文 | 结果 |
 |---|---|---|---|
@@ -59,7 +68,8 @@ description: Every method in NextTransformer, by family.
 
 NextTransformer has {len(cards)} model cards in seven families. Every method runs in the same shell and is calibrated to
 the same training compute. Open a method in the [observatory]({SITE}#atlas) for its architecture diagram, curves and
-model card; "registered" methods have a card and a configuration but no published run.
+model card; "registered" methods have a card and a configuration but no published run, and "arena only" results are
+shown in the [arena]({SITE}#arena), not on the leaderboard.
 
 | Family | Method | Paper | Result |
 |---|---|---|---|
@@ -217,10 +227,10 @@ METHOD_LABELS = load(ROOT / "website/data/method-labels.json")
 def finished():
     """Finished runs with their card, final validation BPB and CORE (x100)."""
     cards = {c["id"]: c for c in (load(p) for p in (ROOT/"results/methods").glob("*.json"))}
-    rows = []
+    rows, hidden = [], arena_only_runs()
     for path in sorted((ROOT/"results/runs").glob("*.json")):
         r = load(path)
-        if r["status"] != "finished": continue
+        if r["status"] != "finished" or r["id"] in hidden: continue
         card = cards[CARD_ALIASES.get(r["methodId"], r["methodId"])]
         rows.append({"method": r["methodId"], "id": r["id"], "name": METHOD_LABELS.get(card["id"], card["name"]), "family": card["family"], "bpb": r["val"][-1]["value"],
                      "core": 100*r["core"][-1]["value"], "base": bool(r.get("baselineAcceptance"))})
@@ -297,13 +307,63 @@ def snapshot(chinese):
             f"[Full leaderboard]({SITE}docs/results/leaderboard/) · [Training replay]({SITE}#leaderboard)")
 
 
+def moe_tracks():
+    """Budget facts come from the admitted baseline even when a different method leads."""
+    tracks = []
+    for baseline_path in sorted((MOE / "configs").glob("*/baseline.json")):
+        cfg = load(baseline_path)
+        name = cfg["track"]["name"]
+        track = cfg["track"]
+        tracks.append(dict(name=name, width=track["width"], updates=track["updates"],
+                           tokens=track["updates"] * track["rows_per_update"] * cfg["protocol"]["sequence_len"],
+                           main=name.endswith("-240tpp")))
+    return sorted(tracks, key=lambda t: (not t["main"], t["width"]))
+
+
+def moe_results(chinese=False):
+    """Preserve the documentation address and track anchors as entry points into the observatory."""
+    title = "MoE 结果" if chinese else "MoE results"
+    intro = ("在观测站的 Leaderboard、Results 和 Model atlas 中可以切换 Dense 与 MoE。"
+             "MoE 主榜按 240 TPP 的两个档位分别排名。" if chinese else
+             "Choose Dense or MoE in the observatory’s Leaderboard, Results and Model atlas. "
+             "The main MoE comparison ranks each 240 TPP budget independently.")
+    out = ["---", f"title: {title}", "---", "", intro]
+    for t in moe_tracks():
+        name = t["name"]
+        heading = f"d{t['width']} · 240 TPP" if t["main"] else name
+        budget = ("Marin 原始参考预算" if chinese else "Original Marin reference budget") if not t["main"] else "240 TPP"
+        labels = ("榜单", "曲线与任务分数", "模型配置") if chinese else ("Leaderboard", "Curves and task scores", "Model atlas")
+        links = " · ".join(f"[{label}]({SITE}#{view}?track={name})"
+                           for label, view in zip(labels, ("leaderboard", "results", "atlas")))
+        out.extend(["", f"## {heading}", "", f"{budget} · {t['updates']:,} updates · {t['tokens']/1e9:.2f}B tokens", "", links])
+    out += ["", ("榜单取最后一次完整评测的 MoE-CORE 和六源宏平均验证 BPB。训练曲线展示计划内评测和抽样验证。"
+                 "原始记录与审计可从模型卡打开。" if chinese else
+                 "Rankings use the separate final MoE-CORE evaluation and full six-source macro BPB. "
+                 "Curves use scheduled task evaluations and sampled validation. Model cards link to the run and audit.")]
+    return "\n".join(out) + "\n"
+
+
+def moe_snapshot(chinese):
+    out = ["| 240 TPP 榜单 | 更新步数 | 输入 tokens | 观测站入口 |" if chinese else
+           "| 240 TPP leaderboard | Updates | Input tokens | Observatory views |",
+           "|---|---:|---:|---|"]
+    atlas, results = ("模型配置", "曲线与评测") if chinese else ("Model atlas", "Curves and evaluations")
+    for t in moe_tracks():
+        if t["main"]:
+            name = t["name"]
+            out.append(f"| [d{t['width']}]({SITE}#leaderboard?track={name}) | {t['updates']:,} | "
+                       f"{t['tokens']/1e9:.2f}B | [{atlas}]({SITE}#atlas?track={name}) · [{results}]({SITE}#results?track={name}) |")
+    return "\n".join(out)
+
+
 def splice(text, block, start=START, end=END):
     before, rest = text.split(start, 1)
     return before + start + "\n" + block + "\n" + end + rest.split(end, 1)[1]
 
 
 def readme_sections(path, chinese):
-    cards = sorted((load(p) for p in (ROOT / "results/methods").glob("*.json")),
+    arena_only = arena_only_methods()
+    cards = sorted((card for card in (load(p) for p in (ROOT / "results/methods").glob("*.json")) if card["id"] not in arena_only),
                    key=lambda card: (card.get("order", 99), card["id"]))
     table = ["| 模型族 | 模型 |" if chinese else "| Family | Models |", "|---|---|"]
     for family in ("baseline", "residual", "looped", "sparse", "linear", "hybrid", "others"):
@@ -314,7 +374,8 @@ def readme_sections(path, chinese):
                  for card in cards if card["family"] == family]
         table.append(f"| {badge} | {' · '.join(names)} |")
     text = splice(path.read_text(), snapshot(chinese))
-    return splice(text, "\n".join(table), "<!-- generated:model-zoo -->", "<!-- /generated:model-zoo -->")
+    text = splice(text, "\n".join(table), "<!-- generated:model-zoo -->", "<!-- /generated:model-zoo -->")
+    return splice(text, moe_snapshot(chinese), MOE_START, MOE_END)
 
 
 def chinese_leaderboard(table):
@@ -335,6 +396,7 @@ def outputs():
     zh_leaderboard = zh / "results/leaderboard.md"
     return {DOCS/"methods/zoo.md": zoo(), DOCS/"methods/configurations.md": configurations(),
             zh/"methods/zoo.md": zoo(True), zh/"methods/configurations.md": configurations(True),
+            DOCS/"moe/results.md": moe_results(), zh/"moe/results.md": moe_results(True),
             zh_leaderboard: splice(zh_leaderboard.read_text(), chinese_leaderboard(docs_table)),
             leaderboard: splice(leaderboard.read_text(), docs_table),
             readme: readme_sections(readme, False),
