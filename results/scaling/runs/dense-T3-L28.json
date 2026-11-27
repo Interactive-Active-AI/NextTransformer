@@ -95,7 +95,7 @@
  "core": [
   {
    "step": 11833,
-   "value": 0.29182285490840754
+   "value": 0.2935205678075323
   }
  ],
  "finalBpb": {
@@ -103,30 +103,30 @@
   "train": 0.6841991893755759
  },
  "finalCore": {
-  "value": 0.29182285490840754,
+  "value": 0.2935205678075323,
   "tasks": {
-   "hellaswag_zeroshot": 0.48270591100056964,
-   "jeopardy": 0.14265470206737518,
-   "bigbench_qa_wikidata": 0.5094237327575684,
-   "arc_easy": 0.6414140860239664,
-   "arc_challenge": 0.26166097323099774,
-   "copa": 0.3799999952316284,
-   "commonsense_qa": 0.17588043957948682,
-   "piqa": 0.5375407934188843,
+   "hellaswag_zeroshot": 0.48111263910929364,
+   "jeopardy": 0.1440718024969101,
+   "bigbench_qa_wikidata": 0.5085379481315613,
+   "arc_easy": 0.6419753233591715,
+   "arc_challenge": 0.2559726635615031,
+   "copa": 0.3999999761581421,
+   "commonsense_qa": 0.17076166719198224,
+   "piqa": 0.5364526510238647,
    "openbook_qa": 0.23200003306070963,
    "lambada_openai": 0.4948573410511017,
-   "hellaswag": 0.49292969703674316,
+   "hellaswag": 0.49306241671244305,
    "winograd": 0.41391944885253906,
-   "winogrande": 0.1681135892868042,
+   "winogrande": 0.17284917831420898,
    "bigbench_dyck_languages": 0.06800000369548798,
-   "agi_eval_lsat_ar": 0.06521737575531004,
-   "bigbench_cs_algorithms": 0.4378787875175476,
-   "bigbench_operators": 0.17619048058986664,
+   "agi_eval_lsat_ar": 0.07608695328235625,
+   "bigbench_cs_algorithms": 0.4371212124824524,
+   "bigbench_operators": 0.17142857611179352,
    "bigbench_repeat_copy_logic": 0.03125,
-   "squad": 0.46641436219215393,
-   "coqa": 0.3628961443901062,
-   "boolq": -0.3029133018694426,
-   "bigbench_language_identification": 0.18206821311556204
+   "squad": 0.4887417256832123,
+   "coqa": 0.3627708852291107,
+   "boolq": -0.30371796457391037,
+   "bigbench_language_identification": 0.18019801083177622
   }
  },
  "links": {

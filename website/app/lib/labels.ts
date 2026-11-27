@@ -2,7 +2,7 @@ import names from '../../data/method-labels.json' with {type:'json'};
 import type {Method} from './types';
 
 const methodNames: Record<string, string> = names;
-export function methodLabel(method?: Method): string {
+export function methodLabel(method?: Pick<Method, 'id' | 'name'>): string {
  return method ? methodNames[method.id] ?? method.name : '';
 }
 
@@ -11,6 +11,7 @@ const PROTOCOLS:Record<string,string>={
  'nextt-reference-50b-v1':'Reference Protocol v1 · 50B',
  'native-v3 · historical matrix FLOPs':'Original native protocol · historical matrix FLOPs',
  'arena-v1':'Arena Protocol v1',
+ 'arena-v2':'Arena Protocol v2',
 };
 const LEDGERS:Record<string,string>={
  'reference-aten-math-v2':'Operator-level cost ledger',
